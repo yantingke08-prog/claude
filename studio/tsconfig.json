@@ -9,6 +9,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "lib": ["DOM", "ES2022"]
   },
   "include": ["src", "remotion.config.ts"]

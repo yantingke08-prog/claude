@@ -1,0 +1,86 @@
+import { AbsoluteFill, Audio, staticFile } from "remotion";
+import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
+import { C } from "../components/Hud";
+import { zh } from "../lib/fonts";
+import { Ambient } from "./components/Ambient";
+import { ProgressBar } from "./components/Chrome";
+import { Hook, HookCharts } from "./scenes/Hook";
+import { Expectancy } from "./scenes/Expectancy";
+import { LargeNumbers } from "./scenes/LargeNumbers";
+import { Sizing } from "./scenes/Sizing";
+import { Discipline } from "./scenes/Discipline";
+import { ExpectancyOutro } from "./scenes/Outro";
+import { SCRIPT, type SceneId } from "./timeline.ts";
+
+const SCENES: Record<SceneId, React.FC> = {
+  hook: Hook,
+  expectancy: Expectancy,
+  lln: LargeNumbers,
+  sizing: Sizing,
+  discipline: Discipline,
+  outro: ExpectancyOutro,
+};
+
+const timing = linearTiming({ durationInFrames: SCRIPT.transition });
+
+/**
+ * One shared WebGL background for the whole video (a single GL context keeps rendering
+ * cheap); scenes are HTML/SVG/canvas on top, crossfaded by TransitionSeries.
+ */
+export const ExpectancyVideo: React.FC<{ withAudio?: boolean }> = ({ withAudio = true }) => (
+  <AbsoluteFill style={{ backgroundColor: C.bg }}>
+    <Ambient />
+    <TransitionSeries>
+      {SCRIPT.scenes.flatMap((s, i) => {
+        const Scene = SCENES[s.id as SceneId];
+        const seq = (
+          <TransitionSeries.Sequence key={s.id} durationInFrames={s.frames}>
+            <Scene />
+          </TransitionSeries.Sequence>
+        );
+        return i === 0 ? [seq] : [<TransitionSeries.Transition key={`t-${s.id}`} presentation={fade()} timing={timing} />, seq];
+      })}
+    </TransitionSeries>
+    <ProgressBar />
+    {withAudio && <Audio src={staticFile("expectancy-score.wav")} />}
+  </AbsoluteFill>
+);
+
+/** Renders a single scene on its own, with the shared background, for fast iteration. */
+export const sceneComposition = (id: SceneId) => {
+  const Scene = SCENES[id];
+  const Comp: React.FC = () => (
+    <AbsoluteFill style={{ backgroundColor: C.bg }}>
+      <Ambient />
+      <Scene />
+    </AbsoluteFill>
+  );
+  return Comp;
+};
+
+const highlightPct = (text: string, color: string) =>
+  text.split(/(\d+%)/).map((part, i) =>
+    /\d+%/.test(part) ? (
+      <span key={i} style={{ color, textShadow: `0 0 40px ${color}` }}>
+        {part}
+      </span>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+
+/** 1280x720 YouTube thumbnail, built from the same chart as the hook. */
+export const ExpectancyThumbnail: React.FC = () => (
+  <AbsoluteFill style={{ backgroundColor: C.bg, overflow: "hidden" }}>
+    <Ambient />
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-end", paddingBottom: 30, opacity: 0.85 }}>
+      <HookCharts frame={360} scale={0.72} />
+    </AbsoluteFill>
+    <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(3,4,11,0.92) 0%, rgba(3,4,11,0.55) 45%, rgba(3,4,11,0) 70%)" }} />
+    <div style={{ position: "absolute", left: 60, top: 40, ...zh(900), lineHeight: 1.12, fontSize: 104, color: "#fff" }}>
+      <div>{highlightPct(SCRIPT.ui.thumbTop, C.amber)}</div>
+      <div>{highlightPct(SCRIPT.ui.thumbBottom, "#ff4d6d")}</div>
+    </div>
+  </AbsoluteFill>
+);

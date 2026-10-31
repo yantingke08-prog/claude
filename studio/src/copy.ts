@@ -1,3 +1,5 @@
+import expectancyScript from "./expectancy/script.json";
+
 // All on-screen copy lives here so the CJK font can be subset to exactly these glyphs.
 export const COPY = {
   introSub: "代码驱动的动态影像实验室",
@@ -21,10 +23,14 @@ export const COPY = {
   outroCredits: "REMOTION  ·  THREE.JS  ·  GSAP  ·  GLSL  ·  FFMPEG",
 };
 
+// Every string any composition shows in the CJK font, plus the ASCII/punctuation it mixes in.
+const CJK_SOURCES = [COPY, expectancyScript];
+const EXTRA = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]_abcdefghijklmnopqrstuvwxyz{|}~·×—…−→";
+
 export const CJK_GLYPHS = Array.from(
   new Set(
-    JSON.stringify(COPY)
+    (JSON.stringify(CJK_SOURCES) + EXTRA)
       .split("")
-      .filter((c) => c.charCodeAt(0) > 0x2e80),
+      .filter((c) => c.charCodeAt(0) > 0x2e80 || EXTRA.includes(c)),
   ),
 ).join("");

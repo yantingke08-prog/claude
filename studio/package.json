@@ -8,7 +8,11 @@
     "audio": "python scripts/soundtrack.py",
     "still": "remotion still Showreel out/still.png",
     "render": "remotion render Showreel out/showreel.mp4",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "exp:audio": "python scripts/score.py src/expectancy/script.json public/expectancy-score.wav",
+    "exp:publish": "node --no-warnings scripts/export-youtube.ts",
+    "exp:thumbnail": "remotion still ExpectancyThumbnail publish/expectancy/thumbnail.png",
+    "exp:render": "remotion render Expectancy out/expectancy.mp4"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

@@ -1,0 +1,29 @@
+{
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "transition": 24,
+  "scenes": { "intro": 270, "globe": 450, "wave": 270, "outro": 255 },
+  "cues": {
+    "intro": { "riser": [40, 148], "hit": [150], "shimmer": [175] },
+    "globe": { "hit": [12] },
+    "wave": { "hit": [14], "tick": [95, 110, 125, 140], "riser": [190, 262] },
+    "outro": { "riser": [20, 108], "hit": [110], "boom": [185] }
+  },
+  "arcs": [
+    { "from": "Shanghai", "to": "Tokyo", "start": 30, "dur": 40 },
+    { "from": "Beijing", "to": "Moscow", "start": 45, "dur": 55 },
+    { "from": "Shenzhen", "to": "Singapore", "start": 55, "dur": 40 },
+    { "from": "Shanghai", "to": "San Francisco", "start": 70, "dur": 70 },
+    { "from": "Beijing", "to": "London", "start": 90, "dur": 75 },
+    { "from": "Singapore", "to": "Sydney", "start": 110, "dur": 50 },
+    { "from": "Shenzhen", "to": "Mumbai", "start": 125, "dur": 50 },
+    { "from": "Shanghai", "to": "Dubai", "start": 145, "dur": 55 },
+    { "from": "Tokyo", "to": "New York", "start": 165, "dur": 75 },
+    { "from": "Beijing", "to": "Paris", "start": 185, "dur": 70 },
+    { "from": "Mumbai", "to": "Cape Town", "start": 210, "dur": 60 },
+    { "from": "Dubai", "to": "London", "start": 230, "dur": 50 },
+    { "from": "Moscow", "to": "Paris", "start": 250, "dur": 40 },
+    { "from": "Shanghai", "to": "Sao Paulo", "start": 265, "dur": 80 }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "motion-lab-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Code-driven motion graphics: Remotion + Three.js + GSAP",
+  "scripts": {
+    "studio": "remotion studio",
+    "audio": "python scripts/soundtrack.py",
+    "still": "remotion still Showreel out/still.png",
+    "render": "remotion render Showreel out/showreel.mp4",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "@react-three/postprocessing": "^3.2.2",
+    "@remotion/cli": "4.0.539",
+    "@remotion/google-fonts": "4.0.539",
+    "@remotion/noise": "4.0.539",
+    "@remotion/three": "4.0.539",
+    "@remotion/transitions": "4.0.539",
+    "d3-geo": "^3.1.1",
+    "gsap": "^3.15.0",
+    "postprocessing": "^6.39.5",
+    "react": "^19.2.9",
+    "react-dom": "^19.2.9",
+    "remotion": "4.0.539",
+    "three": "~0.186.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/d3-geo": "*",
+    "@types/react": "*",
+    "@types/three": "~0.186.0",
+    "@types/topojson-client": "*",
+    "typescript": "*"
+  }
+}

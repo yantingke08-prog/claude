@@ -8,8 +8,9 @@ import { SceneShell } from "../components/SceneShell";
 import { appear, fadeOut, GREEN, RED } from "../components/Charts";
 import { StreakStrip, streakCell, fanStats } from "../components/CanvasCharts";
 import { CleanContext } from "../components/Chrome";
-import { SingleTrade } from "./LargeNumbers";
-import { LLN_TRADES } from "../sim.ts";
+import { LLN_TRADES, STRATEGY_B } from "../sim.ts";
+import { GlassCard } from "../three/common";
+import { ease } from "../../lib/gsap";
 import { SCRIPT } from "../timeline.ts";
 import {
   camAt,
@@ -223,21 +224,112 @@ const Space: React.FC<{ f: number; decor: boolean }> = ({ f, decor }) => {
 };
 
 /**
- * Chapter 2 rebuilt around a real 3D data space (frames 300-1078).
- * The opening single-trade bar and the closing streak strip are still the 2D versions.
+ * One trade as a physical draw: a glass slab lying in perspective, split 40% win / 60%
+ * loss, and a ball that rolls, bounces and settles in the loss zone (with a real shadow).
  */
+const SpatialSingleTrade: React.FC<{ f: number }> = ({ f }) => {
+  const k = appear(f, 205, 22) * fadeOut(f, 312, 12);
+  const W = 1100;
+  const t = Math.max(0, f - 225) / 30;
+  const settle = 0.71;
+  const x = settle + Math.cos(t * 6.5) * Math.exp(-t * 1.7) * 0.32;
+  const hop = Math.abs(Math.sin(t * 6.5)) * Math.exp(-t * 2.4) * 120;
+  const landed = t > 1.7;
+  const tilt = 48 - appear(f, 205, 40) * 6;
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: k, perspective: 1100 }}>
+      <div style={{ transform: `rotateX(${tilt}deg) translateY(40px)`, transformStyle: "preserve-3d", position: "relative" }}>
+        <GlassCard>
+          <div style={{ width: W, height: 220, display: "flex", padding: 22, boxSizing: "border-box", gap: 8 }}>
+            <div style={{ width: `${STRATEGY_B.pWin * 100}%`, borderRadius: 12, background: `linear-gradient(180deg, ${GREEN}cc, ${GREEN}66)`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO.fontFamily, fontWeight: 700, fontSize: 44, color: "#032" }}>
+              40% · +2.5
+            </div>
+            <div style={{ flex: 1, borderRadius: 12, background: `linear-gradient(180deg, ${RED}cc, ${RED}66)`, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: MONO.fontFamily, fontWeight: 700, fontSize: 44, color: "#300" }}>
+              60% · −1
+            </div>
+          </div>
+        </GlassCard>
+        {/* shadow stays on the slab; the ball rises off it */}
+        <div style={{ position: "absolute", left: x * W, top: 110, width: 70 - hop * 0.2, height: 70 - hop * 0.2, transform: "translate(-50%,-50%) translateZ(2px)", borderRadius: "50%", background: "rgba(0,0,0,0.55)", filter: `blur(${6 + hop * 0.08}px)` }} />
+        <div
+          style={{
+            position: "absolute",
+            left: x * W,
+            top: 110,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            transform: `translate(-50%,-50%) translateZ(${28 + hop}px) rotateX(${-tilt}deg)`,
+            background: "radial-gradient(circle at 35% 30%, #ffffff, #cfe6ff 45%, #6b86b8 100%)",
+            boxShadow: `0 0 40px ${landed ? RED : C.cyan}`,
+          }}
+        />
+      </div>
+      <div style={{ position: "absolute", top: 760, ...zh(900), fontSize: 64, color: RED, opacity: landed ? appear(f, 225 + 52) : 0, textShadow: `0 0 30px ${RED}` }}>−1</div>
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * One person's 1000 trades on a glass plane lying in perspective. When the streak lights
+ * up, the "camera" pushes in on it (scale about the streak's own position).
+ */
+const SpatialStreak: React.FC<{ f: number }> = ({ f }) => {
+  const W = 1250;
+  const k = appear(f, 1088, 24);
+  const reveal = interpolate(f, [1095, 1185], [0, 1], clamp);
+  const highlight = appear(f, 1225, 20);
+  const sc = streakCell(W);
+  const push = ease("power3.inOut")(interpolate(f, [1215, 1290], [0, 1], clamp)) * (1 - ease("power2.inOut")(interpolate(f, [1370, 1440], [0, 1], clamp)) * 0.6);
+  const tilt = 48 - ease("expo.out")(interpolate(f, [1088, 1190], [0, 1], clamp)) * 24 - push * 14;
+  const ox = sc.x + sc.cell * (sc.wraps ? 0 : sc.length / 2);
+  const oy = sc.y + sc.cell / 2;
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", perspective: 1500, opacity: k }}>
+      <div
+        style={{
+          transform: `translateY(${-30 + push * 60}px) rotateX(${tilt}deg) rotateZ(${-3 + push * 3}deg) scale(${1 + push * 0.9})`,
+          transformOrigin: `${ox + 24}px ${oy + 24}px`,
+          transformStyle: "preserve-3d",
+          position: "relative",
+        }}
+      >
+        <GlassCard>
+          <div style={{ padding: 24 }}>
+            <StreakStrip reveal={reveal} highlight={highlight} width={W} />
+          </div>
+        </GlassCard>
+        {highlight > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              left: ox + 24,
+              top: oy + 24,
+              transform: `translate(-50%, -100%) translateZ(60px) rotateX(${-tilt}deg) translateY(-30px)`,
+              opacity: highlight,
+              ...zh(900),
+              fontSize: 40,
+              color: RED,
+              whiteSpace: "nowrap",
+              textShadow: `0 0 20px ${RED}`,
+            }}
+          >
+            {sc.length} {UI.streak} ↓
+          </div>
+        )}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** Chapter 2: a single draw, the 3D trajectory space (frames 300-1078), then one person's streak. */
 export const LargeNumbers3D: React.FC = () => {
   const f = useCurrentFrame();
   const clean = useContext(CleanContext);
   const spaceO = appear(f, SPACE_IN, 22) * fadeOut(f, SPACE_OUT, 12);
-  const stripIn = appear(f, 1088, 20);
-  const reveal = interpolate(f, [1095, 1185], [0, 1], clamp);
-  const highlight = appear(f, 1225, 20);
-  const stripW = 1250;
-  const sc = streakCell(stripW);
   return (
     <SceneShell id="lln">
-      {f >= 200 && f < 330 && <SingleTrade frame={f} />}
+      {f >= 200 && f < 330 && <SpatialSingleTrade f={f} />}
       {f >= SPACE_IN - 2 && f < SPACE_OUT + 14 && (
         <AbsoluteFill style={{ opacity: spaceO }}>
           <Space f={f} decor={!clean} />
@@ -245,16 +337,7 @@ export const LargeNumbers3D: React.FC = () => {
           <Readout f={f} />
         </AbsoluteFill>
       )}
-      {f >= 1085 && (
-        <div style={{ position: "absolute", left: (1920 - stripW) / 2, top: 190, opacity: stripIn }}>
-          <StreakStrip reveal={reveal} highlight={highlight} width={stripW} />
-          {highlight > 0 && (
-            <div style={{ position: "absolute", left: sc.x, top: sc.y - 74, opacity: highlight, ...zh(900), fontSize: 40, color: RED, whiteSpace: "nowrap", textShadow: `0 0 20px ${RED}` }}>
-              {sc.length} {UI.streak} ↓
-            </div>
-          )}
-        </div>
-      )}
+      {f >= 1085 && <SpatialStreak f={f} />}
     </SceneShell>
   );
 };

@@ -5,29 +5,29 @@ import { C } from "../components/Hud";
 import { zh } from "../lib/fonts";
 import { Ambient } from "./components/Ambient";
 import { CleanContext, ProgressBar } from "./components/Chrome";
-import { Hook, HookCharts } from "./scenes/Hook";
-import { Expectancy } from "./scenes/Expectancy";
-import { LargeNumbers } from "./scenes/LargeNumbers";
-import { Sizing } from "./scenes/Sizing";
-import { Discipline } from "./scenes/Discipline";
-import { ExpectancyOutro } from "./scenes/Outro";
+import { HookCharts } from "./scenes/Hook";
 import { LargeNumbers3D } from "./scenes/LargeNumbers3D";
+import { Hook3D } from "./scenes/Hook3D";
+import { Expectancy3D } from "./scenes/Expectancy3D";
+import { Sizing3D } from "./scenes/Sizing3D";
+import { Discipline3D } from "./scenes/Discipline3D";
+import { Outro3D } from "./scenes/Outro3D";
 import { SCRIPT, sceneStart, type SceneId } from "./timeline.ts";
 
 const SCENES: Record<SceneId, React.FC> = {
-  hook: Hook,
-  expectancy: Expectancy,
-  lln: LargeNumbers,
-  sizing: Sizing,
-  discipline: Discipline,
-  outro: ExpectancyOutro,
+  hook: Hook3D,
+  expectancy: Expectancy3D,
+  lln: LargeNumbers3D,
+  sizing: Sizing3D,
+  discipline: Discipline3D,
+  outro: Outro3D,
 };
 
 const timing = linearTiming({ durationInFrames: SCRIPT.transition });
 
 /**
- * One shared WebGL background for the whole video (a single GL context keeps rendering
- * cheap); scenes are HTML/SVG/canvas on top, crossfaded by TransitionSeries.
+ * Each chapter owns its 3D data space (its own WebGL stage); the shared Ambient cloud only
+ * shows through during the 2D motion-graphics beats. Crossfaded by TransitionSeries.
  */
 export const ExpectancyVideo: React.FC<{ withAudio?: boolean }> = ({ withAudio = true }) => (
   <AbsoluteFill style={{ backgroundColor: C.bg }}>

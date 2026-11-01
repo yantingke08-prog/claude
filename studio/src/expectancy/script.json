@@ -568,6 +568,12 @@
     "distribution": "1000 人第 1000 笔时的盈亏分布",
     "axisTrades": "交易笔数",
     "axisPnl": "累计盈亏",
-    "eachDot": "每个光点 = 一个人"
+    "eachDot": "每个光点 = 一个人",
+    "widthIsProb": "宽 = 概率",
+    "heightIsPayoff": "高 = 盈亏",
+    "hundredTrades": "100 笔交易，每格一笔",
+    "sideViewNote": "从侧面看，就是那张面积图",
+    "lost90": "亏掉九成",
+    "eachParticle": "每个光点 = 一个玩家"
   }
 }

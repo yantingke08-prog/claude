@@ -12,6 +12,7 @@ import { interpolate } from "remotion";
 import { ease } from "../../lib/gsap";
 import { SOFT_POINT_FRAG } from "../../lib/glsl";
 import { getSim, LLN_TRADERS, LLN_TRADES, STRATEGY_B, expectancy } from "../sim.ts";
+import { makeCamera, projector, v, type Shot } from "./common";
 
 export const KX = 0.02;
 export const KY = 0.025;
@@ -72,10 +73,7 @@ const meanPath = (() => {
 
 // ---------------- camera: a pure function of the frame ----------------
 
-export type Cam = { pos: THREE.Vector3; target: THREE.Vector3; fov: number };
-const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
-
-const SHOTS: Record<string, (f: number) => Cam> = {
+const SHOTS: Record<string, Shot> = {
   // macro, side-on, at the very first trade of person #0
   close: () => ({ pos: v(-0.06, 0.07, 0.42), target: v(0.05, 0.0, 0), fov: 32 }),
   // tracking shot that rides alongside person #0's line head
@@ -96,7 +94,7 @@ const SHOTS: Record<string, (f: number) => Cam> = {
   side: () => ({ pos: v(12.5, 7, 52), target: v(12.5, 6.5, -4), fov: 20 }),
 };
 
-const KEYS: [number, keyof typeof SHOTS][] = [
+const KEYS: [number, string][] = [
   [300, "close"],
   [340, "track"],
   [415, "track"],
@@ -111,28 +109,8 @@ const KEYS: [number, keyof typeof SHOTS][] = [
   [1100, "side"],
 ];
 
-export const camAt = (f: number): Cam => {
-  let i = 0;
-  while (i < KEYS.length - 2 && f >= KEYS[i + 1][0]) i++;
-  const [f0, a] = KEYS[i];
-  const [f1, b] = KEYS[i + 1];
-  const t = ease("power2.inOut")(Math.min(1, Math.max(0, (f - f0) / (f1 - f0))));
-  const A = SHOTS[a](f);
-  const B = SHOTS[b](f);
-  return { pos: A.pos.lerp(B.pos, t), target: A.target.lerp(B.target, t), fov: A.fov + (B.fov - A.fov) * t };
-};
-
-/** World -> screen pixels with exactly the camera the WebGL scene uses (for crisp HTML labels). */
-export const projector = (cam: Cam, width: number, height: number) => {
-  const c = new THREE.PerspectiveCamera(cam.fov, width / height, 0.01, 400);
-  c.position.copy(cam.pos);
-  c.lookAt(cam.target);
-  c.updateMatrixWorld();
-  return (p: THREE.Vector3) => {
-    const ndc = p.clone().project(c);
-    return { x: ((ndc.x + 1) / 2) * width, y: ((1 - ndc.y) / 2) * height, visible: ndc.z < 1 && Math.abs(ndc.x) < 1.15 && Math.abs(ndc.y) < 1.15 };
-  };
-};
+export const camAt = makeCamera(SHOTS, KEYS);
+export { projector };
 
 // ---------------- 1000 trajectories: one static geometry, revealed in the shader ----------------
 

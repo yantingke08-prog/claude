@@ -26,7 +26,7 @@ export const WORLD = {
 /** What stands on the horizon. See FarFields.tsx for the alternatives to the ridges. */
 export type FarField = "ridges" | "skyline" | "lattice" | "orbit";
 /** The far field the whole film uses; one switch for every chapter. */
-export const FAR_FIELD: FarField = "ridges";
+export const FAR_FIELD: FarField = "lattice";
 
 export type WorldProps = {
   /** overrides FAR_FIELD (used by the far-field showcase) */

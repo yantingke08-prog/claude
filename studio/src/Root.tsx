@@ -7,6 +7,11 @@ import { Outro } from "./scenes/Outro";
 import { TL, TOTAL_FRAMES } from "./lib/timeline";
 import { ExpectancySample, ExpectancyThumbnail, ExpectancyVideo, SAMPLE_FRAMES, sceneComposition } from "./expectancy/ExpectancyVideo";
 import { SCRIPT as EXP, TOTAL_FRAMES as EXP_FRAMES, type SceneId } from "./expectancy/timeline.ts";
+import { LvpEndCard } from "./lvp/EndCard";
+import { LvpV1Seeing } from "./lvp/V1Seeing";
+import { LvpV2Footprint } from "./lvp/V2Footprint";
+import { LvpV3Profile } from "./lvp/V3Profile";
+import { VIDEO as LVP } from "./lvp/brand";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -30,6 +35,12 @@ export const RemotionRoot: React.FC = () => (
       {EXP_SCENES.map((s) => (
         <Composition key={s.id} id={`Exp-${s.id}`} component={s.component} durationInFrames={s.frames} {...expBase} />
       ))}
+    </Folder>
+    <Folder name="LVP">
+      <Composition id="LVP-V1-Seeing" component={LvpV1Seeing} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+      <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+      <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+      <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
     </Folder>
   </>
 );

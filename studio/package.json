@@ -4,6 +4,11 @@
   "private": true,
   "description": "Code-driven motion graphics: Remotion + Three.js + GSAP",
   "scripts": {
+    "lvp:geometry": "python scripts/lvp-logo-geometry.py",
+    "lvp:v1:gpu": "remotion render LVP-V1-Seeing out/lvp/lvp-v1-seeing.mp4 --gl=angle --concurrency=50%",
+    "lvp:v2:gpu": "remotion render LVP-V2-Footprint out/lvp/lvp-v2-footprint.mp4 --gl=angle --concurrency=50%",
+    "lvp:v3:gpu": "remotion render LVP-V3-Profile out/lvp/lvp-v3-profile.mp4 --gl=angle --concurrency=50%",
+    "lvp:endcard": "remotion still LVP-EndCard out/lvp/endcard.png --frame=60",
     "studio": "remotion studio",
     "audio": "python scripts/soundtrack.py",
     "still": "remotion still Showreel out/still.png",

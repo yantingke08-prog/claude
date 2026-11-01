@@ -9,6 +9,7 @@ import { STRATEGY_B } from "../sim.ts";
 import { cue, SCRIPT } from "../timeline.ts";
 import { GlassCard, Label, makeCamera, projector, StudioLights, v, type Shot } from "../three/common";
 import { KH, Tray, trayAnchors, TRAY_W, type TrayParams } from "../three/Trays";
+import { World } from "../three/World";
 
 const UI = SCRIPT.ui;
 const PB: TrayParams = { p: STRATEGY_B.pWin, win: STRATEGY_B.win, loss: STRATEGY_B.loss };
@@ -87,6 +88,7 @@ const Space: React.FC<{ f: number }> = ({ f }) => {
     <Stage fov={cam.fov} bloom={0.8} bloomThreshold={0.35}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
       <StudioLights />
+      <World center={[2, 0, 0]} groundY={-5} sun={[0.2, -1]} scale={0.6} time={f / 30} />
       <Tray params={PB} win={val.win} loss={val.loss} pop={1} sort={1} position={POS} seed={8} dim={pitsOn ? 0.6 : 0} />
       {pitsOn && <Pits f={f} />}
     </Stage>
@@ -163,7 +165,7 @@ const Checks: React.FC<{ f: number }> = ({ f }) => (
         return (
           <GlassCard key={c} rx={(1 - k) * 60} ry={(i - 1.5) * -6} style={{ opacity: k, transform: `translateY(${(1 - k) * 80}px)` }}>
             <div style={{ width: 330, height: 290, padding: 30, boxSizing: "border-box", position: "relative" }}>
-              <div style={{ fontFamily: MONO.fontFamily, fontSize: 20, color: C.cyan, letterSpacing: 3 }}>0{i + 1}</div>
+              <div style={{ fontFamily: MONO.fontFamily, fontSize: 20, color: C.gold, letterSpacing: 3 }}>0{i + 1}</div>
               <div style={{ ...zh(900), fontSize: 50, color: "#fff", marginTop: 44 }}>{c}</div>
               <div style={{ fontFamily: DISPLAY.fontFamily, fontWeight: 300, fontSize: 16, letterSpacing: 4, color: C.dim, marginTop: 10 }}>{UI.checksEn[i]}</div>
               <div

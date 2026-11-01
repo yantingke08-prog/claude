@@ -8,6 +8,7 @@ import { LLN_TRADES } from "../sim.ts";
 import { cue, SCRIPT } from "../timeline.ts";
 import { GlassCard, v } from "../three/common";
 import { ExpectationPlane, MeanLine, Trajectories } from "../three/LlnSpace";
+import { World } from "../three/World";
 
 const UI = SCRIPT.ui;
 
@@ -19,6 +20,7 @@ const Backdrop: React.FC<{ f: number }> = ({ f }) => {
   return (
     <Stage fov={38} bloom={1.0} bloomThreshold={0.18}>
       <CameraRig position={pos.toArray() as [number, number, number]} target={c.toArray() as [number, number, number]} fov={38} />
+      <World center={[10, 0, -4]} groundY={-1.4} sun={[0.5, -1]} time={f / 30} />
       <Trajectories n={LLN_TRADES} crowd={1} />
       <ExpectationPlane opacity={0.7} />
       <MeanLine n={LLN_TRADES} opacity={0.9} />
@@ -61,7 +63,7 @@ export const Outro3D: React.FC = () => {
             transform: `scale(${1.25 - l2 * 0.25}) rotateX(${(1 - l2) * 30}deg)`,
             letterSpacing: 10,
             marginTop: 14,
-            textShadow: `0 0 50px ${C.cyan}88`,
+            textShadow: `0 0 50px ${C.gold}88`,
           }}
         >
           {q2}
@@ -69,7 +71,7 @@ export const Outro3D: React.FC = () => {
         <div style={{ display: "flex", gap: 18, marginTop: 50, opacity: checks }}>
           {UI.checks.map((c, i) => (
             <GlassCard key={c} style={{ transform: `translateY(${(1 - appear(f, 150 + i * 6)) * 20}px)` }}>
-              <div style={{ ...zh(500), fontSize: 26, color: C.cyan, padding: "6px 22px" }}>✓ {c}</div>
+              <div style={{ ...zh(500), fontSize: 26, color: C.gold, padding: "6px 22px" }}>✓ {c}</div>
             </GlassCard>
           ))}
         </div>

@@ -11,7 +11,6 @@ import { SOFT_POINT_FRAG } from "../../lib/glsl";
 import { ease } from "../../lib/gsap";
 import { mulberry32 } from "../../lib/rng";
 import { column, ERGO_DOWN, ERGO_PLAYERS, ERGO_UP, getSim, median, SIZING_TRADERS, SIZING_TRADES } from "../sim.ts";
-import { glassPlaneMat } from "./common";
 
 export const SKX = 0.06;
 export const SKY = 1.4;
@@ -45,8 +44,9 @@ varying float vY;
 void main(){
   if (vI > uN) discard;
   bool ruined = vY < uRuin;
-  vec3 c = ruined ? vec3(1.0, 0.3, 0.42) : uColor;
-  gl_FragColor = vec4(c, (ruined ? 0.07 : uAlpha));
+  // ruined paths fade to dark ember: they are evidence, not the subject
+  vec3 c = ruined ? vec3(0.5, 0.1, 0.14) : uColor;
+  gl_FragColor = vec4(c, (ruined ? 0.016 : uAlpha));
 }
 `;
 
@@ -121,7 +121,7 @@ export const RunwayHeads: React.FC<{ which: "s2" | "s40"; n: number; color: stri
     const b = logW[t * stride + Math.min(SIZING_TRADES, k + 1)];
     const lw = a + (b - a) * fr;
     pos.setXYZ(t, n * SKX, yOf(lw), GROUP_Z[which] - t * LANE);
-    if (lw < -1) col.setXYZ(t, 1, 0.3, 0.42);
+    if (lw < -1) col.setXYZ(t, 0.55, 0.12, 0.18);
     else col.setXYZ(t, base.r, base.g, base.b);
   }
   pos.needsUpdate = col.needsUpdate = true;
@@ -145,38 +145,20 @@ export const MedianPath: React.FC<{ which: "s2" | "s40"; n: number; color: strin
   const pts: [number, number, number][] = [];
   for (let i = 0; i <= Math.min(SIZING_TRADES, Math.floor(n)); i += 2) pts.push([i * SKX, yOf(meds[i]), GROUP_Z[which] + 0.3]);
   if (pts.length < 2 || opacity <= 0.01) return null;
-  return <Line points={pts} color={color} lineWidth={4} transparent opacity={opacity} />;
+  return <Line points={pts} color={color} lineWidth={6} transparent opacity={opacity} />;
 };
 
-/** x1 plane (break-even) and the red "lost 90%" glass floor with a dark abyss under it. */
+/**
+ * Reference lines only - x1 (break-even, white) and "lost 90%" (dashed red) along the
+ * front edge. Filled planes here read as a red wall behind the curves, so there are none.
+ */
 export const SizingPlanes: React.FC<{ opacity: number }> = ({ opacity }) => {
-  const zMin = GROUP_Z.s40 - SHOWN * LANE - 0.6;
+  if (opacity <= 0.01) return null;
   const zMax = 0.6;
-  const depth = zMax - zMin;
-  const zc = (zMax + zMin) / 2;
-  const ruin = useMemo(() => glassPlaneMat("#ff4d6d", 0.12), []);
-  const base = useMemo(() => glassPlaneMat("#9fc2ff", 0.05), []);
-  const abyss = useMemo(() => new THREE.MeshBasicMaterial({ color: "#2a0410", transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }), []);
-  ruin.opacity = 0.06 * opacity;
-  base.opacity = 0.025 * opacity;
-  abyss.opacity = 0.22 * opacity;
   return (
     <>
-      <mesh position={[RUN_LEN / 2, 0, zc]} rotation={[-Math.PI / 2, 0, 0]} material={base}>
-        <planeGeometry args={[RUN_LEN + 1, depth]} />
-      </mesh>
-      <mesh position={[RUN_LEN / 2, -SKY, zc]} rotation={[-Math.PI / 2, 0, 0]} material={ruin}>
-        <planeGeometry args={[RUN_LEN + 1, depth]} />
-      </mesh>
-      <mesh position={[RUN_LEN / 2, (LOG_FLOOR * SKY - SKY) / 2, zMin]} material={abyss}>
-        <planeGeometry args={[RUN_LEN + 1, -LOG_FLOOR * SKY - SKY]} />
-      </mesh>
-      {opacity > 0.01 && (
-        <>
-          <Line points={[[-0.5, -SKY, zMax], [RUN_LEN + 0.5, -SKY, zMax]]} color="#ff4d6d" lineWidth={2.5} transparent opacity={opacity} dashed dashSize={0.5} gapSize={0.3} />
-          <Line points={[[-0.5, 0, zMax], [RUN_LEN + 0.5, 0, zMax]]} color="#ffffff" lineWidth={1.5} transparent opacity={opacity * 0.6} />
-        </>
-      )}
+      <Line points={[[-0.5, -SKY, zMax], [RUN_LEN + 0.5, -SKY, zMax]]} color="#ff4d6d" lineWidth={2.5} transparent opacity={opacity} dashed dashSize={0.5} gapSize={0.3} />
+      <Line points={[[-0.5, 0, zMax], [RUN_LEN + 0.5, 0, zMax]]} color="#ffffff" lineWidth={1.5} transparent opacity={opacity * 0.6} />
     </>
   );
 };
@@ -256,7 +238,7 @@ export const CoinParticles: React.FC<{ round: number; height: number }> = ({ rou
     pos.setXYZ(p, a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t + arc, a[2] + (b[2] - a[2]) * t);
     const e = a[3] + (b[3] - a[3]) * t;
     if (e < 0) col.setXYZ(p, 1, 0.32, 0.45);
-    else col.setXYZ(p, 0.36, 0.9, 1);
+    else col.setXYZ(p, 0.98, 0.8, 0.48);
   }
   pos.needsUpdate = col.needsUpdate = true;
   return <points geometry={geometry} material={material} frustumCulled={false} />;

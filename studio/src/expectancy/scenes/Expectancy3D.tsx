@@ -9,6 +9,7 @@ import { STRATEGY_A, STRATEGY_B } from "../sim.ts";
 import { SCRIPT } from "../timeline.ts";
 import { GlassCard, Label, makeCamera, projector, span, StudioLights, v, type Shot } from "../three/common";
 import { Tray, trayAnchors, type TrayParams } from "../three/Trays";
+import { World } from "../three/World";
 
 const UI = SCRIPT.ui;
 const PA: TrayParams = { p: STRATEGY_A.pWin, win: STRATEGY_A.win, loss: STRATEGY_A.loss };
@@ -77,7 +78,7 @@ const NotWinRate: React.FC<{ f: number }> = ({ f }) => {
           {UI.winRate}
           <div style={{ position: "absolute", left: -10, right: -10, top: "52%", height: 10, background: RED, transform: `scaleX(${strike})`, transformOrigin: "left", boxShadow: `0 0 20px ${RED}` }} />
         </div>
-        <div style={{ opacity: b, transform: `scale(${0.7 + b * 0.3}) rotateY(${(1 - b) * 40}deg)`, color: C.cyan, textShadow: `0 0 40px ${C.cyan}` }}>{UI.formula[0]}</div>
+        <div style={{ opacity: b, transform: `scale(${0.7 + b * 0.3}) rotateY(${(1 - b) * 40}deg)`, color: C.gold, textShadow: `0 0 40px ${C.gold}` }}>{UI.formula[0]}</div>
       </div>
     </AbsoluteFill>
   );
@@ -102,6 +103,7 @@ const Space: React.FC<{ f: number }> = ({ f }) => {
     <Stage fov={cam.fov} bloom={0.8} bloomThreshold={0.35}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
       <StudioLights />
+      <World groundY={-2.2} sun={[0, -1]} scale={0.6} time={f / 30} />
       <Tray params={PA} pop={popA(f)} sort={sortA(f)} position={POS_A} seed={7} plate={span(f, 335, 360)} />
       <Tray params={PB} pop={popB(f)} sort={sortB(f)} position={POS_B} seed={8} plate={span(f, 585, 610)} />
       {dims(ia, dimsA)}
@@ -160,9 +162,9 @@ const Annotations: React.FC<{ f: number }> = ({ f }) => {
       </Label>,
     );
   };
-  tray("a", PA, POS_A, UI.traderA, 340, 520, C.cyan);
-  tray("b", PB, POS_B, UI.traderB, 585, 765, C.amber);
-  const note = proj(v(0, -2.2, 0));
+  tray("a", PA, POS_A, UI.traderA, 340, 520, C.steel);
+  tray("b", PB, POS_B, UI.traderB, 585, 765, C.gold);
+  const note = proj(v(0, -3.0, 0));
   items.push(
     <Label key="note" x={note.x} y={note.y} o={span(f, 880, 900) * (1 - span(f, 945, 960))} align="center">
       <span style={{ ...zh(500), fontSize: 24, color: C.dim }}>{UI.sideViewNote}</span>

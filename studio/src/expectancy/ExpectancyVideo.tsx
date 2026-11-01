@@ -80,7 +80,7 @@ export const ExpectancyThumbnail: React.FC = () => (
     </AbsoluteFill>
     <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(3,4,11,0.92) 0%, rgba(3,4,11,0.55) 45%, rgba(3,4,11,0) 70%)" }} />
     <div style={{ position: "absolute", left: 60, top: 40, ...zh(900), lineHeight: 1.12, fontSize: 104, color: "#fff" }}>
-      <div>{highlightPct(SCRIPT.ui.thumbTop, C.amber)}</div>
+      <div>{highlightPct(SCRIPT.ui.thumbTop, C.gold)}</div>
       <div>{highlightPct(SCRIPT.ui.thumbBottom, "#ff4d6d")}</div>
     </div>
   </AbsoluteFill>

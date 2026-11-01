@@ -15,6 +15,7 @@ import { SceneShell } from "../components/SceneShell";
 import { appear, fadeOut, GREEN, RED } from "../components/Charts";
 import { hookPathA, hookPathB } from "../sim.ts";
 import { cue, SCRIPT } from "../timeline.ts";
+import { World } from "../three/World";
 import { GlassCard, glassPlaneMat, Label, makeCamera, projector, span, v, withShake, type Shot } from "../three/common";
 
 const UI = SCRIPT.ui;
@@ -87,10 +88,10 @@ const Floor: React.FC<{ flash: number }> = ({ flash }) => {
     for (let z = -4; z <= 4; z += 1) g.push(0, 0, z, 21, 0, z);
     const grid = new THREE.BufferGeometry();
     grid.setAttribute("position", new THREE.BufferAttribute(new Float32Array(g), 3));
-    return { grid, gridMat: new THREE.LineBasicMaterial({ color: "#ff4d6d", transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false }) };
+    return { grid, gridMat: new THREE.LineBasicMaterial({ color: "#ff4d6d", transparent: true, opacity: 0.09, blending: THREE.AdditiveBlending, depthWrite: false }) };
   }, []);
   const fill = useMemo(() => glassPlaneMat("#ff4d6d", 0.05), []);
-  fill.opacity = 0.05 + flash * 0.25;
+  fill.opacity = 0.025 + flash * 0.25;
   return (
     <>
       <mesh position={[10.5, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} material={fill}>
@@ -199,12 +200,13 @@ const Space: React.FC<{ f: number }> = ({ f }) => {
   return (
     <Stage fov={cam.fov} bloom={1.1} bloomThreshold={0.15}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
+      <World center={[10, 0, 0]} groundY={-0.8} sun={[0.45, -1]} time={f / 30} />
       <Floor flash={flash} />
       <ImpactRing f={f} />
       {revealA(f) > 0.01 && (
-        <Line points={pathPts(A.equity, revealA(f), ZA, -1.2)} color={crashed ? RED : C.cyan} lineWidth={5} />
+        <Line points={pathPts(A.equity, revealA(f), ZA, -1.2)} color={crashed ? RED : C.steel} lineWidth={5} />
       )}
-      {revealB(f) > 0.01 && <Line points={pathPts(B, revealB(f), ZB)} color={C.amber} lineWidth={5} />}
+      {revealB(f) > 0.01 && <Line points={pathPts(B, revealB(f), ZB)} color={C.gold} lineWidth={5} />}
       {!crashed && revealA(f) > 0.01 && (
         <mesh position={a} scale={0.16}>
           <sphereGeometry args={[1, 20, 20]} />
@@ -228,8 +230,8 @@ const Tags: React.FC<{ f: number }> = ({ f }) => {
   const proj = projector(cameraAt(f), width, height);
   const crashed = f >= CRASH;
   const tags = [
-    { name: "A", rate: 70, head: headA(f), value: crashed ? 0 : valueAt(A.equity, revealA(f)), color: crashed ? RED : C.cyan, at: 8 },
-    { name: "B", rate: 40, head: headB(f), value: valueAt(B, revealB(f)), color: C.amber, at: 16 },
+    { name: "A", rate: 70, head: headA(f), value: crashed ? 0 : valueAt(A.equity, revealA(f)), color: crashed ? RED : C.steel, at: 8 },
+    { name: "B", rate: 40, head: headB(f), value: valueAt(B, revealB(f)), color: C.gold, at: 16 },
   ];
   const o = fadeOut(f, TITLE_AT - 10, 20);
   return (
@@ -241,7 +243,7 @@ const Tags: React.FC<{ f: number }> = ({ f }) => {
         const scale = Math.max(0.6, Math.min(1.15, 14 / p.dist));
         return (
           <div key={t.name} style={{ position: "absolute", left: p.x, top: p.y, transform: `translate(-50%,-100%) scale(${scale})`, transformOrigin: "bottom center", opacity: k }}>
-            <GlassCard ry={-8} tint={t.name === "A" && crashed ? "255,77,109" : "120,170,255"}>
+            <GlassCard ry={-8} tint={t.name === "A" && crashed ? "255,77,109" : undefined}>
               <div style={{ padding: "14px 22px", display: "flex", gap: 18, alignItems: "baseline" }}>
                 <span style={{ ...zh(900), fontSize: 30, color: "#fff" }}>{t.name}</span>
                 <span style={{ ...zh(500), fontSize: 18, color: C.dim }}>{UI.winRate}</span>
@@ -306,7 +308,7 @@ export const Hook3D: React.FC = () => {
   const pct = (s: string, first: boolean) =>
     s.split(/(\d+%)/).map((p, i) =>
       /\d+%/.test(p) ? (
-        <span key={i} style={{ color: first ? C.amber : C.cyan, textShadow: "0 0 30px currentColor" }}>
+        <span key={i} style={{ color: first ? C.gold : C.steel, textShadow: "0 0 30px currentColor" }}>
           {p}
         </span>
       ) : (

@@ -9,6 +9,7 @@ import { ergoStats, logFanStats } from "../components/CanvasCharts";
 import { SIZING_TRADES } from "../sim.ts";
 import { SCRIPT } from "../timeline.ts";
 import { GlassCard, Label, makeCamera, projector, v, type Shot } from "../three/common";
+import { World } from "../three/World";
 import {
   Beam,
   CoinParticles,
@@ -88,16 +89,20 @@ const coinCam = makeCamera(COIN_SHOTS, [
 const RunSpace: React.FC<{ f: number }> = ({ f }) => {
   const cam = runCam(f);
   const n = tradesAt(f);
+  // whichever group a close-up is about stays bright; the other recedes into the background
+  const on2 = 1 - 0.8 * appear(f, 640, 24) * fadeOut(f, 775, 24);
+  const on40 = 1 - 0.75 * appear(f, 500, 24) * fadeOut(f, 640, 20);
   return (
     <Stage fov={cam.fov} bloom={1.0} bloomThreshold={0.18}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
+      <World center={[9, 0, ZC]} groundY={-9} sun={[0.6, -1]} time={f / 30} intensity={0.85} />
       <SizingPlanes opacity={appear(f, RUN_IN + 10, 30)} />
-      <Runway which="s2" n={n} color={C.cyan} alpha={0.07} />
-      <Runway which="s40" n={n} color={C.amber} alpha={0.04} />
-      <RunwayHeads which="s2" n={n} color={C.cyan} />
-      <RunwayHeads which="s40" n={n} color={C.amber} />
-      <MedianPath which="s2" n={n} color="#ffffff" opacity={appear(f, 300, 30)} />
-      <MedianPath which="s40" n={n} color="#ffffff" opacity={appear(f, 300, 30)} />
+      <Runway which="s2" n={n} color={C.gold} alpha={0.06 * on2} />
+      <Runway which="s40" n={n} color={C.steel} alpha={0.035 * on40} />
+      <RunwayHeads which="s2" n={n} color={C.gold} />
+      <RunwayHeads which="s40" n={n} color={C.steel} />
+      <MedianPath which="s2" n={n} color="#ffe6b0" opacity={appear(f, 300, 30)} />
+      <MedianPath which="s40" n={n} color="#d6ecff" opacity={appear(f, 300, 30)} />
     </Stage>
   );
 };
@@ -109,8 +114,8 @@ const RunLabels: React.FC<{ f: number }> = ({ f }) => {
   const proj = projector(runCam(f), width, height);
   const out: React.ReactNode[] = [];
   const groups = [
-    { which: "s2" as const, title: UI.risk2, color: C.cyan },
-    { which: "s40" as const, title: UI.risk40, color: C.amber },
+    { which: "s2" as const, title: UI.risk2, color: C.gold },
+    { which: "s40" as const, title: UI.risk40, color: C.steel },
   ];
   for (const g of groups) {
     const p = proj(v(-0.6, 0.9, GROUP_Z[g.which] - 1.5));
@@ -173,8 +178,8 @@ const RunReadouts: React.FC<{ f: number }> = ({ f }) => {
   const same = appear(f, 780) * fadeOut(f, RUN_OUT - 12, 12);
   return (
     <>
-      {card("s2", UI.risk2, C.cyan, 495, "left")}
-      {card("s40", UI.risk40, C.amber, 635, "right")}
+      {card("s2", UI.risk2, C.gold, 495, "left")}
+      {card("s40", UI.risk40, C.steel, 635, "right")}
       {same > 0 && (
         <div style={{ position: "absolute", left: 0, right: 0, top: 150, display: "flex", justifyContent: "center", opacity: same }}>
           <GlassCard tint="255,181,71">
@@ -221,10 +226,11 @@ const CoinSpace: React.FC<{ f: number }> = ({ f }) => {
   return (
     <Stage fov={cam.fov} bloom={1.1} bloomThreshold={0.18}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
+      <World groundY={-0.6} sun={[0, -1]} scale={0.8} time={f / 30} />
       <CoinParticles round={r} height={5.2} />
       <Beam e={0} color="#ffffff" opacity={appear(f, 1175) * 0.7} dashed />
-      <Beam e={coinMeanLog(r)} color={C.amber} opacity={appear(f, 1200) * (0.45 + appear(f, 1295) * 0.55)} />
-      <Beam e={coinMedianLog(r)} color={C.cyan} opacity={appear(f, 1200) * (0.45 + appear(f, 1425) * 0.55)} />
+      <Beam e={coinMeanLog(r)} color={C.gold} opacity={appear(f, 1200) * (0.45 + appear(f, 1295) * 0.55)} />
+      <Beam e={coinMedianLog(r)} color={C.steel} opacity={appear(f, 1200) * (0.45 + appear(f, 1425) * 0.55)} />
     </Stage>
   );
 };
@@ -249,8 +255,8 @@ const CoinLabels: React.FC<{ f: number }> = ({ f }) => {
     );
   };
   beam("p", 0, UI.principal, "×1", "#fff", appear(f, 1180) * fadeOut(f, 1290), 7.4);
-  beam("m", coinMeanLog(r), UI.mean, `×${e.mean < 10 ? e.mean.toFixed(2) : Math.round(e.mean)}`, C.amber, appear(f, 1210), 7.6);
-  beam("d", coinMedianLog(r), UI.median, `×${e.median < 0.1 ? e.median.toFixed(3) : e.median.toFixed(2)}`, C.cyan, appear(f, 1210), 6.4);
+  beam("m", coinMeanLog(r), UI.mean, `×${e.mean < 10 ? e.mean.toFixed(2) : Math.round(e.mean)}`, C.gold, appear(f, 1210), 7.6);
+  beam("d", coinMedianLog(r), UI.median, `×${e.median < 0.1 ? e.median.toFixed(3) : e.median.toFixed(2)}`, C.steel, appear(f, 1210), 6.4);
   for (const dec of [-4, -2, 0, 2, 4]) {
     const p = proj(v(dec * EKX, -0.35, 1.0));
     out.push(

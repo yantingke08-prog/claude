@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { C } from "../../components/Hud";
-import { CameraRig, Stage, Starfield } from "../../components/Stage";
+import { CameraRig, Stage } from "../../components/Stage";
 import { MONO, zh } from "../../lib/fonts";
 import { SceneShell } from "../components/SceneShell";
 import { appear, fadeOut, GREEN, RED } from "../components/Charts";
@@ -10,6 +10,7 @@ import { StreakStrip, streakCell, fanStats } from "../components/CanvasCharts";
 import { CleanContext } from "../components/Chrome";
 import { LLN_TRADES, STRATEGY_B } from "../sim.ts";
 import { GlassCard } from "../three/common";
+import { World } from "../three/World";
 import { ease } from "../../lib/gsap";
 import { SCRIPT } from "../timeline.ts";
 import {
@@ -89,7 +90,7 @@ const Annotations: React.FC<{ f: number }> = ({ f }) => {
   const head = at(pointOf(HERO, s.n));
   out.push(
     <Label key="hero" x={head.x + 26} y={head.y - 46} o={appear(f, 348) * fadeOut(f, 455)}>
-      <span style={{ ...zh(900), fontSize: 30, color: "#ffd27a" }}>{UI.oneTrader}</span>
+      <span style={{ ...zh(900), fontSize: 30, color: "#ffffff" }}>{UI.oneTrader}</span>
     </Label>,
   );
   for (let i = 1; i <= 10; i++) {
@@ -145,7 +146,7 @@ const Annotations: React.FC<{ f: number }> = ({ f }) => {
   const gate = at(V(LLN_TRADES * KX, 2.2, 0.25));
   out.push(
     <Label key="gate" x={gate.x - 24} y={gate.y} o={s.gate} align="right">
-      <span style={{ ...zh(900), fontSize: 32, color: C.cyan }}>{UI.finishLine}</span>
+      <span style={{ ...zh(900), fontSize: 32, color: C.gold }}>{UI.finishLine}</span>
     </Label>,
   );
   const top = at(histogramTop());
@@ -211,7 +212,7 @@ const Space: React.FC<{ f: number; decor: boolean }> = ({ f, decor }) => {
   return (
     <Stage fov={cam.fov} bloom={1.0} bloomThreshold={0.18}>
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
-      {decor && <Starfield time={f / fps} opacity={0.35} count={2500} />}
+      {decor && <World center={[10, 0, -4]} groundY={-1.4} sun={[0.5, -1]} time={f / fps} />}
       <ZeroPlane opacity={s.zero} n={s.n} />
       <ExpectationPlane opacity={s.ev} />
       <FinishGate opacity={s.gate} />
@@ -261,7 +262,7 @@ const SpatialSingleTrade: React.FC<{ f: number }> = ({ f }) => {
             borderRadius: "50%",
             transform: `translate(-50%,-50%) translateZ(${28 + hop}px) rotateX(${-tilt}deg)`,
             background: "radial-gradient(circle at 35% 30%, #ffffff, #cfe6ff 45%, #6b86b8 100%)",
-            boxShadow: `0 0 40px ${landed ? RED : C.cyan}`,
+            boxShadow: `0 0 40px ${landed ? RED : C.gold}`,
           }}
         />
       </div>

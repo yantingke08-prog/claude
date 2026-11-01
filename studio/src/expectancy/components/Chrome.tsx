@@ -54,10 +54,11 @@ export const ChapterCard: React.FC<{ chapter: NonNullable<Scene["chapter"]>; acc
 
 const CHAPTER_COLORS: Record<string, string> = {
   hook: C.text,
-  expectancy: C.cyan,
-  lln: C.violet,
-  sizing: C.amber,
-  discipline: C.magenta,
+  // one warm key colour for the whole film (the reference's cohesion comes from this)
+  expectancy: C.gold,
+  lln: C.gold,
+  sizing: C.gold,
+  discipline: C.gold,
   outro: C.text,
 };
 export const accentOf = (id: string) => CHAPTER_COLORS[id] ?? C.cyan;

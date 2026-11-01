@@ -20,10 +20,10 @@ export const HookCharts: React.FC<{ frame: number; scale?: number }> = ({ frame,
   return (
     <div style={{ display: "flex", gap: 60, transform: `scale(${scale})` }}>
       <div style={{ opacity: inA, transform: `translateY(${(1 - inA) * 50}px)` }}>
-        <EquityPanel name="A" winRate={70} equity={A.equity} reveal={revealA} liquidatedAt={A.liquidatedAt} color={C.cyan} frame={frame} crashFrame={CRASH} />
+        <EquityPanel name="A" winRate={70} equity={A.equity} reveal={revealA} liquidatedAt={A.liquidatedAt} color={C.steel} frame={frame} crashFrame={CRASH} />
       </div>
       <div style={{ opacity: inB, transform: `translateY(${(1 - inB) * 50}px)` }}>
-        <EquityPanel name="B" winRate={40} equity={B} reveal={revealB} color={C.amber} frame={frame} />
+        <EquityPanel name="B" winRate={40} equity={B} reveal={revealB} color={C.gold} frame={frame} />
       </div>
     </div>
   );
@@ -38,7 +38,7 @@ export const Hook: React.FC = () => {
   const accentNums = (s: string) =>
     s.split(/(\d+%)/).map((p, i) =>
       /\d+%/.test(p) ? (
-        <span key={i} style={{ color: i === 1 && s === line1 ? C.amber : C.cyan, textShadow: `0 0 30px currentColor` }}>
+        <span key={i} style={{ color: i === 1 && s === line1 ? C.gold : C.steel, textShadow: `0 0 30px currentColor` }}>
           {p}
         </span>
       ) : (

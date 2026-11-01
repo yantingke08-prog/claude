@@ -139,7 +139,7 @@ void main(){
   if (vI > uN) discard;
   // under water = red, above = cyan; red is boosted because it is rarer and it is the point
   bool under = vY < 0.0;
-  vec3 c = under ? vec3(1.0, 0.3, 0.42) : vec3(0.36, 0.88, 1.0);
+  vec3 c = under ? vec3(1.0, 0.3, 0.42) : vec3(0.98, 0.8, 0.5);
   float a = (under ? 0.34 : 0.05) * vFade * uOpacity;
   gl_FragColor = vec4(c, a);
 }
@@ -249,7 +249,7 @@ export const Heads: React.FC<{ n: number; crowd: number; settle: number; size?: 
     settled.setX(t, k);
     pos.setXYZ(t, p.x, p.y, p.z);
     const under = head.y < 0;
-    col.setXYZ(t, under ? 1 : 0.45, under ? 0.32 : 0.95, under ? 0.45 : 1);
+    col.setXYZ(t, under ? 1 : 1, under ? 0.32 : 0.86, under ? 0.45 : 0.6);
     const shown = t === HERO ? 1 : Math.min(1, Math.max(0, (crowd * 1060 - t) / 60));
     alpha.setX(t, shown * (n > 0 ? 1 : 0));
   }
@@ -387,12 +387,12 @@ export const HeroLine: React.FC<{ n: number; opacity: number; width: number }> =
   const { pnl, stride } = getSim().lln;
   const pts = pathPoints((i) => pnl[HERO * stride + i], n, 0.002);
   if (pts.length < 2 || opacity <= 0.01) return null;
-  return <Line points={pts} color="#ffd27a" lineWidth={width} transparent opacity={opacity} />;
+  return <Line points={pts} color="#ffffff" lineWidth={width} transparent opacity={opacity} />;
 };
 
 export const MeanLine: React.FC<{ n: number; opacity: number }> = ({ n, opacity }) => {
   const m = meanPath();
   const pts = pathPoints((i) => m[i], n, 0.3);
   if (pts.length < 2 || opacity <= 0.01) return null;
-  return <Line points={pts} color="#ffffff" lineWidth={3} transparent opacity={opacity} />;
+  return <Line points={pts} color="#ffe2a8" lineWidth={3} transparent opacity={opacity} />;
 };

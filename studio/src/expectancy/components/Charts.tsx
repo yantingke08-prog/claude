@@ -165,7 +165,7 @@ export const Formula: React.FC<{ show: number; values?: FormulaValues; numbers?:
               transform: `translateY(${(1 - ease("expo.out")(k)) * 30}px)`,
               display: "inline-block",
               position: "relative",
-              color: p.op ? C.dim : i === 0 ? C.cyan : hot ? C.amber : "#fff",
+              color: p.op ? C.dim : i === 0 ? C.gold : hot ? C.amber : "#fff",
               ...(isNum ? { fontFamily: MONO.fontFamily, fontWeight: 700 } : zh(i === 0 ? 900 : 500)),
               fontSize: isNum ? size * 1.05 : p.op ? size : size * 0.82,
               textShadow: hot ? `0 0 24px ${C.amber}` : undefined,

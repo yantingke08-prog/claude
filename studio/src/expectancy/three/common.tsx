@@ -85,7 +85,7 @@ export const GlassCard: React.FC<{
   tint?: string;
   style?: React.CSSProperties;
   perspective?: number;
-}> = ({ children, rx = 0, ry = 0, z = 0, tint = "120,170,255", style, perspective = 1400 }) => {
+}> = ({ children, rx = 0, ry = 0, z = 0, tint = "214,196,160", style, perspective = 1400 }) => {
   const frame = useCurrentFrame();
   const sheen = ((ry * 2 + frame * 0.15) % 200) - 50;
   return (
@@ -96,10 +96,10 @@ export const GlassCard: React.FC<{
           transform: `translateZ(${z}px) rotateX(${rx}deg) rotateY(${ry}deg)`,
           transformStyle: "preserve-3d",
           borderRadius: 22,
-          background: `linear-gradient(150deg, rgba(${tint},0.16) 0%, rgba(${tint},0.05) 45%, rgba(10,12,30,0.38) 100%)`,
+          background: `linear-gradient(150deg, rgba(${tint},0.10) 0%, rgba(${tint},0.03) 45%, rgba(6,8,16,0.42) 100%)`,
           backdropFilter: "blur(22px) saturate(150%)",
           WebkitBackdropFilter: "blur(22px) saturate(150%)",
-          border: `1px solid rgba(${tint},0.28)`,
+          border: `1px solid rgba(${tint},0.2)`,
           boxShadow: `0 40px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(${tint},0.12)`,
           overflow: "hidden",
         }}

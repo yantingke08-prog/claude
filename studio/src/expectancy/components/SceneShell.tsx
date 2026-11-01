@@ -21,7 +21,7 @@ export const SceneShell: React.FC<{ id: SceneId; children: React.ReactNode }> = 
     <AbsoluteFill>
       <AbsoluteFill style={{ opacity: out }}>{children}</AbsoluteFill>
       {!clean && s.chapter && <ChapterCard chapter={s.chapter} accent={accent} />}
-      {!clean && <Captions captions={s.captions} accent={accent === "#e9f1ff" ? "#5ce8ff" : accent} />}
+      {!clean && <Captions captions={s.captions} accent={accent === "#e9f1ff" ? "#f2c46d" : accent} />}
     </AbsoluteFill>
   );
 };

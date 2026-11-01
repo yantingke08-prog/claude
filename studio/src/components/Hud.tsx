@@ -7,6 +7,8 @@ export const C = {
   violet: "#7b5cff",
   magenta: "#ff4fd8",
   amber: "#ffb547",
+  gold: "#f2c46d",
+  steel: "#86b7dc",
   text: "#e9f1ff",
   dim: "rgba(200,215,255,0.55)",
   line: "rgba(140,180,255,0.22)",

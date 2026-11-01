@@ -17,7 +17,13 @@ const flyEase = ease("power3.inOut");
  * price path - sized by its trade - and later flies home to its bead. The extras are the noise
  * of the session: they fall into the body and vanish.
  */
-export const TradeBubbles: React.FC<{ headX: number; converge: number; time: number; look?: BubbleLook }> = ({ headX, converge, time, look = "glass" }) => {
+export const TradeBubbles: React.FC<{ headX: number; converge: number; time: number; look?: BubbleLook; level?: number }> = ({
+  headX,
+  converge,
+  time,
+  look = "glass",
+  level = -10,
+}) => {
   const data = useMemo(() => {
     const rand = mulberry32(31);
     const order = SYMBOL.beads.map((b, i) => ({ i, x: b[0] })).sort((a, b) => a.x - b.x);
@@ -77,7 +83,9 @@ export const TradeBubbles: React.FC<{ headX: number; converge: number; time: num
     const arc = Math.sin(p * Math.PI);
     const bob = (1 - e) * 0.012 * Math.sin(time * 3 + i);
     pos.set(b.x + (b.to[0] - b.x) * e, b.y + (b.to[1] - b.y) * e + bob, 0.12 * (1 - e) + arc * (0.9 + (i % 5) * 0.25));
-    const r = Math.max(0.0001, (b.r + (b.rTo - b.r) * e) * born);
+    // landed beads melt into the final mark as the sweep passes them
+    const handoff = p >= 1 ? Math.min(1, Math.max(0, (b.to[1] - level + 0.02) / 0.14)) : 1;
+    const r = Math.max(0.0001, (b.r + (b.rTo - b.r) * e) * born * handoff);
     scl.set(r, r, r * (1 + (b.dome - 1) * e));
     m.compose(pos, q, scl);
     data.mesh.setMatrixAt(i, m);

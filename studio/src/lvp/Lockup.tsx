@@ -86,7 +86,7 @@ const Spark: React.FC<{ size: number; x: number; y: number; opacity: number }> =
 );
 
 /**
- * Wordmark, divider, belief line and claim line, staged from frame `at`.
+ * Wordmark, divider, claim line (big) and belief line (small), staged from frame `at`.
  * The symbol itself is drawn by each version (3D or flat) so it can arrive its own way.
  */
 export const Lockup: React.FC<{ at: number }> = ({ at }) => {
@@ -96,12 +96,12 @@ export const Lockup: React.FC<{ at: number }> = ({ at }) => {
   const wpx = LAYOUT.wordmark.w;
   const hpx = (wpx * wh) / ww;
 
-  const wordIn = ramp(f, 0, 22, "expo.out");
-  const sheen = ramp(f, 14, 48, "power2.inOut");
-  const line = ramp(f, 10, 34, "expo.inOut");
-  const claimIn = ramp(f, 34, 58, "power3.out");
-  const truth = ramp(f, 44, 70, "power2.out");
-  const beliefChars = Array.from(COPY.belief);
+  const wordIn = ramp(f, 0, 20, "expo.out");
+  const sheen = ramp(f, 10, 40, "power2.inOut");
+  const line = ramp(f, 6, 26, "expo.inOut");
+  const beliefIn = ramp(f, 20, 36, "power3.out");
+  const truth = ramp(f, 24, 40, "power2.out");
+  const claimChars = Array.from(COPY.claim);
 
   return (
     <AbsoluteFill style={{ pointerEvents: "none" }}>
@@ -144,11 +144,11 @@ export const Lockup: React.FC<{ at: number }> = ({ at }) => {
       ))}
       <Spark size={mix(0, 22, line)} x={VIDEO.width / 2} y={LAYOUT.divider} opacity={line} />
 
-      {/* Belief line: each character surfaces from a blur. */}
+      {/* Claim line: each character surfaces from a blur. */}
       <div
         style={{
           position: "absolute",
-          top: LAYOUT.belief,
+          top: LAYOUT.primary,
           left: 0,
           right: 0,
           transform: "translateY(-50%)",
@@ -160,8 +160,8 @@ export const Lockup: React.FC<{ at: number }> = ({ at }) => {
           color: BRAND.softGold,
         }}
       >
-        {beliefChars.map((ch, i) => {
-          const p = ramp(f, 16 + i * 1.3, 32 + i * 1.3, "power3.out");
+        {claimChars.map((ch, i) => {
+          const p = ramp(f, 10 + i * 0.7, 24 + i * 0.7, "power3.out");
           return (
             <span
               key={i}
@@ -181,19 +181,19 @@ export const Lockup: React.FC<{ at: number }> = ({ at }) => {
       <div
         style={{
           position: "absolute",
-          top: LAYOUT.claim,
+          top: LAYOUT.secondary,
           left: 0,
           right: 0,
           transform: "translateY(-50%)",
           textAlign: "center",
           ...serif(400),
           fontSize: 25,
-          letterSpacing: `${mix(0.7, 0.42, claimIn)}em`,
+          letterSpacing: `${mix(0.7, 0.42, beliefIn)}em`,
           color: BRAND.warm,
-          opacity: claimIn * 0.78,
+          opacity: beliefIn * 0.78,
         }}
       >
-        {COPY.claim}
+        {COPY.belief}
       </div>
 
       <div

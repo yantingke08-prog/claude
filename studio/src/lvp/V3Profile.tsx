@@ -3,13 +3,13 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { MONO } from "../lib/fonts";
 import { mulberry32 } from "../lib/rng";
 import { BRAND, LAYOUT, mix, ramp } from "./brand";
-import { Backdrop, FlatSymbol, Lockup } from "./Lockup";
+import { FinalReveal, endingReveal, sweepPx } from "./FinalReveal";
 import { SYMBOL, symbolMask } from "./logo";
 
 /**
  * V3「成交量分布」: a volume profile builds level by level beside a price axis. Then every
  * level re-sorts its volume into the mark's silhouette on that row - the profile *is* the logo,
- * read as scanlines - before the lines close up into the solid mark.
+ * read as scanlines - and the lines close up into the mark just as the shared ending sweeps in.
  */
 export const T3 = {
   axis: [0, 14] as const,
@@ -17,8 +17,6 @@ export const T3 = {
   poc: [44, 62] as const,
   morph: [60, 102] as const,
   close: [96, 116] as const,
-  solid: [104, 124] as const,
-  lockup: 120,
 };
 
 const ROWS = 64;
@@ -74,7 +72,9 @@ export const LvpV3Profile: React.FC = () => {
   const axis = ramp(frame, ...T3.axis, "expo.out");
   const pocGlow = ramp(frame, ...T3.poc, "power2.out") * (1 - ramp(frame, T3.morph[0], T3.morph[0] + 14));
   const close = ramp(frame, ...T3.close, "power2.inOut");
-  const solid = ramp(frame, ...T3.solid, "power2.inOut");
+  // the shared ending's sweep takes over the scanlines from the bottom up
+  const reveal = endingReveal(frame);
+  const cut = reveal > 0 ? sweepPx(reveal) - (LAYOUT.symbol.cy - LAYOUT.symbol.h / 2) : 9999;
   const chrome = 1 - ramp(frame, T3.morph[0], T3.morph[0] + 20);
   // Open framed on the profile itself, big and centred; settle onto the end-card layout as it morphs.
   const u = 1 - ramp(frame, T3.morph[0] - 4, T3.morph[1], "power3.inOut");
@@ -86,7 +86,6 @@ export const LvpV3Profile: React.FC = () => {
 
   return (
     <AbsoluteFill style={{ backgroundColor: BRAND.black }}>
-      <Backdrop opacity={ramp(frame, 90, 130, "power2.out")} spin={frame * 0.03} />
       <AbsoluteFill style={{ transform: `translate(${shiftX}px, ${shiftY}px) scale(${zoom})`, transformOrigin: `${focusX}px ${focusY}px` }}>
         <svg
           viewBox={`${bx} ${by} ${bw} ${bh}`}
@@ -97,7 +96,8 @@ export const LvpV3Profile: React.FC = () => {
             width: pw,
             height: LAYOUT.symbol.h,
             overflow: "visible",
-            opacity: 1 - ramp(frame, T3.solid[0] + 8, T3.solid[1] + 6),
+            WebkitMaskImage: reveal > 0 ? `linear-gradient(to bottom, black ${cut - 12}px, transparent ${cut + 6}px)` : undefined,
+            maskImage: reveal > 0 ? `linear-gradient(to bottom, black ${cut - 12}px, transparent ${cut + 6}px)` : undefined,
           }}
         >
           <defs>
@@ -179,10 +179,8 @@ export const LvpV3Profile: React.FC = () => {
             POC
           </text>
         </svg>
-
-        <FlatSymbol opacity={solid} sheen={ramp(frame, T3.solid[1] - 4, T3.solid[1] + 30, "power2.inOut")} dots={ramp(frame, T3.solid[1] - 6, T3.solid[1] + 10)} />
       </AbsoluteFill>
-      <Lockup at={T3.lockup} />
+      <FinalReveal />
     </AbsoluteFill>
   );
 };

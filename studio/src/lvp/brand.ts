@@ -28,8 +28,8 @@ export const LAYOUT = {
   symbol: { cx: 960, cy: 372, h: 380 },
   wordmark: { top: 600, w: 620 },
   divider: 742,
-  belief: 798,
-  claim: 862,
+  primary: 798, // big line: the claim
+  secondary: 862, // small line: the belief
 };
 
 /** The 3D scenes end on this camera; LAYOUT px map to world units through it. */

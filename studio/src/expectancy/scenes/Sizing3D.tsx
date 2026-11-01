@@ -16,7 +16,7 @@ import {
   coinMeanLog,
   coinMedianLog,
   EKX,
-  GROUP_Z,
+  GROUP_X,
   MedianPath,
   Runway,
   RunwayHeads,
@@ -31,25 +31,28 @@ const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: eas
 const RUN_IN = 100;
 const RUN_OUT = 905;
 const COIN_IN = 1160;
-const ZC = -4.5; // between the two groups
+const ZC = -1.5; // the middle of each group's lanes
+const MID = (GROUP_X.s40 + RUN_LEN) / 2; // between the two groups
+const X40 = GROUP_X.s40;
 
 const tradesAt = (f: number) => interpolate(f, [260, 490], [0, SIZING_TRADES], clamp);
 const roundAt = (f: number) => interpolate(f, [1170, 1400], [0, 100], clamp);
 
 // ---------------- cameras ----------------
 
+// Always from the front (never from behind, which would mirror the trade axis), so the
+// 2% group stays on the left and the 40% group on the right in every shot.
 const RUN_SHOTS: Record<string, Shot> = {
-  establish: () => ({ pos: v(-7, 5.5, 9), target: v(4, -0.5, ZC), fov: 38 }),
-  establish2: () => ({ pos: v(-6, 4.2, 11.5), target: v(4, -0.8, ZC), fov: 38 }),
+  establish: () => ({ pos: v(MID - 6, 7, 30), target: v(MID, -1, ZC), fov: 40 }),
+  establish2: () => ({ pos: v(MID - 3, 5.5, 31), target: v(MID, -1.4, ZC), fov: 40 }),
+  // both groups advance together; the camera drifts along with them, staying wide
   track: (f) => {
-    const x = tradesAt(f) * SKX;
-    return { pos: v(x - 7.5, 4.5, 11), target: v(x + 1, -1.4, ZC), fov: 40 };
+    const k = tradesAt(f) / SIZING_TRADES;
+    return { pos: v(MID - 3 + k * 6, 4.5, 31), target: v(MID, -1.8, ZC), fov: 40 };
   },
-  focus2: () => ({ pos: v(RUN_LEN * 0.62, 3.2, 8.5), target: v(RUN_LEN * 0.62, 0.9, -1.5), fov: 40 }),
-  // from the front but below the floor: the 2% runway passes overhead, the 40% group falls in view.
-  // (A view from behind would mirror the trade axis and make the fall read as a rise.)
-  focus40: () => ({ pos: v(RUN_LEN * 0.45, -6.2, 7), target: v(RUN_LEN * 0.6, -3.6, -7.5), fov: 44 }),
-  wide: () => ({ pos: v(RUN_LEN / 2, 0.8, 25), target: v(RUN_LEN / 2, -2.6, ZC), fov: 36 }),
+  focus2: () => ({ pos: v(RUN_LEN * 0.55, 3, 14), target: v(RUN_LEN * 0.55, 0.2, ZC), fov: 40 }),
+  focus40: () => ({ pos: v(X40 + RUN_LEN * 0.55, -1.5, 15), target: v(X40 + RUN_LEN * 0.55, -3.6, ZC), fov: 44 }),
+  wide: () => ({ pos: v(MID, 3.5, 33), target: v(MID, -2.4, ZC), fov: 40 }),
 };
 const runCam = makeCamera(RUN_SHOTS, [
   [RUN_IN, "establish"],
@@ -68,21 +71,17 @@ const COIN_SHOTS: Record<string, Shot> = {
   tower: () => ({ pos: v(0, 3.4, 11), target: v(0, 3.0, 0), fov: 38 }),
   tower2: () => ({ pos: v(-0.6, 3.6, 14), target: v(0, 2.2, 0), fov: 38 }),
   spread: () => ({ pos: v(-1, 4.2, 19.5), target: v(-0.8, 1.7, 0), fov: 38 }),
-  mean: () => ({ pos: v(4.5, 3.6, 12.5), target: v(coinMeanLog(100) * EKX - 0.4, 1.6, 0), fov: 38 }),
-  median: () => ({ pos: v(-5.5, 3.2, 12), target: v(coinMedianLog(100) * EKX + 0.4, 1.3, 0), fov: 38 }),
-  front: () => ({ pos: v(-0.6, 2.8, 26), target: v(-0.6, 1.8, 0), fov: 30 }),
+  // high and far: every beam, its label and the whole distribution in one frame
+  overview: (f) => ({ pos: v(-0.4 + Math.sin(f * 0.004) * 1.5, 9.5, 28), target: v(-0.4, 3.6, 0), fov: 38 }),
 };
 const coinCam = makeCamera(COIN_SHOTS, [
   [COIN_IN, "tower"],
   [1205, "tower2"],
-  [1300, "spread"],
-  [1365, "mean"],
-  [1420, "mean"],
-  [1475, "median"],
-  [1540, "median"],
-  [1600, "front"],
-  [1650, "front"],
-]);
+  [1290, "spread"],
+  [1330, "spread"],
+  [1440, "overview"],
+  [1650, "overview"],
+], "power2.inOut");
 
 // ---------------- runways (position sizing) ----------------
 
@@ -101,8 +100,9 @@ const RunSpace: React.FC<{ f: number }> = ({ f }) => {
       <Runway which="s40" n={n} color={C.steel} alpha={0.035 * on40} />
       <RunwayHeads which="s2" n={n} color={C.gold} />
       <RunwayHeads which="s40" n={n} color={C.steel} />
-      <MedianPath which="s2" n={n} color="#ffe6b0" opacity={appear(f, 300, 30)} />
-      <MedianPath which="s40" n={n} color="#d6ecff" opacity={appear(f, 300, 30)} />
+      {/* each group's main line in its own colour, brighter than its crowd */}
+      <MedianPath which="s2" n={n} color="#ffd36e" opacity={appear(f, 300, 30)} />
+      <MedianPath which="s40" n={n} color="#7cc4ff" opacity={appear(f, 300, 30)} />
     </Stage>
   );
 };
@@ -118,9 +118,10 @@ const RunLabels: React.FC<{ f: number }> = ({ f }) => {
     { which: "s40" as const, title: UI.risk40, color: C.steel },
   ];
   for (const g of groups) {
-    const p = proj(v(-0.6, 0.9, GROUP_Z[g.which] - 1.5));
+    // each group's name floats above the start of its own runway
+    const p = proj(v(GROUP_X[g.which] + RUN_LEN / 2, 4.6, ZC));
     out.push(
-      <Label key={g.which} x={p.x} y={p.y} o={appear(f, RUN_IN + 20) * fadeOut(f, 520)} align="right">
+      <Label key={g.which} x={p.x} y={p.y} o={appear(f, RUN_IN + 20) * fadeOut(f, 228, 14)} align="center">
         <GlassCard>
           <div style={{ padding: "10px 20px", ...zh(900), fontSize: 26, color: g.color }}>{g.title}</div>
         </GlassCard>
@@ -134,10 +135,10 @@ const RunLabels: React.FC<{ f: number }> = ({ f }) => {
     [-1, UI.lost90],
     [-3, "1/1000"],
   ];
-  for (const [e, txt] of ticks) {
-    const p = proj(v(-0.4, e * SKY, 0.6));
+  for (const [e, txt, x0] of ticks.flatMap(([e, txt]) => [0, X40].map((x0) => [e, txt, x0] as const))) {
+    const p = proj(v(x0 - 0.4, e * SKY, 0.6));
     out.push(
-      <Label key={`t${e}`} x={p.x - 10} y={p.y} o={appear(f, RUN_IN + 30) * fadeOut(f, 520)} align="right">
+      <Label key={`t${e}-${x0}`} x={p.x - 10} y={p.y} o={appear(f, RUN_IN + 30) * fadeOut(f, 545)} align="right">
         <span style={{ ...(e === -1 ? zh(900) : { fontFamily: MONO.fontFamily }), fontSize: 20, color: e === -1 ? RED : e === 0 ? "#fff" : C.dim }}>{txt}</span>
       </Label>,
     );

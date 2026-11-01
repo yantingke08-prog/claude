@@ -12,11 +12,17 @@ const FRAMES = scene("cover").frames;
 
 // Beats (all in script.json, so the score's slam / dive / boom land on the picture)
 const SLAM = cue("cover", "slam");
+const SUB_A = cue("cover", "pop"); // "40% steadily profitable" snaps in
+const SUB_B = cue("cover", "pop", SUB_A + 1); // "70% blown up overnight"
+const WORDS = scene("cover").cues.filter((c) => c.type === "tick").map((c) => c.at!); // the four chapters
+const TYPE = cue("cover", "type"); // the invitation types itself out
+const TYPE_END = scene("cover").cues.find((c) => c.type === "type")!.to!;
 const DRAW = cue("cover", "riser"); // both curves start drawing with the riser
 const DROP = cue("cover", "drop"); // A goes over the edge
 const BOOM = cue("cover", "boom"); // ... and hits zero
 const SHINE = cue("cover", "ping"); // B's endpoint lights up
 const EXIT = FRAMES - SCRIPT.transition;
+const EXIT_START = EXIT - 4;
 
 const clampI = (f: number, a: number, b: number) => interpolate(f, [a, b], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
@@ -137,10 +143,14 @@ const TitleBlock: React.FC<{ f: number }> = ({ f }) => {
   const kick = appear(f, SLAM - 3, 8);
   const slam = ease("expo.out")(clampI(f, SLAM - 4, SLAM + 6));
   const sheen = interpolate(f, [SLAM + 8, SLAM + 34], [-40, 140], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const sub = appear(f, DRAW + 6, 10);
-  const tag = appear(f, DRAW + 14, 10);
-  const invite = appear(f, DRAW + 22, 10);
+  const subA = ease("back.out(1.8)")(clampI(f, SUB_A - 2, SUB_A + 10));
+  const subB = ease("back.out(1.8)")(clampI(f, SUB_B - 2, SUB_B + 10));
+  // "blown up overnight" lands with a short jolt
+  const jolt = f >= SUB_B && f < SUB_B + 10 ? Math.sin((f - SUB_B) * 2.6) * (1 - (f - SUB_B) / 10) * 6 : 0;
   const [p1, w1, p2, w2] = CV.sub;
+  const words = CV.tagline.split(" · ");
+  const typed = Math.floor(interpolate(f, [TYPE, TYPE_END], [0, CV.invite.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const caret = f >= TYPE && (f < TYPE_END || Math.floor(f / 8) % 2 === 0);
   return (
     <div style={{ position: "absolute", left: 130, top: 280 }}>
       <div style={{ ...zh(700), fontSize: 46, color: C.gold, letterSpacing: 6, opacity: kick, transform: `translateX(${(1 - kick) * -20}px)` }}>{CV.kicker}</div>
@@ -162,13 +172,30 @@ const TitleBlock: React.FC<{ f: number }> = ({ f }) => {
           {CV.title}
         </div>
       </div>
-      <div style={{ ...zh(700), fontSize: 44, color: "#fff", marginTop: 26, opacity: sub, transform: `translateY(${(1 - sub) * 16}px)`, letterSpacing: 2 }}>
-        <span style={{ color: "#ffd98f" }}>{p1}</span> {w1}
-        <span style={{ color: "rgba(255,255,255,0.35)", margin: "0 22px" }}>·</span>
-        <span style={{ color: C.steel }}>{p2}</span> <span style={{ color: RED }}>{w2}</span>
+      <div style={{ ...zh(700), fontSize: 44, color: "#fff", marginTop: 26, letterSpacing: 2, display: "flex", alignItems: "baseline" }}>
+        <span style={{ opacity: subA, transform: `translateX(${(1 - subA) * -60}px)`, display: "inline-block" }}>
+          <span style={{ color: "#ffd98f" }}>{p1}</span> {w1}
+        </span>
+        <span style={{ color: "rgba(255,255,255,0.35)", margin: "0 22px", opacity: subB }}>·</span>
+        <span style={{ opacity: subB, transform: `translateX(${(1 - subB) * 60 + jolt}px)`, display: "inline-block" }}>
+          <span style={{ color: C.steel }}>{p2}</span> <span style={{ color: RED, textShadow: `0 0 ${20 * (jolt !== 0 ? 1 : 0.4)}px ${RED}` }}>{w2}</span>
+        </span>
       </div>
-      <div style={{ ...zh(500), fontSize: 32, color: "rgba(255,255,255,0.72)", marginTop: 26, letterSpacing: 8, opacity: tag }}>{CV.tagline}</div>
-      <div style={{ ...zh(500), fontSize: 30, color: "#ffd98f", marginTop: 30, letterSpacing: 2, opacity: invite, transform: `translateY(${(1 - invite) * 10}px)` }}>{CV.invite}</div>
+      <div style={{ ...zh(500), fontSize: 32, color: "rgba(255,255,255,0.78)", marginTop: 28, letterSpacing: 6, display: "flex", gap: 18, alignItems: "center" }}>
+        {words.map((w, i) => {
+          const k = ease("back.out(2.2)")(clampI(f, WORDS[i] - 2, WORDS[i] + 8));
+          return (
+            <span key={w} style={{ display: "inline-flex", alignItems: "center", gap: 18, opacity: clampI(f, WORDS[i] - 2, WORDS[i] + 3) }}>
+              {i > 0 && <span style={{ width: 6, height: 6, borderRadius: 3, background: C.gold, opacity: 0.7 }} />}
+              <span style={{ display: "inline-block", transform: `scale(${1.5 - 0.5 * k})`, filter: `blur(${(1 - k) * 6}px)` }}>{w}</span>
+            </span>
+          );
+        })}
+      </div>
+      <div style={{ ...zh(500), fontSize: 30, color: "#ffd98f", marginTop: 30, letterSpacing: 2, minHeight: 44 }}>
+        {CV.invite.slice(0, typed)}
+        {caret && <span style={{ display: "inline-block", width: 3, height: 32, background: "#ffd98f", marginLeft: 4, verticalAlign: "middle" }} />}
+      </div>
     </div>
   );
 };
@@ -186,7 +213,7 @@ export const Cover: React.FC = () => {
   const shake = k >= 0 && k < 12 ? (1 - k / 12) ** 2 * 14 : 0;
   const flash = k >= 0 ? Math.exp(-k / 4) * 0.22 : 0;
   // exit: push through the frame into the hook
-  const out = ease("power2.in")(clampI(f, EXIT - 4, FRAMES));
+  const out = ease("power2.in")(clampI(f, EXIT_START, FRAMES));
   return (
     <AbsoluteFill
       style={{

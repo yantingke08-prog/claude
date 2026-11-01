@@ -129,14 +129,32 @@ const fmt = (v: number, digits = 1) => (Math.abs(v - Math.round(v)) < 1e-6 ? Mat
  * E = P x W - (1-P) x L. `show` reveals terms left-to-right (0..1); with `values` the
  * symbolic labels give way to numbers and a coloured result.
  */
-export const Formula: React.FC<{ show: number; values?: FormulaValues; numbers?: number; result?: number; size?: number; highlight?: ("win" | "loss")[] }> = ({
-  show,
-  values,
-  numbers = 0,
-  result = 0,
-  size = 64,
-  highlight = [],
-}) => {
+export type FormulaCallout = { k: number; color: string; node: React.ReactNode };
+export type FormulaCallouts = Partial<Record<"win" | "loss" | "result", FormulaCallout>>;
+
+/**
+ * A leader line dropping from a term of the formula to a note under it, so the note stays
+ * attached to the exact number it explains. Needs a card with clip={false}.
+ */
+const Callout: React.FC<{ c?: FormulaCallout }> = ({ c }) =>
+  !c || c.k <= 0.01 ? null : (
+    <span style={{ position: "absolute", left: "50%", top: "100%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", pointerEvents: "none" }}>
+      <span style={{ width: 3, height: 54 * ease("power3.out")(c.k), background: `linear-gradient(${c.color}, ${c.color}88)`, boxShadow: `0 0 12px ${c.color}`, borderRadius: 2 }} />
+      <span style={{ width: 12, height: 12, borderRadius: 6, background: c.color, boxShadow: `0 0 16px ${c.color}`, marginTop: -2, opacity: c.k }} />
+      <span style={{ marginTop: 10, opacity: c.k, transform: `translateY(${(1 - c.k) * 12}px) scale(${0.85 + 0.15 * ease("back.out(2.4)")(c.k)})`, whiteSpace: "nowrap" }}>{c.node}</span>
+    </span>
+  );
+
+export const Formula: React.FC<{
+  show: number;
+  values?: FormulaValues;
+  numbers?: number;
+  result?: number;
+  size?: number;
+  highlight?: ("win" | "loss")[];
+  callouts?: FormulaCallouts;
+  resultPulse?: number;
+}> = ({ show, values, numbers = 0, result = 0, size = 64, highlight = [], callouts = {}, resultPulse = 0 }) => {
   const [E, P, W, Q, L] = UI.formula;
   const ev = values ? values.p * values.win - (1 - values.p) * values.loss : 0;
   const parts: { sym: string; num?: string; key?: "win" | "loss"; op?: boolean }[] = [
@@ -172,6 +190,7 @@ export const Formula: React.FC<{ show: number; values?: FormulaValues; numbers?:
             }}
           >
             {isNum ? p.num : p.sym}
+            {p.key && isNum && <Callout c={callouts[p.key]} />}
           </span>
         );
       })}
@@ -183,13 +202,15 @@ export const Formula: React.FC<{ show: number; values?: FormulaValues; numbers?:
             fontSize: size * 1.15,
             color: resColor,
             opacity: result,
-            transform: `scale(${1.4 - ease("back.out(2)")(result) * 0.4})`,
+            transform: `scale(${1.4 - ease("back.out(2)")(result) * 0.4 + resultPulse * 0.25})`,
             display: "inline-block",
-            textShadow: `0 0 30px ${resColor}`,
+            position: "relative",
+            textShadow: `0 0 ${30 + resultPulse * 40}px ${resColor}`,
           }}
         >
           = {ev >= 0 ? "+" : "−"}
           {fmt(Math.abs(ev))}
+          <Callout c={callouts.result} />
         </span>
       )}
     </div>

@@ -66,7 +66,9 @@ export const Tray: React.FC<{
   seed: number;
   dim?: number;
   plate?: number;
-}> = ({ params, win = params.win, loss = params.loss, pop, sort, position, seed, dim = 0, plate = 1 }) => {
+  /** world units per unit of payoff (chapter 4 exaggerates it) */
+  kh?: number;
+}> = ({ params, win = params.win, loss = params.loss, pop, sort, position, seed, dim = 0, plate = 1, kh = KH }) => {
   const frame = useCurrentFrame();
   const { winMesh, lossMesh, winDepth, lossDepth, plan } = useMemo(() => {
     const outcomes = outcomesFor(params.p, seed);
@@ -90,7 +92,7 @@ export const Tray: React.FC<{
     const b = slotXZ(t.to);
     const x = a.x + (b.x - a.x) * k;
     const z = a.z + (b.z - a.z) * k;
-    const h = (t.won ? win : loss) * KH * grow;
+    const h = (t.won ? win : loss) * kh * grow;
     tmp.position.set(x, t.won ? 0 : -h, z);
     // not-yet-landed trades must not draw at all (a zero-height box still shows its top face)
     if (landed <= 0) tmp.scale.set(0, 0, 0);
@@ -140,16 +142,33 @@ const Plate: React.FC<{ opacity: number }> = ({ opacity }) => {
 };
 
 /** World-space anchors for labels around a sorted tray. */
-export const trayAnchors = (params: TrayParams, position: [number, number, number], win = params.win, loss = params.loss) => {
+export const trayAnchors = (params: TrayParams, position: [number, number, number], win = params.win, loss = params.loss, KH_ = KH) => {
   const [px, py, pz] = position;
   const b = trayBlocks(params.p);
   const front = pz + TRAY_W / 2 + 0.25;
   return {
-    title: v(px, py + Math.max(win * KH, 0.6) + 1.0, pz),
-    winTop: v(px + b.winX, py + win * KH + 0.35, front),
-    lossBottom: v(px + b.lossX, py - loss * KH - 0.4, front),
+    title: v(px, py + Math.max(win * KH_, 0.6) + 1.0, pz),
+    winTop: v(px + b.winX, py + win * KH_ + 0.35, front),
+    lossBottom: v(px + b.lossX, py - loss * KH_ - 0.4, front),
     winWidthLine: [v(px - TRAY_W / 2, py - 0.25, front), v(px - TRAY_W / 2 + b.winWidth, py - 0.25, front)] as const,
-    winHeightLine: [v(px - TRAY_W / 2 - 0.25, py, front), v(px - TRAY_W / 2 - 0.25, py + win * KH, front)] as const,
+    winHeightLine: [v(px - TRAY_W / 2 - 0.25, py, front), v(px - TRAY_W / 2 - 0.25, py + win * KH_, front)] as const,
     center: v(px, py, pz),
   };
+};
+
+/**
+ * One early-landing column of the given kind (before sorting), the one most facing a camera
+ * coming from `towards` (tray-local x/z direction) - the column a callout measures.
+ */
+export const pickColumn = (params: TrayParams, seed: number, won: boolean, towards: [number, number]) => {
+  const outcomes = outcomesFor(params.p, seed);
+  let best = { i: -1, x: 0, z: 0, score: -Infinity };
+  outcomes.forEach((w, i) => {
+    if (w !== won || i >= 30) return;
+    const { x, z } = slotXZ(i);
+    const score = x * towards[0] + z * towards[1];
+    if (score > best.score) best = { i, x, z, score };
+  });
+  // landed when pop * N reaches i + 3 (see Tray)
+  return { ...best, landsAt: (best.i + 3) / N };
 };

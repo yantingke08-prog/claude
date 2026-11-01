@@ -7,15 +7,67 @@
   "scenes": [
     {
       "id": "cover",
-      "frames": 100,
-      "chord": [33, 40, 45, 48, 52],
+      "frames": 190,
+      "chord": [
+        33,
+        40,
+        45,
+        48,
+        52
+      ],
       "chapter": null,
       "cues": [
-        { "type": "slam", "at": 12 },
-        { "type": "riser", "from": 16, "to": 40 },
-        { "type": "drop", "at": 40, "to": 47 },
-        { "type": "boom", "at": 47 },
-        { "type": "ping", "at": 52 }
+        {
+          "type": "slam",
+          "at": 12
+        },
+        {
+          "type": "pop",
+          "at": 30
+        },
+        {
+          "type": "pop",
+          "at": 42
+        },
+        {
+          "type": "riser",
+          "from": 54,
+          "to": 84
+        },
+        {
+          "type": "drop",
+          "at": 84,
+          "to": 91
+        },
+        {
+          "type": "boom",
+          "at": 91
+        },
+        {
+          "type": "ping",
+          "at": 99
+        },
+        {
+          "type": "tick",
+          "at": 114
+        },
+        {
+          "type": "tick",
+          "at": 121
+        },
+        {
+          "type": "tick",
+          "at": 128
+        },
+        {
+          "type": "tick",
+          "at": 135
+        },
+        {
+          "type": "type",
+          "from": 142,
+          "to": 162
+        }
       ],
       "captions": []
     },
@@ -41,8 +93,21 @@
           "at": 323
         },
         {
-          "type": "ping",
-          "at": 445
+          "type": "type",
+          "from": 445,
+          "to": 476
+        },
+        {
+          "type": "pop",
+          "at": 484
+        },
+        {
+          "type": "pop",
+          "at": 500
+        },
+        {
+          "type": "pop",
+          "at": 516
         }
       ],
       "captions": [
@@ -74,7 +139,7 @@
         {
           "from": 445,
           "to": 590,
-          "text": "答案藏在三个词里：**正期望、大数法则、纪律**。"
+          "text": "答案，藏在三个词里。"
         }
       ]
     },
@@ -107,12 +172,28 @@
           "at": 340
         },
         {
+          "type": "pop",
+          "at": 372
+        },
+        {
+          "type": "pop",
+          "at": 402
+        },
+        {
           "type": "ping",
           "at": 540
         },
         {
           "type": "tick",
           "at": 585
+        },
+        {
+          "type": "pop",
+          "at": 612
+        },
+        {
+          "type": "pop",
+          "at": 642
         },
         {
           "type": "ping",
@@ -418,8 +499,16 @@
           "at": 340
         },
         {
+          "type": "pop",
+          "at": 345
+        },
+        {
           "type": "tick",
           "at": 480
+        },
+        {
+          "type": "pop",
+          "at": 485
         },
         {
           "type": "hit",
@@ -428,6 +517,18 @@
         {
           "type": "whoosh",
           "at": 770
+        },
+        {
+          "type": "hit",
+          "at": 792
+        },
+        {
+          "type": "hit",
+          "at": 822
+        },
+        {
+          "type": "hit",
+          "at": 852
         },
         {
           "type": "ping",
@@ -508,6 +609,10 @@
         {
           "type": "hit",
           "at": 95
+        },
+        {
+          "type": "stamp",
+          "at": 345
         }
       ],
       "captions": [
@@ -578,7 +683,12 @@
     "cover": {
       "kicker": "交易里的数学",
       "title": "胜率陷阱",
-      "sub": ["胜率 40%", "稳稳赚钱", "胜率 70%", "一夜爆仓"],
+      "sub": [
+        "胜率 40%",
+        "稳稳赚钱",
+        "胜率 70%",
+        "一夜爆仓"
+      ],
       "tagline": "期望 · 大数法则 · 仓位 · 纪律",
       "invite": "带你用 1000 个人、100 万笔交易，亲手做一次实验",
       "labelB": "胜率 40%：越走越高",
@@ -586,10 +696,26 @@
       "boom": "爆仓"
     },
     "farFields": [
-      { "id": "ridges", "name": "现版 · 山脊", "note": "参照片的思路：多层山脊剪影" },
-      { "id": "skyline", "name": "A · K线天际线", "note": "地平线上的城市，每栋楼都是一根K线，天线是影线" },
-      { "id": "lattice", "name": "B · 分布点阵海", "note": "点阵地形，每座山都是一条正态分布曲线，雷达扫过" },
-      { "id": "orbit", "name": "C · 轨道巨星", "note": "线框行星从地平线升起，遮住光源，数据环绕它运行" }
+      {
+        "id": "ridges",
+        "name": "现版 · 山脊",
+        "note": "参照片的思路：多层山脊剪影"
+      },
+      {
+        "id": "skyline",
+        "name": "A · K线天际线",
+        "note": "地平线上的城市，每栋楼都是一根K线，天线是影线"
+      },
+      {
+        "id": "lattice",
+        "name": "B · 分布点阵海",
+        "note": "点阵地形，每座山都是一条正态分布曲线，雷达扫过"
+      },
+      {
+        "id": "orbit",
+        "name": "C · 轨道巨星",
+        "note": "线框行星从地平线升起，遮住光源，数据环绕它运行"
+      }
     ],
     "oneTrader": "其中一个人",
     "finishLine": "第 1000 笔",
@@ -604,6 +730,34 @@
     "hundredTrades": "100 笔交易，每格一笔",
     "sideViewNote": "从侧面看，就是那张面积图",
     "lost90": "亏掉九成",
-    "eachParticle": "每个光点 = 一个玩家"
+    "eachParticle": "每个光点 = 一个玩家",
+    "keywords": [
+      {
+        "zh": "正期望",
+        "en": "POSITIVE EXPECTANCY"
+      },
+      {
+        "zh": "大数法则",
+        "en": "LAW OF LARGE NUMBERS"
+      },
+      {
+        "zh": "纪律",
+        "en": "DISCIPLINE"
+      }
+    ],
+    "winOnce": "赢一次",
+    "lossOnce": "亏一次",
+    "avgWin": "平均盈利",
+    "avgLoss": "平均亏损",
+    "flipNegative": "期望翻负",
+    "kinetic": [
+      "加倍下注！",
+      "再加倍！",
+      "梭哈翻本"
+    ],
+    "stamp": [
+      "坚守纪律",
+      "活下去"
+    ]
   }
 }

@@ -6,10 +6,10 @@ import { ease } from "../../lib/gsap";
 import { SceneShell } from "../components/SceneShell";
 import { appear, fadeOut, Formula, GREEN, RED } from "../components/Charts";
 import { STRATEGY_B } from "../sim.ts";
-import { cue, SCRIPT } from "../timeline.ts";
-import { GlassCard, Label, makeCamera, projector, StudioLights, v, type Shot } from "../three/common";
+import { cue, scene, SCRIPT } from "../timeline.ts";
+import { Bracket, GlassCard, Label, makeCamera, projector, StudioLights, v, ValueChip, type Shot } from "../three/common";
 import { energyMaterial, setEnergy, unitColumn } from "../three/Energy";
-import { KH, Tray, trayAnchors, TRAY_W, type TrayParams } from "../three/Trays";
+import { Tray, trayAnchors, TRAY_W, type TrayParams } from "../three/Trays";
 import { World } from "../three/World";
 
 const UI = SCRIPT.ui;
@@ -18,6 +18,13 @@ const POS: [number, number, number] = [0, 0, 0];
 const CHECKS_AT = [1050, 1070, 1090, 1110];
 const DOUBLE = [1, 2, 4, 8, 16];
 const PIT_X = 7;
+// columns stretched further than in chapter 1, so the leaks read at a glance
+const KH_D = 0.6;
+const WIN_AT = cue("discipline", "pop");
+const LOSS_AT = cue("discipline", "pop", WIN_AT + 1);
+const FLIP_AT = cue("discipline", "hit", 600);
+const LEAKS_OUT = 612;
+const KINETIC_AT = scene("discipline").cues.filter((c) => c.type === "hit" && c.at! > 770).map((c) => c.at!);
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 /** The two leaks, then (from 905) discipline restoring the original numbers. */
@@ -37,7 +44,7 @@ const SHOTS: Record<string, Shot> = {
   },
   winClose: () => ({ pos: v(-4.2, 3.4, 4.6), target: v(-1.2, 0.4, 0), fov: 36 }),
   // under the glass plate, looking up at the shafts as they dig deeper
-  under: () => ({ pos: v(4.6, -4.2, 5.4), target: v(1.0, -0.6, 0), fov: 38 }),
+  under: () => ({ pos: v(4.8, -4.4, 5.8), target: v(1.0, -0.9, 0), fov: 38 }),
   side: () => ({ pos: v(0, 0.2, 10.5), target: v(0, -0.3, 0), fov: 36 }),
   pits: () => ({ pos: v(PIT_X - 1, 3.2, 6.5), target: v(PIT_X + 0.5, -1.2, 0), fov: 40 }),
   pitsDown: () => ({ pos: v(PIT_X + 0.4, 4.6, 3.6), target: v(PIT_X + 1.2, -3.4, 0), fov: 44 }),
@@ -81,6 +88,14 @@ const Pits: React.FC<{ f: number }> = ({ f }) => (
   </group>
 );
 
+// dimension lines beside the middle of the green block's left side and the red block's right
+// side: in frame from the close-ups (front-left, below-right) and from the side view alike
+const WIN_EDGE = v(-TRAY_W / 2 - 0.2, 0, 0);
+const LOSS_EDGE = v(TRAY_W / 2 + 0.2, 0, 0);
+// the win measure steps aside while the camera is under the plate with the losses
+const winMeasure = (f: number) => appear(f, WIN_AT, 16) * fadeOut(f, LOSS_AT - 10, 12) + appear(f, 650, 14) * fadeOut(f, 762, 12);
+const lossMeasure = (f: number) => appear(f, LOSS_AT, 16) * fadeOut(f, 762, 12);
+
 const Space: React.FC<{ f: number }> = ({ f }) => {
   const cam = camAt(f);
   const val = valuesAt(f);
@@ -90,7 +105,9 @@ const Space: React.FC<{ f: number }> = ({ f }) => {
       <CameraRig position={cam.pos.toArray() as [number, number, number]} target={cam.target.toArray() as [number, number, number]} fov={cam.fov} />
       <StudioLights />
       <World center={[2, 0, 0]} groundY={-5} sun={[0.2, -1]} scale={0.6} time={f / 30} />
-      <Tray params={PB} win={val.win} loss={val.loss} pop={1} sort={1} position={POS} seed={8} dim={pitsOn ? 0.6 : 0} />
+      <Tray params={PB} win={val.win} loss={val.loss} pop={1} sort={1} position={POS} seed={8} dim={pitsOn ? 0.6 : 0} kh={KH_D} />
+      <Bracket base={WIN_EDGE} tip={WIN_EDGE.clone().setY(val.win * KH_D)} tick={v(0.13, 0, 0)} k={winMeasure(f)} color={GREEN} width={3} />
+      <Bracket base={LOSS_EDGE} tip={LOSS_EDGE.clone().setY(-val.loss * KH_D)} tick={v(0.13, 0, 0)} k={lossMeasure(f)} color={RED} width={3.5} />
       {pitsOn && <Pits f={f} />}
     </Stage>
   );
@@ -98,53 +115,47 @@ const Space: React.FC<{ f: number }> = ({ f }) => {
 
 // ---------------- 2D layers ----------------
 
-const Chip: React.FC<{ text: string; k: number; color: string }> = ({ text, k, color }) =>
-  k <= 0.01 ? null : (
-    <div style={{ transform: `scale(${0.6 + ease("back.out(2.5)")(k) * 0.4})`, opacity: k }}>
-      <GlassCard tint="255,181,71">
-        <div style={{ ...zh(900), fontSize: 30, color, padding: "8px 24px" }}>{text}</div>
-      </GlassCard>
-    </div>
-  );
-
 const Annotations: React.FC<{ f: number }> = ({ f }) => {
   const { width, height } = useVideoConfig();
   const proj = projector(camAt(f), width, height);
   const val = valuesAt(f);
-  const a = trayAnchors(PB, POS, val.win, val.loss);
+  const a = trayAnchors(PB, POS, val.win, val.loss, KH_D);
   const out: React.ReactNode[] = [];
   const o = appear(f, 230) * fadeOut(f, 770) + appear(f, 920) * fadeOut(f, 1040);
   const w = proj(a.winTop);
   const l = proj(a.lossBottom);
   out.push(
     <Label key="w" x={w.x} y={w.y} o={o} align="center">
-      <span style={{ fontFamily: MONO.fontFamily, fontWeight: 700, fontSize: 26, color: GREEN }}>
+      <ValueChip color={GREEN}>
         +{val.win.toFixed(1)} × 40 = +{(val.win * 40).toFixed(0)}
-      </span>
+      </ValueChip>
     </Label>,
     <Label key="l" x={l.x} y={l.y} o={o} align="center">
-      <span style={{ fontFamily: MONO.fontFamily, fontWeight: 700, fontSize: 26, color: RED }}>
+      <ValueChip color={RED}>
         −{val.loss.toFixed(1)} × 60 = −{(val.loss * 60).toFixed(0)}
-      </span>
+      </ValueChip>
     </Label>,
   );
-  const chipW = proj(v(a.winTop.x, val.win * KH + 1.4, 0));
-  const chipL = proj(v(a.lossBottom.x, -val.loss * KH - 1.2, TRAY_W / 2));
+  // labels on the dimension lines: the measured height, live
+  const wm = proj(WIN_EDGE.clone().setY((val.win * KH_D) / 2).add(v(-0.15, 0, 0)));
+  const lm = proj(LOSS_EDGE.clone().setY((-val.loss * KH_D) / 2).add(v(0.15, 0, 0)));
   out.push(
-    <div key="cw" style={{ position: "absolute", left: chipW.x, top: chipW.y, transform: "translate(-50%,-50%)" }}>
-      <Chip text={UI.takeProfitEarly} k={appear(f, 340) * fadeOut(f, 468)} color={C.amber} />
-    </div>,
-    <div key="cl" style={{ position: "absolute", left: chipL.x, top: chipL.y, transform: "translate(-50%,-50%)" }}>
-      <Chip text={UI.holdLosers} k={appear(f, 480) * fadeOut(f, 610)} color={C.amber} />
-    </div>,
+    <Label key="wm" x={wm.x - 14} y={wm.y} o={winMeasure(f)} align="right">
+      <ValueChip color={GREEN} size={28}>
+        <span style={{ ...zh(700), color: "#fff", fontSize: 22 }}>{UI.avgWin}</span>
+        {val.win.toFixed(1)}
+      </ValueChip>
+    </Label>,
+    <Label key="lm" x={lm.x + 14} y={lm.y} o={lossMeasure(f)} align="left">
+      <div style={{ transform: `scale(${1 + 0.12 * Math.max(0, Math.sin((f - LOSS_AT) * 0.25)) * (f < 570 ? 1 : 0)})`, transformOrigin: "left center" }}>
+        <ValueChip color={RED} size={34}>
+          <span style={{ ...zh(900), color: "#fff", fontSize: 28 }}>{UI.holdLosers}</span>
+          {val.loss.toFixed(1)}
+        </ValueChip>
+      </div>
+    </Label>,
   );
   if (f >= 770 && f < 920) {
-    const top = proj(v(PIT_X + 1.5, 1.4, 0));
-    out.push(
-      <div key="dd" style={{ position: "absolute", left: top.x, top: top.y, transform: "translate(-50%,-50%)" }}>
-        <Chip text={UI.doubleDown} k={appear(f, 772) * fadeOut(f, 895)} color={RED} />
-      </div>,
-    );
     DOUBLE.forEach((s, i) => {
       const p = proj(v(PIT_X + i * 0.75, 0.35, 0.4));
       out.push(
@@ -156,6 +167,54 @@ const Annotations: React.FC<{ f: number }> = ({ f }) => {
   }
   return <AbsoluteFill style={{ pointerEvents: "none" }}>{out}</AbsoluteFill>;
 };
+
+/** Doubling down, as shouted words that slam in on each hit and shake the frame. */
+const KINETIC_POS = [
+  { x: 0.27, y: 0.3, rot: -7, size: 110, color: "#fff" },
+  { x: 0.74, y: 0.42, rot: 6, size: 124, color: "#fff" },
+  { x: 0.5, y: 0.7, rot: -3, size: 168, color: RED },
+];
+const Kinetic: React.FC<{ f: number }> = ({ f }) => (
+  <AbsoluteFill style={{ pointerEvents: "none" }}>
+    {UI.kinetic.map((w, i) => {
+      const at = KINETIC_AT[i];
+      if (f < at - 4) return null;
+      const k = ease("expo.out")(Math.min(1, Math.max(0, (f - at + 4) / 8)));
+      const age = f - at;
+      const shake = age >= 0 && age < 10 ? (1 - age / 10) * 10 : 0;
+      const p = KINETIC_POS[i];
+      return (
+        <div
+          key={w}
+          style={{
+            position: "absolute",
+            left: p.x * 1920,
+            top: p.y * 1080,
+            transform: `translate(-50%,-50%) translate(${Math.sin(age * 7.1) * shake}px, ${Math.cos(age * 8.3) * shake}px) rotate(${p.rot}deg) scale(${2.2 - 1.2 * k})`,
+            opacity: k * fadeOut(f, 895, 12),
+            filter: `blur(${(1 - k) * 10}px)`,
+            ...zh(900),
+            fontSize: p.size,
+            color: p.color,
+            letterSpacing: 6,
+            whiteSpace: "nowrap",
+            WebkitTextStroke: p.color === RED ? undefined : `2px ${RED}`,
+            textShadow: `0 0 40px ${RED}, 0 8px 30px rgba(0,0,0,0.9)`,
+          }}
+        >
+          {w}
+        </div>
+      );
+    })}
+  </AbsoluteFill>
+);
+
+const calloutNote = (title: string, detail: string, color: string, big = false) => (
+  <div style={{ padding: "10px 20px", borderRadius: 12, background: "rgba(4,6,14,0.86)", border: `1.5px solid ${color}88`, boxShadow: `0 10px 30px rgba(0,0,0,0.6), 0 0 24px ${color}33`, textAlign: "center" }}>
+    <div style={{ ...zh(900), fontSize: big ? 46 : 40, color }}>{title}</div>
+    <div style={{ fontFamily: MONO.fontFamily, fontWeight: 700, fontSize: big ? 64 : 28, color: big ? color : "#fff", marginTop: 4, textShadow: big ? `0 0 30px ${color}` : undefined }}>{detail}</div>
+  </div>
+);
 
 const Checks: React.FC<{ f: number }> = ({ f }) => (
   <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", marginTop: -30 }}>
@@ -206,8 +265,15 @@ export const Discipline3D: React.FC = () => {
   if (f >= 475 && f < 615) highlight.push("loss");
   const spaceO = appear(f, 100, 26) * (1 - appear(f, 1040, 20) * 0.75);
   const blur = appear(f, 1040, 20) * 8;
-  const hit = cue("discipline", "hit", 600);
-  const flash = f >= hit && f < hit + 20 ? 1 - (f - hit) / 20 : 0;
+  const flash = f >= FLIP_AT && f < FLIP_AT + 20 ? 1 - (f - FLIP_AT) / 20 : 0;
+  const pulse = f >= FLIP_AT ? Math.exp(-(f - FLIP_AT) / 9) : 0;
+  const shake = f >= FLIP_AT && f < FLIP_AT + 12 ? (1 - (f - FLIP_AT) / 12) * 9 : 0;
+  // the leaks point at the exact numbers they change; then the result is called out
+  const callouts = {
+    win: { k: appear(f, WIN_AT, 14) * fadeOut(f, LEAKS_OUT, 12), color: C.amber, node: calloutNote(UI.takeProfitEarly, `${UI.avgWin} ${PB.win} → ${val.win.toFixed(1)}`, C.amber) },
+    loss: { k: appear(f, LOSS_AT, 14) * fadeOut(f, LEAKS_OUT, 12), color: RED, node: calloutNote(UI.holdLosers, `${UI.avgLoss} ${PB.loss} → ${val.loss.toFixed(1)}`, RED) },
+    result: { k: appear(f, FLIP_AT, 12) * fadeOut(f, 762, 12), color: RED, node: calloutNote(UI.flipNegative, "−0.8", RED, true) },
+  };
   // the doubling-down pits take the top of the frame, so the formula steps aside for them
   const formulaO = appear(f, 110) * fadeOut(f, 1040, 16) * (fadeOut(f, 768, 12) + appear(f, 905, 16));
   return (
@@ -217,13 +283,14 @@ export const Discipline3D: React.FC = () => {
         <Annotations f={f} />
       </AbsoluteFill>
       <AbsoluteFill style={{ background: RED, opacity: flash * 0.16, pointerEvents: "none" }} />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 120, display: "flex", justifyContent: "center", opacity: formulaO, transform: "scale(0.8)" }}>
-        <GlassCard rx={8} tint={val.p * val.win - (1 - val.p) * val.loss < 0 ? "255,77,109" : "120,170,255"}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 120, display: "flex", justifyContent: "center", opacity: formulaO, transform: `translate(${Math.sin(f * 7.3) * shake}px, ${Math.cos(f * 9.1) * shake}px) scale(0.8)` }}>
+        <GlassCard rx={8} clip={false} tint={val.p * val.win - (1 - val.p) * val.loss < 0 ? "255,77,109" : "120,170,255"}>
           <div style={{ padding: "22px 40px" }}>
-            <Formula show={interpolate(f, [110, 200], [0, 1], clamp)} values={val} numbers={appear(f, 220)} result={appear(f, 300)} size={56} highlight={highlight} />
+            <Formula show={interpolate(f, [110, 200], [0, 1], clamp)} values={val} numbers={appear(f, 220)} result={appear(f, 300)} size={56} highlight={highlight} callouts={callouts} resultPulse={pulse} />
           </div>
         </GlassCard>
       </div>
+      {f >= 770 && f < 910 && <Kinetic f={f} />}
       {f >= 1045 && <Checks f={f} />}
     </SceneShell>
   );

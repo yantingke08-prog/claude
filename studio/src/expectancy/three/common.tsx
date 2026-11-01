@@ -1,7 +1,9 @@
 // Shared toolkit for the 3D chapters: keyframed cameras, exact 3D -> screen projection for
 // crisp HTML labels, spatial glass cards, and studio lighting for solid geometry.
 import * as THREE from "three";
+import { Line } from "@react-three/drei";
 import { useCurrentFrame } from "remotion";
+import { MONO } from "../../lib/fonts";
 import { ease } from "../../lib/gsap";
 
 export type Cam = { pos: THREE.Vector3; target: THREE.Vector3; fov: number };
@@ -85,7 +87,9 @@ export const GlassCard: React.FC<{
   tint?: string;
   style?: React.CSSProperties;
   perspective?: number;
-}> = ({ children, rx = 0, ry = 0, z = 0, tint = "214,196,160", style, perspective = 1400 }) => {
+  /** false lets callouts hang outside the card (they are positioned relative to its content) */
+  clip?: boolean;
+}> = ({ children, rx = 0, ry = 0, z = 0, tint = "214,196,160", style, perspective = 1400, clip = true }) => {
   const frame = useCurrentFrame();
   const sheen = ((ry * 2 + frame * 0.15) % 200) - 50;
   return (
@@ -101,13 +105,14 @@ export const GlassCard: React.FC<{
           WebkitBackdropFilter: "blur(22px) saturate(150%)",
           border: `1px solid rgba(${tint},0.2)`,
           boxShadow: `0 40px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(${tint},0.12)`,
-          overflow: "hidden",
+          overflow: clip ? "hidden" : "visible",
         }}
       >
         <div
           style={{
             position: "absolute",
             inset: 0,
+            borderRadius: "inherit",
             pointerEvents: "none",
             background: `linear-gradient(105deg, transparent ${sheen}%, rgba(255,255,255,0.09) ${sheen + 10}%, transparent ${sheen + 22}%)`,
           }}
@@ -133,3 +138,54 @@ export const glassPlaneMat = (color: string, opacity: number) =>
 
 export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 export const span = (f: number, a: number, b: number) => clamp01((f - a) / (b - a));
+
+/**
+ * A value read out next to the data: dark glass behind the text and a coloured bar, so a
+ * green number never sinks into green columns (or red into red).
+ */
+export const ValueChip: React.FC<{ color: string; children: React.ReactNode; size?: number }> = ({ color, children, size = 24 }) => (
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "stretch",
+      gap: 10,
+      padding: "6px 14px 6px 8px",
+      borderRadius: 10,
+      background: "rgba(4,6,14,0.82)",
+      border: `1px solid ${color}55`,
+      boxShadow: "0 8px 26px rgba(0,0,0,0.55)",
+      fontFamily: MONO.fontFamily,
+      fontWeight: 700,
+      fontSize: size,
+      color,
+      whiteSpace: "nowrap",
+    }}
+  >
+    <span style={{ width: 4, borderRadius: 2, background: color, boxShadow: `0 0 10px ${color}` }} />
+    {children}
+  </div>
+);
+
+/**
+ * A dimension line in space, like an engineering drawing: a bar from `base` towards `tip`
+ * (grown by k) with end ticks along `tick` (half-length vector).
+ */
+export const Bracket: React.FC<{ base: THREE.Vector3; tip: THREE.Vector3; tick: THREE.Vector3; k: number; color: string; width?: number }> = ({
+  base,
+  tip,
+  tick,
+  k,
+  color,
+  width = 2.5,
+}) => {
+  if (k <= 0.01) return null;
+  const end = base.clone().lerp(tip, ease("power3.out")(Math.min(1, k)));
+  const seg = (a: THREE.Vector3, b: THREE.Vector3) => [a.toArray(), b.toArray()] as [number, number, number][];
+  return (
+    <>
+      <Line points={seg(base, end)} color={color} lineWidth={width} transparent opacity={Math.min(1, k * 2)} />
+      <Line points={seg(base.clone().sub(tick), base.clone().add(tick))} color={color} lineWidth={width} transparent opacity={Math.min(1, k * 2)} />
+      {k >= 0.98 && <Line points={seg(tip.clone().sub(tick), tip.clone().add(tick))} color={color} lineWidth={width} />}
+    </>
+  );
+};

@@ -7,14 +7,14 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import * as THREE from "three";
 import { C } from "../../components/Hud";
 import { CameraRig, Stage } from "../../components/Stage";
-import { MONO, zh } from "../../lib/fonts";
+import { DISPLAY, MONO, zh } from "../../lib/fonts";
 import { ease } from "../../lib/gsap";
 import { SOFT_POINT_FRAG } from "../../lib/glsl";
 import { mulberry32 } from "../../lib/rng";
 import { SceneShell } from "../components/SceneShell";
 import { appear, fadeOut, GREEN, RED } from "../components/Charts";
 import { hookPathA, hookPathB } from "../sim.ts";
-import { cue, SCRIPT } from "../timeline.ts";
+import { cue, scene, SCRIPT } from "../timeline.ts";
 import { World } from "../three/World";
 import { GlassCard, glassPlaneMat, Label, makeCamera, projector, span, v, withShake, type Shot } from "../three/common";
 
@@ -52,11 +52,8 @@ const SHOTS: Record<string, Shot> = {
     const h = headA(CRASH);
     return { pos: v(h.x - 9.5, 8, 16), target: v(h.x - 2.8, 3.9, 0), fov: 42 };
   },
-  orbit: (f) => {
-    const h = headA(CRASH);
-    const a = 0.4 + (f - CRASH) * 0.004;
-    return { pos: v(h.x - 3 + Math.sin(a) * 12, 7, Math.cos(a) * 12), target: v(h.x - 3, 4, 0), fov: 42 };
-  },
+  // after the crash, pull back until both fates are in one frame: A through the floor, B on top
+  versus: (f) => ({ pos: v(10.5 + (f - 380) * 0.006, 6.2, 31 - (f - 380) * 0.01), target: v(10, 4.6, 0), fov: 40 }),
   wide: () => ({ pos: v(9.5, 21, 25), target: v(10, 4.5, 0), fov: 40 }),
 };
 const camAt = makeCamera(SHOTS, [
@@ -64,9 +61,9 @@ const camAt = makeCamera(SHOTS, [
   [70, "track"],
   [290, "track"],
   [CRASH, "crash"],
-  [338, "crash"],
-  [420, "orbit"],
-  [TITLE_AT, "orbit"],
+  [345, "crash"],
+  [395, "versus"],
+  [TITLE_AT, "versus"],
   [520, "wide"],
   [600, "wide"],
 ]);
@@ -299,35 +296,70 @@ const Tags: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-export const Hook3D: React.FC = () => {
-  const f = useCurrentFrame();
-  const [line1, line2] = SCRIPT.title.split("，");
-  const l1 = appear(f, TITLE_AT + 30, 26);
-  const l2 = appear(f, TITLE_AT + 46, 26);
-  const veil = appear(f, TITLE_AT + 20, 40) * 0.55;
-  const pct = (s: string, first: boolean) =>
+const TYPE_AT = cue("hook", "type");
+const TYPE_END = scene("hook").cues.find((c) => c.type === "type")!.to!;
+const CARD_AT = scene("hook").cues.filter((c) => c.type === "pop").map((c) => c.at!);
+
+/** The question types itself out, small - it is only the lead-in to the three answers. */
+const Question: React.FC<{ f: number }> = ({ f }) => {
+  const title = SCRIPT.title;
+  const n = Math.floor(interpolate(f, [TYPE_AT, TYPE_END], [0, title.length], clamp));
+  const shown = title.slice(0, n);
+  const pct = (s: string) =>
     s.split(/(\d+%)/).map((p, i) =>
       /\d+%/.test(p) ? (
-        <span key={i} style={{ color: first ? C.gold : C.steel, textShadow: "0 0 30px currentColor" }}>
+        <span key={i} style={{ color: p.startsWith("40") ? C.gold : C.steel }}>
           {p}
         </span>
       ) : (
         <span key={i}>{p}</span>
       ),
     );
+  const caret = f < TYPE_END + 20 && Math.floor(f / 7) % 2 === 0;
+  return (
+    <div style={{ position: "absolute", left: 0, right: 0, top: 230, textAlign: "center", ...zh(700), fontSize: 50, color: "#fff", letterSpacing: 2 }}>
+      {pct(shown)}
+      <span style={{ display: "inline-block", width: 4, height: 52, marginLeft: 6, verticalAlign: "middle", background: C.gold, opacity: caret ? 1 : 0 }} />
+    </div>
+  );
+};
+
+/** Three answer cards flip up out of the floor, one per beat. */
+const Keywords: React.FC<{ f: number }> = ({ f }) => (
+  <div style={{ position: "absolute", left: 0, right: 0, top: 400, display: "flex", justifyContent: "center", gap: 46, perspective: 1400 }}>
+    {UI.keywords.map((kw, i) => {
+      const at = CARD_AT[i];
+      const k = ease("back.out(1.7)")(span(f, at - 3, at + 12));
+      const o = span(f, at - 3, at + 3);
+      const glow = Math.max(0, 1 - (f - at) / 24) * (f >= at ? 1 : 0);
+      const sweep = interpolate(f, [at + 4, at + 26], [-30, 130], clamp);
+      return (
+        <GlassCard key={kw.zh} clip rx={(1 - k) * 75} ry={(i - 1) * -6} style={{ opacity: o, transform: `translateY(${(1 - k) * 90}px)` }}>
+          <div style={{ width: 380, height: 230, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", position: "relative", background: "rgba(5,7,15,0.72)", boxShadow: `inset 0 0 ${40 + glow * 60}px rgba(242,196,109,${0.12 + glow * 0.35})` }}>
+            <div style={{ position: "absolute", top: 0, left: 40, right: 40, height: 3, background: C.gold, boxShadow: `0 0 18px ${C.gold}`, transform: `scaleX(${k})` }} />
+            <div style={{ position: "absolute", left: 24, top: 18, fontFamily: MONO.fontFamily, fontSize: 18, color: C.gold, letterSpacing: 3 }}>0{i + 1}</div>
+            <div style={{ ...zh(900), fontSize: 76, color: "#fff", letterSpacing: 6, textShadow: `0 0 ${20 + glow * 30}px rgba(242,196,109,0.6)` }}>{kw.zh}</div>
+            <div style={{ fontFamily: DISPLAY.fontFamily, fontWeight: 300, fontSize: 15, letterSpacing: 4, color: C.dim, marginTop: 10 }}>{kw.en}</div>
+            <div style={{ position: "absolute", inset: 0, background: `linear-gradient(105deg, transparent ${sweep - 10}%, rgba(255,255,255,0.18) ${sweep}%, transparent ${sweep + 10}%)` }} />
+          </div>
+        </GlassCard>
+      );
+    })}
+  </div>
+);
+
+export const Hook3D: React.FC = () => {
+  const f = useCurrentFrame();
+  const veil = appear(f, TITLE_AT, 30) * 0.65;
   return (
     <SceneShell id="hook">
       <AbsoluteFill style={{ opacity: appear(f, 0, 20) }}>
         <Space f={f} />
       </AbsoluteFill>
       <Tags f={f} />
-      <AbsoluteFill style={{ background: `radial-gradient(ellipse at center, rgba(3,4,11,${veil}) 0%, rgba(3,4,11,${veil * 0.6}) 70%)` }} />
-      {f >= TITLE_AT + 20 && (
-        <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", ...zh(900), color: "#fff", textAlign: "center", marginTop: -60, perspective: 1200 }}>
-          <div style={{ fontSize: 92, opacity: l1, transform: `translateY(${(1 - l1) * 40}px) rotateX(${(1 - l1) * 40}deg)`, letterSpacing: 4 }}>{pct(line1, true)}，</div>
-          <div style={{ fontSize: 92, opacity: l2, transform: `translateY(${(1 - l2) * 40}px) rotateX(${(1 - l2) * 40}deg)`, letterSpacing: 4, marginTop: 10 }}>{pct(line2, false)}</div>
-        </AbsoluteFill>
-      )}
+      <AbsoluteFill style={{ background: `radial-gradient(ellipse at center, rgba(3,4,11,${veil}) 0%, rgba(3,4,11,${veil * 0.75}) 70%)` }} />
+      {f >= TYPE_AT && <Question f={f} />}
+      {f >= CARD_AT[0] - 4 && <Keywords f={f} />}
     </SceneShell>
   );
 };

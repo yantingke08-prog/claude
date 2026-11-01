@@ -1,9 +1,10 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { C } from "../../components/Hud";
 import { CameraRig, Stage } from "../../components/Stage";
 import { zh } from "../../lib/fonts";
 import { SceneShell } from "../components/SceneShell";
 import { appear } from "../components/Charts";
+import { ease } from "../../lib/gsap";
 import { LLN_TRADES } from "../sim.ts";
 import { cue, SCRIPT } from "../timeline.ts";
 import { GlassCard, v } from "../three/common";
@@ -28,15 +29,61 @@ const Backdrop: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
+const STAMP_AT = cue("outro", "stamp");
+const SEAL = "#e2483a";
+
+/**
+ * The closing seal: drops onto the dimmed frame, lands with a jolt and an ink ring, and the
+ * film ends frozen on it. Rough edges come from a turbulence displacement, like real ink.
+ */
+const Stamp: React.FC<{ f: number }> = ({ f }) => {
+  const k = ease("power4.in")(Math.min(1, Math.max(0, (f - STAMP_AT + 9) / 9)));
+  if (k <= 0) return null;
+  const age = f - STAMP_AT;
+  const jolt = age >= 0 && age < 8 ? Math.sin(age * 3) * (1 - age / 8) * 0.04 : 0;
+  const ring = age >= 0 ? Math.min(1, age / 18) : 0;
+  const [l1, l2] = UI.stamp;
+  return (
+    <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", marginTop: -40 }}>
+      <svg width={0} height={0} style={{ position: "absolute" }}>
+        <filter id="ink">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} seed={7} />
+          <feDisplacementMap in="SourceGraphic" scale={5} />
+        </filter>
+      </svg>
+      {age >= 0 && (
+        <div style={{ position: "absolute", width: 560, height: 560, borderRadius: 280, border: `3px solid ${SEAL}`, opacity: (1 - ring) * 0.5, transform: `scale(${0.7 + ring * 0.7})` }} />
+      )}
+      <div
+        style={{
+          transform: `rotate(-7deg) scale(${2.6 - 1.6 * k + jolt})`,
+          opacity: Math.min(1, k * 1.5),
+          filter: "url(#ink)",
+          border: `9px solid ${SEAL}`,
+          borderRadius: 18,
+          padding: "26px 54px",
+          boxShadow: `inset 0 0 0 5px rgba(3,4,11,0.9), inset 0 0 0 9px ${SEAL}`,
+          color: SEAL,
+          textAlign: "center",
+          background: "rgba(226,72,58,0.06)",
+        }}
+      >
+        <div style={{ ...zh(900), fontSize: 120, letterSpacing: 22, lineHeight: 1.15 }}>{l1}</div>
+        <div style={{ ...zh(900), fontSize: 92, letterSpacing: 40, lineHeight: 1.2, marginTop: 6 }}>{l2}</div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const Outro3D: React.FC = () => {
   const f = useCurrentFrame();
-  const { durationInFrames } = useVideoConfig();
   const [q1, q2] = UI.quote;
   const l1 = appear(f, cue("outro", "ping") - 5, 26);
   const l2 = appear(f, cue("outro", "hit") - 4, 20);
   const checks = appear(f, 150, 24);
   const disc = appear(f, 220, 24);
-  const black = interpolate(f, [durationInFrames - 30, durationInFrames - 2], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  // everything settles back and dims before the seal comes down; the film ends frozen on it
+  const dim = interpolate(f, [STAMP_AT - 50, STAMP_AT - 6], [0, 0.8], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   return (
     <SceneShell id="outro">
       <AbsoluteFill style={{ opacity: appear(f, 0, 30) * 0.55 }}>
@@ -84,7 +131,8 @@ export const Outro3D: React.FC = () => {
           </div>
         </GlassCard>
       </div>
-      <AbsoluteFill style={{ background: "#000", opacity: black }} />
+      <AbsoluteFill style={{ background: "#03040b", opacity: dim }} />
+      <Stamp f={f} />
     </SceneShell>
   );
 };

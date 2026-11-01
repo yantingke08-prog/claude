@@ -1,8 +1,9 @@
 // Chapter 3 spaces.
 //
 // Sizing runways:  x = trade (0.06 / trade)   y = log10(wealth) x 1.4   z = person
-//   2% group in lanes z = 0 .. -3, 40% group in lanes z = -6 .. -9. Same strategy, same
-//   edge; only the bet size differs. A red glass floor at "lost 90%" (y = -1 decade).
+//   The 2% group runs on the left, the 40% group on the right (offset in x), each in lanes
+//   z = 0 .. -3, so the comparison stays left/right from any camera, including head-on.
+//   Same strategy, same edge; only the bet size differs.
 // Coin game:       x = log10(wealth) x 1.3, particles = players, stacked by count.
 import { useMemo } from "react";
 import { Line } from "@react-three/drei";
@@ -17,8 +18,9 @@ export const SKY = 1.4;
 export const LOG_FLOOR = -6;
 export const SHOWN = 300;
 const LANE = 0.01;
-export const GROUP_Z = { s2: 0, s40: -6 } as const;
 export const RUN_LEN = SIZING_TRADES * SKX;
+export const GROUP_X = { s2: 0, s40: RUN_LEN + 6 } as const;
+export const GROUP_Z = { s2: 0, s40: 0 } as const;
 
 export const LOG_CEIL = 3;
 // clipped to [1/10^6, x1000]: the far tails would otherwise dominate the frame
@@ -62,7 +64,7 @@ export const Runway: React.FC<{ which: "s2" | "s40"; n: number; color: string; a
       const z = GROUP_Z[which] - t * LANE;
       for (let i = 0; i < segs; i++) {
         for (const j of [i, i + 1]) {
-          pos[k * 3] = j * SKX;
+          pos[k * 3] = GROUP_X[which] + j * SKX;
           pos[k * 3 + 1] = yOf(logW[t * stride + j]);
           pos[k * 3 + 2] = z;
           aI[k] = j;
@@ -120,7 +122,7 @@ export const RunwayHeads: React.FC<{ which: "s2" | "s40"; n: number; color: stri
     const a = logW[t * stride + k];
     const b = logW[t * stride + Math.min(SIZING_TRADES, k + 1)];
     const lw = a + (b - a) * fr;
-    pos.setXYZ(t, n * SKX, yOf(lw), GROUP_Z[which] - t * LANE);
+    pos.setXYZ(t, GROUP_X[which] + n * SKX, yOf(lw), GROUP_Z[which] - t * LANE);
     if (lw < -1) col.setXYZ(t, 0.55, 0.12, 0.18);
     else col.setXYZ(t, base.r, base.g, base.b);
   }
@@ -143,7 +145,7 @@ export const MedianPath: React.FC<{ which: "s2" | "s40"; n: number; color: strin
     });
   }, [which]);
   const pts: [number, number, number][] = [];
-  for (let i = 0; i <= Math.min(SIZING_TRADES, Math.floor(n)); i += 2) pts.push([i * SKX, yOf(meds[i]), GROUP_Z[which] + 0.3]);
+  for (let i = 0; i <= Math.min(SIZING_TRADES, Math.floor(n)); i += 2) pts.push([GROUP_X[which] + i * SKX, yOf(meds[i]), GROUP_Z[which] + 0.3]);
   if (pts.length < 2 || opacity <= 0.01) return null;
   return <Line points={pts} color={color} lineWidth={6} transparent opacity={opacity} />;
 };
@@ -157,8 +159,12 @@ export const SizingPlanes: React.FC<{ opacity: number }> = ({ opacity }) => {
   const zMax = 0.6;
   return (
     <>
-      <Line points={[[-0.5, -SKY, zMax], [RUN_LEN + 0.5, -SKY, zMax]]} color="#ff4d6d" lineWidth={2.5} transparent opacity={opacity} dashed dashSize={0.5} gapSize={0.3} />
-      <Line points={[[-0.5, 0, zMax], [RUN_LEN + 0.5, 0, zMax]]} color="#ffffff" lineWidth={1.5} transparent opacity={opacity * 0.6} />
+      {Object.values(GROUP_X).map((x0) => (
+        <group key={x0}>
+          <Line points={[[x0 - 0.5, -SKY, zMax], [x0 + RUN_LEN + 0.5, -SKY, zMax]]} color="#ff4d6d" lineWidth={2.5} transparent opacity={opacity} dashed dashSize={0.5} gapSize={0.3} />
+          <Line points={[[x0 - 0.5, 0, zMax], [x0 + RUN_LEN + 0.5, 0, zMax]]} color="#ffffff" lineWidth={1.5} transparent opacity={opacity * 0.6} />
+        </group>
+      ))}
     </>
   );
 };

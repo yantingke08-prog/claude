@@ -8,6 +8,7 @@ import { appear, fadeOut, Formula, GREEN, RED } from "../components/Charts";
 import { STRATEGY_B } from "../sim.ts";
 import { cue, SCRIPT } from "../timeline.ts";
 import { GlassCard, Label, makeCamera, projector, StudioLights, v, type Shot } from "../three/common";
+import { energyMaterial, setEnergy, unitColumn } from "../three/Energy";
 import { KH, Tray, trayAnchors, TRAY_W, type TrayParams } from "../three/Trays";
 import { World } from "../three/World";
 
@@ -60,18 +61,18 @@ const camAt = makeCamera(SHOTS, [
 
 // ---------------- 3D ----------------
 
+const PIT_GEO = unitColumn();
+const PIT_MATS = DOUBLE.map(() => energyMaterial("#ff4d6d", false));
+
 const Pits: React.FC<{ f: number }> = ({ f }) => (
   <group position={[PIT_X, 0, 0]}>
     {DOUBLE.map((s, i) => {
       const k = ease("elastic.out(1, 0.6)")(Math.min(1, Math.max(0, (f - 785 - i * 16) / 18)));
       const d = s * 0.28 * k;
       if (d <= 0.001) return null;
-      return (
-        <mesh key={s} position={[i * 0.75, -d / 2, 0]}>
-          <boxGeometry args={[0.55, d, 0.55]} />
-          <meshStandardMaterial color="#ff4d6d" emissive="#a3132f" emissiveIntensity={0.4 + i * 0.15} roughness={0.35} transparent opacity={0.92} />
-        </mesh>
-      );
+      // deeper pits burn a little hotter
+      setEnergy(PIT_MATS[i], 0.8 + i * 0.12, f / 30);
+      return <mesh key={s} geometry={PIT_GEO} material={PIT_MATS[i]} position={[i * 0.75, -d, 0]} scale={[0.55, d, 0.55]} />;
     })}
     <mesh position={[1.5, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[4.6, 1.6]} />

@@ -5,6 +5,7 @@ import { C } from "../components/Hud";
 import { zh } from "../lib/fonts";
 import { Ambient } from "./components/Ambient";
 import { CleanContext, ProgressBar } from "./components/Chrome";
+import { Cover } from "./Cover";
 import { HookCharts } from "./scenes/Hook";
 import { LargeNumbers3D } from "./scenes/LargeNumbers3D";
 import { Hook3D } from "./scenes/Hook3D";
@@ -15,6 +16,7 @@ import { Outro3D } from "./scenes/Outro3D";
 import { SCRIPT, sceneStart, type SceneId } from "./timeline.ts";
 
 const SCENES: Record<SceneId, React.FC> = {
+  cover: Cover,
   hook: Hook3D,
   expectancy: Expectancy3D,
   lln: LargeNumbers3D,

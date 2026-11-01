@@ -2,10 +2,12 @@
 // column by its payoff, a loss sinks a red shaft by its loss. Sorted, the tray seen from
 // the side *is* the area chart: width = probability (rows), height = payoff.
 import { useMemo } from "react";
+import { useCurrentFrame } from "remotion";
 import * as THREE from "three";
 import { ease } from "../../lib/gsap";
 import { mulberry32 } from "../../lib/rng";
 import { clamp01, v } from "./common";
+import { depthTwin, energyMaterial, setEnergy, unitColumn } from "./Energy";
 
 export const SLOT = 0.34;
 export const GAP = 0.05;
@@ -65,23 +67,17 @@ export const Tray: React.FC<{
   dim?: number;
   plate?: number;
 }> = ({ params, win = params.win, loss = params.loss, pop, sort, position, seed, dim = 0, plate = 1 }) => {
-  const { winMesh, lossMesh, plan } = useMemo(() => {
+  const frame = useCurrentFrame();
+  const { winMesh, lossMesh, winDepth, lossDepth, plan } = useMemo(() => {
     const outcomes = outcomesFor(params.p, seed);
     let w = 0;
     let l = Math.round(params.p * N);
     const plan = outcomes.map((won, i) => ({ won, from: i, to: won ? w++ : l++ }));
-    const geo = new THREE.BoxGeometry(1, 1, 1);
-    geo.translate(0, 0.5, 0);
-    const mk = (color: string, emissive: string) =>
-      new THREE.InstancedMesh(
-        geo,
-        new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 0.55, roughness: 0.35, metalness: 0.1, transparent: true, opacity: 0.92 }),
-        N,
-      );
-    const winMesh = mk("#3ff2a4", "#11a86a");
-    const lossMesh = mk("#ff4d6d", "#a3132f");
+    const geo = unitColumn();
+    const winMesh = new THREE.InstancedMesh(geo, energyMaterial("#3ff2a4", true), N);
+    const lossMesh = new THREE.InstancedMesh(geo, energyMaterial("#ff4d6d", false), N);
     winMesh.frustumCulled = lossMesh.frustumCulled = false;
-    return { winMesh, lossMesh, plan };
+    return { winMesh, lossMesh, winDepth: depthTwin(winMesh), lossDepth: depthTwin(lossMesh), plan };
   }, [params.p, seed]);
 
   let wi = 0;
@@ -103,13 +99,15 @@ export const Tray: React.FC<{
     if (t.won) winMesh.setMatrixAt(wi++, tmp.matrix);
     else lossMesh.setMatrixAt(li++, tmp.matrix);
   });
-  winMesh.count = wi;
-  lossMesh.count = li;
+  winMesh.count = winDepth.count = wi;
+  lossMesh.count = lossDepth.count = li;
   winMesh.instanceMatrix.needsUpdate = lossMesh.instanceMatrix.needsUpdate = true;
-  for (const m of [winMesh, lossMesh]) (m.material as THREE.MeshStandardMaterial).opacity = 0.92 * (1 - dim * 0.75);
+  for (const m of [winMesh, lossMesh]) setEnergy(m.material as THREE.Material, 1 - dim * 0.75, frame / 30);
 
   return (
     <group position={position}>
+      <primitive object={winDepth} />
+      <primitive object={lossDepth} />
       <primitive object={winMesh} />
       <primitive object={lossMesh} />
       <Plate opacity={plate * (1 - dim * 0.6)} />

@@ -47,7 +47,8 @@ writeFileSync(join(out, "subtitles.zh-Hans.srt"), srt, "utf-8");
 
 // ---- description with chapters ----
 const chapterName = (s: Script["scenes"][number]) => (s.chapter ? `${s.chapter.index}：${s.chapter.title}` : s.id === "hook" ? "开场：两个交易者" : "结语");
-const chapters = script.scenes.map((s) => `${clock(s.id === "hook" ? 0 : starts[s.id] + script.transition / 2)} ${chapterName(s)}`);
+// the cold-open cover is part of the opening chapter
+const chapters = script.scenes.filter((s) => s.id !== "cover").map((s) => `${clock(s.id === "hook" ? 0 : starts[s.id] + script.transition / 2)} ${chapterName(s)}`);
 
 const md = `# YouTube 上传资料
 

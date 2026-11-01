@@ -53,6 +53,7 @@ export const ChapterCard: React.FC<{ chapter: NonNullable<Scene["chapter"]>; acc
 };
 
 const CHAPTER_COLORS: Record<string, string> = {
+  cover: C.gold,
   hook: C.text,
   // one warm key colour for the whole film (the reference's cohesion comes from this)
   expectancy: C.gold,

@@ -1,7 +1,8 @@
+import { useContext } from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { scene, SCRIPT, type SceneId } from "../timeline.ts";
 import { Captions } from "./Captions";
-import { accentOf, ChapterCard } from "./Chrome";
+import { accentOf, ChapterCard, CleanContext } from "./Chrome";
 
 /**
  * Every scene = its own visuals + the chapter card (if any) + burned-in captions.
@@ -10,6 +11,7 @@ import { accentOf, ChapterCard } from "./Chrome";
  */
 export const SceneShell: React.FC<{ id: SceneId; children: React.ReactNode }> = ({ id, children }) => {
   const frame = useCurrentFrame();
+  const clean = useContext(CleanContext);
   const s = scene(id);
   const accent = accentOf(id);
   const isLast = SCRIPT.scenes[SCRIPT.scenes.length - 1].id === id;
@@ -18,8 +20,8 @@ export const SceneShell: React.FC<{ id: SceneId; children: React.ReactNode }> = 
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{ opacity: out }}>{children}</AbsoluteFill>
-      {s.chapter && <ChapterCard chapter={s.chapter} accent={accent} />}
-      <Captions captions={s.captions} accent={accent === "#e9f1ff" ? "#5ce8ff" : accent} />
+      {!clean && s.chapter && <ChapterCard chapter={s.chapter} accent={accent} />}
+      {!clean && <Captions captions={s.captions} accent={accent === "#e9f1ff" ? "#5ce8ff" : accent} />}
     </AbsoluteFill>
   );
 };

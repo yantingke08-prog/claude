@@ -64,12 +64,17 @@ const PostMountRender: React.FC = () => {
 };
 
 /** Drives the camera from props (i.e. from the frame), never from a clock. */
-export const CameraRig: React.FC<{ position: [number, number, number]; target?: [number, number, number]; roll?: number }> = ({
+export const CameraRig: React.FC<{ position: [number, number, number]; target?: [number, number, number]; roll?: number; fov?: number }> = ({
   position,
   target = [0, 0, 0],
   roll = 0,
+  fov,
 }) => {
   const camera = useThree((s) => s.camera);
+  if (fov !== undefined && camera instanceof THREE.PerspectiveCamera && camera.fov !== fov) {
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  }
   camera.position.set(...position);
   camera.up.set(Math.sin(roll), Math.cos(roll), 0);
   camera.lookAt(...target);

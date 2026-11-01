@@ -1,17 +1,18 @@
-import { AbsoluteFill, Audio, staticFile } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
 import { C } from "../components/Hud";
 import { zh } from "../lib/fonts";
 import { Ambient } from "./components/Ambient";
-import { ProgressBar } from "./components/Chrome";
+import { CleanContext, ProgressBar } from "./components/Chrome";
 import { Hook, HookCharts } from "./scenes/Hook";
 import { Expectancy } from "./scenes/Expectancy";
 import { LargeNumbers } from "./scenes/LargeNumbers";
 import { Sizing } from "./scenes/Sizing";
 import { Discipline } from "./scenes/Discipline";
 import { ExpectancyOutro } from "./scenes/Outro";
-import { SCRIPT, type SceneId } from "./timeline.ts";
+import { LargeNumbers3D } from "./scenes/LargeNumbers3D";
+import { SCRIPT, sceneStart, type SceneId } from "./timeline.ts";
 
 const SCENES: Record<SceneId, React.FC> = {
   hook: Hook,
@@ -83,4 +84,26 @@ export const ExpectancyThumbnail: React.FC = () => (
       <div>{highlightPct(SCRIPT.ui.thumbBottom, "#ff4d6d")}</div>
     </div>
   </AbsoluteFill>
+);
+
+// ---------------- 3D direction sample: chapter 2, frames 300-1080 ----------------
+
+export const SAMPLE_FROM = 300;
+export const SAMPLE_FRAMES = 780;
+
+/**
+ * Review cut of the rebuilt law-of-large-numbers segment, with the matching slice of the
+ * score. `clean` hides captions, chapter card and decorative background, leaving only
+ * the subject, to judge whether the picture carries the explanation on its own.
+ */
+export const ExpectancySample: React.FC<{ clean?: boolean }> = ({ clean = false }) => (
+  <CleanContext.Provider value={clean}>
+    <AbsoluteFill style={{ backgroundColor: C.bg }}>
+      {!clean && <Ambient />}
+      <Sequence from={-SAMPLE_FROM}>
+        <LargeNumbers3D />
+      </Sequence>
+      {!clean && <Audio src={staticFile("expectancy-score.wav")} trimBefore={sceneStart("lln") + SAMPLE_FROM} />}
+    </AbsoluteFill>
+  </CleanContext.Provider>
 );

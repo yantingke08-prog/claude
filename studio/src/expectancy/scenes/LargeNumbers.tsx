@@ -12,7 +12,7 @@ import { SCRIPT } from "../timeline.ts";
 const UI = SCRIPT.ui;
 
 /** One trade = one draw from a 40/60 bar. A ball rattles along it and settles in the red. */
-const SingleTrade: React.FC<{ frame: number }> = ({ frame }) => {
+export const SingleTrade: React.FC<{ frame: number }> = ({ frame }) => {
   const a = appear(frame, 205);
   const out = fadeOut(frame, 312, 12);
   const W = 1100;

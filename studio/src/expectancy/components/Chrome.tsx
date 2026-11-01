@@ -1,3 +1,4 @@
+import { createContext } from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import { C } from "../../components/Hud";
 import { DISPLAY, MONO, zh } from "../../lib/fonts";
@@ -88,3 +89,6 @@ export const SimTag: React.FC<{ label: string; style?: React.CSSProperties }> = 
 );
 
 export const totalFrames = TOTAL_FRAMES;
+
+/** Review mode: hides captions, chapter cards and decorative backgrounds so only the subject remains. */
+export const CleanContext = createContext(false);

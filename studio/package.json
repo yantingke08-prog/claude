@@ -12,7 +12,12 @@
     "exp:audio": "python scripts/score.py src/expectancy/script.json public/expectancy-score.wav",
     "exp:publish": "node --no-warnings scripts/export-youtube.ts",
     "exp:thumbnail": "remotion still ExpectancyThumbnail publish/expectancy/thumbnail.png",
-    "exp:render": "remotion render Expectancy out/expectancy.mp4"
+    "exp:render": "remotion render Expectancy out/expectancy.mp4",
+    "render:gpu": "remotion render Showreel out/showreel.mp4 --gl=angle --concurrency=50%",
+    "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
+    "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
+    "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

@@ -1,7 +1,7 @@
 import { Config } from "@remotion/cli/config";
 
 // No GPU on this machine: SwiftShader via ANGLE gives deterministic WebGL in headless Chrome.
-// On a machine with a real GPU, switch to "angle" for a large speed-up.
+// On a machine with a real GPU use the *:gpu npm scripts (they pass --gl=angle, which overrides this).
 Config.setChromiumOpenGlRenderer("swangle");
 Config.setVideoImageFormat("jpeg");
 Config.setJpegQuality(95);

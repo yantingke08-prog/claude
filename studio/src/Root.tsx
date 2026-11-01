@@ -5,7 +5,7 @@ import { GlobeScene } from "./scenes/GlobeScene";
 import { WaveScene } from "./scenes/WaveScene";
 import { Outro } from "./scenes/Outro";
 import { TL, TOTAL_FRAMES } from "./lib/timeline";
-import { ExpectancyThumbnail, ExpectancyVideo, sceneComposition } from "./expectancy/ExpectancyVideo";
+import { ExpectancySample, ExpectancyThumbnail, ExpectancyVideo, SAMPLE_FRAMES, sceneComposition } from "./expectancy/ExpectancyVideo";
 import { SCRIPT as EXP, TOTAL_FRAMES as EXP_FRAMES, type SceneId } from "./expectancy/timeline.ts";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
@@ -24,6 +24,8 @@ export const RemotionRoot: React.FC = () => (
     </Folder>
     <Folder name="Expectancy">
       <Composition id="Expectancy" component={ExpectancyVideo} durationInFrames={EXP_FRAMES} {...expBase} />
+      <Composition id="Exp-lln-3d-sample" component={ExpectancySample} durationInFrames={SAMPLE_FRAMES} {...expBase} defaultProps={{ clean: false }} />
+      <Composition id="Exp-lln-3d-clean" component={ExpectancySample} durationInFrames={SAMPLE_FRAMES} {...expBase} defaultProps={{ clean: true }} />
       <Still id="ExpectancyThumbnail" component={ExpectancyThumbnail} width={1280} height={720} />
       {EXP_SCENES.map((s) => (
         <Composition key={s.id} id={`Exp-${s.id}`} component={s.component} durationInFrames={s.frames} {...expBase} />

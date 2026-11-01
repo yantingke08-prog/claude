@@ -560,6 +560,14 @@
     "tails": "反面",
     "avgPerRound": "平均每把",
     "players": "10000 人",
-    "losingMoney": "亏钱的人"
+    "losingMoney": "亏钱的人",
+    "oneTrader": "其中一个人",
+    "finishLine": "第 1000 笔",
+    "zeroPlane": "盈亏 = 0",
+    "evPlane": "期望值：每笔 +0.4",
+    "distribution": "1000 人第 1000 笔时的盈亏分布",
+    "axisTrades": "交易笔数",
+    "axisPnl": "累计盈亏",
+    "eachDot": "每个光点 = 一个人"
   }
 }

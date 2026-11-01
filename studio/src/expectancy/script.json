@@ -561,6 +561,12 @@
     "avgPerRound": "平均每把",
     "players": "10000 人",
     "losingMoney": "亏钱的人",
+    "farFields": [
+      { "id": "ridges", "name": "现版 · 山脊", "note": "参照片的思路：多层山脊剪影" },
+      { "id": "skyline", "name": "A · K线天际线", "note": "地平线上的城市，每栋楼都是一根K线，天线是影线" },
+      { "id": "lattice", "name": "B · 分布点阵海", "note": "点阵地形，每座山都是一条正态分布曲线，雷达扫过" },
+      { "id": "orbit", "name": "C · 轨道巨星", "note": "线框行星从地平线升起，遮住光源，数据环绕它运行" }
+    ],
     "oneTrader": "其中一个人",
     "finishLine": "第 1000 笔",
     "zeroPlane": "盈亏 = 0",

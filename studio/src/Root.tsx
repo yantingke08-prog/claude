@@ -6,6 +6,7 @@ import { WaveScene } from "./scenes/WaveScene";
 import { Outro } from "./scenes/Outro";
 import { TL, TOTAL_FRAMES } from "./lib/timeline";
 import { ExpectancySample, ExpectancyThumbnail, ExpectancyVideo, SAMPLE_FRAMES, sceneComposition } from "./expectancy/ExpectancyVideo";
+import { FAR_SHOWCASE_FRAMES, FarFieldShowcase } from "./expectancy/FarFieldShowcase";
 import { SCRIPT as EXP, TOTAL_FRAMES as EXP_FRAMES, type SceneId } from "./expectancy/timeline.ts";
 import { LvpEndCard } from "./lvp/EndCard";
 import { LvpV1Seeing } from "./lvp/V1Seeing";
@@ -31,6 +32,7 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="Expectancy" component={ExpectancyVideo} durationInFrames={EXP_FRAMES} {...expBase} />
       <Composition id="Exp-lln-3d-sample" component={ExpectancySample} durationInFrames={SAMPLE_FRAMES} {...expBase} defaultProps={{ clean: false }} />
       <Composition id="Exp-lln-3d-clean" component={ExpectancySample} durationInFrames={SAMPLE_FRAMES} {...expBase} defaultProps={{ clean: true }} />
+      <Composition id="Exp-far-fields" component={FarFieldShowcase} durationInFrames={FAR_SHOWCASE_FRAMES} {...expBase} />
       <Still id="ExpectancyThumbnail" component={ExpectancyThumbnail} width={1280} height={720} />
       {EXP_SCENES.map((s) => (
         <Composition key={s.id} id={`Exp-${s.id}`} component={s.component} durationInFrames={s.frames} {...expBase} />

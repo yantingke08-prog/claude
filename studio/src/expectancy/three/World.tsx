@@ -6,12 +6,14 @@
 //           rim-lit on the side facing the sun; a dark ground with a faint sun reflection
 //   near  - a few drifting dust motes catching the light
 //
-// The data lives above the ground in front of the sun. Everything here is kept well below
+// The far layer is switchable (FAR_FIELD): ridges, or one of the tech far fields in
+// FarFields.tsx. The data lives above the ground in front of the sun. Everything here is kept well below
 // the bloom threshold: the environment sets the mood, the data stays the brightest thing.
 import { useMemo } from "react";
 import * as THREE from "three";
 import { SOFT_POINT_FRAG } from "../../lib/glsl";
 import { mulberry32 } from "../../lib/rng";
+import { Lattice, Orbit, Skyline } from "./FarFields";
 
 export const WORLD = {
   zenith: new THREE.Color("#02040a"),
@@ -21,7 +23,14 @@ export const WORLD = {
   rim: new THREE.Color("#d9a35a"),
 };
 
+/** What stands on the horizon. See FarFields.tsx for the alternatives to the ridges. */
+export type FarField = "ridges" | "skyline" | "lattice" | "orbit";
+/** The far field the whole film uses; one switch for every chapter. */
+export const FAR_FIELD: FarField = "ridges";
+
 export type WorldProps = {
+  /** overrides FAR_FIELD (used by the far-field showcase) */
+  far?: FarField;
   /** world centre (where the data sits) */
   center?: [number, number, number];
   /** ground height in data units - keep it below the lowest data point */
@@ -198,7 +207,7 @@ const RIDGES = [
   { r: 210, h: 19, haze: 0.72 },
 ];
 
-export const World: React.FC<WorldProps> = ({ center = [0, 0, 0], groundY, sun, scale = 1, time, intensity = 1 }) => {
+export const World: React.FC<WorldProps> = ({ far = FAR_FIELD, center = [0, 0, 0], groundY, sun, scale = 1, time, intensity = 1 }) => {
   const sunV = useMemo(() => new THREE.Vector2(sun[0], sun[1]).normalize(), [sun[0], sun[1]]);
   const parts = useMemo(() => {
     const sky = new THREE.ShaderMaterial({
@@ -292,13 +301,17 @@ export const World: React.FC<WorldProps> = ({ center = [0, 0, 0], groundY, sun, 
         <sphereGeometry args={[300, 48, 24]} />
       </mesh>
       <points geometry={parts.stars} material={parts.starMat} frustumCulled={false} renderOrder={-9} />
-      <sprite material={parts.sunMat} position={sunPos} scale={[260, 110, 1]} renderOrder={-8} />
-      {parts.ridges.map((r, i) => (
-        <group key={i}>
-          <mesh geometry={r.body} material={parts.ridgeMat} frustumCulled={false} />
-          <primitive object={r.crest} />
-        </group>
-      ))}
+      {far !== "orbit" && <sprite material={parts.sunMat} position={sunPos} scale={[260, 110, 1]} renderOrder={-8} />}
+      {far === "ridges" &&
+        parts.ridges.map((r, i) => (
+          <group key={i}>
+            <mesh geometry={r.body} material={parts.ridgeMat} frustumCulled={false} />
+            <primitive object={r.crest} />
+          </group>
+        ))}
+      {far === "skyline" && <Skyline sun={sunV} time={time} intensity={intensity} />}
+      {far === "lattice" && <Lattice sun={sunV} time={time} intensity={intensity} />}
+      {far === "orbit" && <Orbit sun={sunV} time={time} intensity={intensity} sunMat={parts.sunMat} />}
       <mesh material={parts.ground} rotation={[-Math.PI / 2, 0, 0]} frustumCulled={false}>
         <circleGeometry args={[240, 96]} />
       </mesh>

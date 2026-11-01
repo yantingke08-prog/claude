@@ -1,0 +1,4 @@
+# Python dependencies for the soundtrack scripts (scripts/synth.py, score.py, soundtrack.py).
+# Install: python -m pip install -r requirements.txt   (Python 3.12; FFmpeg must be on PATH for loudness normalisation)
+numpy==2.5.4
+scipy==1.18.1

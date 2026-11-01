@@ -6,6 +6,7 @@ import { BRAND } from "./brand";
 import { MARKET } from "./market";
 import { SYMBOL, sampleSymbol, symbolToWorld } from "./logo";
 import { beadWorld } from "./GoldSymbol";
+import { type BubbleLook, bubbleMaterial } from "./BubbleMaterial";
 
 const EXTRA = 36;
 const popEase = ease("back.out(2.2)");
@@ -16,7 +17,7 @@ const flyEase = ease("power3.inOut");
  * price path - sized by its trade - and later flies home to its bead. The extras are the noise
  * of the session: they fall into the body and vanish.
  */
-export const TradeBubbles: React.FC<{ headX: number; converge: number; time: number }> = ({ headX, converge, time }) => {
+export const TradeBubbles: React.FC<{ headX: number; converge: number; time: number; look?: BubbleLook }> = ({ headX, converge, time, look = "glass" }) => {
   const data = useMemo(() => {
     const rand = mulberry32(31);
     const order = SYMBOL.beads.map((b, i) => ({ i, x: b[0] })).sort((a, b) => a.x - b.x);
@@ -51,23 +52,23 @@ export const TradeBubbles: React.FC<{ headX: number; converge: number; time: num
         };
       }),
     ];
-    const mesh = new THREE.InstancedMesh(
-      new THREE.SphereGeometry(1, 36, 22),
-      new THREE.MeshPhysicalMaterial({ color: "#ffffff", metalness: 0.75, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.08 }),
-      bubbles.length,
-    );
+    const geo = new THREE.SphereGeometry(1, 48, 32);
+    const metal = new THREE.InstancedBufferAttribute(new Float32Array(bubbles.length), 1);
+    geo.setAttribute("aMetal", metal);
+    const mesh = new THREE.InstancedMesh(geo, bubbleMaterial(look), bubbles.length);
     mesh.frustumCulled = false;
-    return { bubbles, mesh };
-  }, []);
+    mesh.renderOrder = 2;
+    return { bubbles, mesh, metal };
+  }, [look]);
 
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const pos = new THREE.Vector3();
   const scl = new THREE.Vector3();
   const col = new THREE.Color();
-  const gold = new THREE.Color("#E7B759");
-  const buy = new THREE.Color(BRAND.softGold);
-  const sell = new THREE.Color("#B4C6EE");
+  const buy = new THREE.Color(BRAND.buy);
+  const sell = new THREE.Color(BRAND.sellRed);
+  (data.mesh.material as THREE.ShaderMaterial).uniforms.uSpin.value = time * 0.25;
 
   data.bubbles.forEach((b, i) => {
     const born = popEase(Math.min(1, Math.max(0, (headX - b.x) / 0.32)));
@@ -80,10 +81,11 @@ export const TradeBubbles: React.FC<{ headX: number; converge: number; time: num
     scl.set(r, r, r * (1 + (b.dome - 1) * e));
     m.compose(pos, q, scl);
     data.mesh.setMatrixAt(i, m);
-    col.copy(b.buy ? buy : sell).lerp(gold, e);
-    data.mesh.setColorAt(i, col);
+    data.mesh.setColorAt(i, col.copy(b.buy ? buy : sell));
+    data.metal.setX(i, Math.min(1, Math.max(0, (e - 0.15) / 0.6)));
   });
   data.mesh.instanceMatrix.needsUpdate = true;
+  data.metal.needsUpdate = true;
   if (data.mesh.instanceColor) data.mesh.instanceColor.needsUpdate = true;
   return <primitive object={data.mesh} />;
 };

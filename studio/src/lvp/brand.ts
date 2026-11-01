@@ -11,6 +11,9 @@ export const BRAND = {
   warm: "#EADBB8",
   // Order-flow sides inside the animation (not part of the VI): buyers lean gold, sellers a cool steel.
   sell: "#7F95C4",
+  // Footprint sides (process only, never on the mark): aggressive buyers / sellers.
+  buy: "#1FC79A",
+  sellRed: "#E8414E",
 };
 
 export const COPY = {

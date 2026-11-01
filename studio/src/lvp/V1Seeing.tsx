@@ -7,6 +7,7 @@ import { Backdrop, Lockup } from "./Lockup";
 import { GoldEnvironment, GoldSymbol, revealLevel } from "./GoldSymbol";
 import { FlowParticles } from "./FlowParticles";
 import { TradeBubbles } from "./TradeBubbles";
+import type { BubbleLook } from "./BubbleMaterial";
 import { MARKET } from "./market";
 
 /**
@@ -39,7 +40,7 @@ const ChartGrid: React.FC<{ opacity: number }> = ({ opacity }) => {
   return <lineSegments geometry={geometry} material={material} />;
 };
 
-export const LvpV1Seeing: React.FC = () => {
+export const LvpV1Seeing: React.FC<{ bubbleLook?: BubbleLook }> = ({ bubbleLook = "glass" }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
@@ -74,7 +75,7 @@ export const LvpV1Seeing: React.FC = () => {
         <ChartGrid opacity={ramp(frame, 0, 20) * market} />
         <Glow position={[headX, headY, 0.05]} scale={1.3} color={BRAND.softGold} intensity={0.9 * ramp(frame, 0, 8) * market} />
         <FlowParticles progress={converge} time={t} headX={headX} see={see} level={level} />
-        <TradeBubbles headX={headX} converge={converge} time={t} />
+        <TradeBubbles headX={headX} converge={converge} time={t} look={bubbleLook} />
         <GoldSymbol reveal={reveal} heat={heat} beads={false} rotY={Math.sin(t * 0.9) * 0.03 * ramp(frame, 146, 175)} />
       </Stage>
       <Backdrop opacity={ramp(frame, 128, 160, "power2.out")} spin={frame * 0.03} />

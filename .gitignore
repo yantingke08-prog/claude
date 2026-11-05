@@ -2,3 +2,6 @@ node_modules/
 studio/out/
 studio/.remotion/
 *.log
+# rendered deliverables stay out of git; the code renders them
+outputs*/*.mp4
+studio/public/fakeout/mix-pre.wav

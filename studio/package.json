@@ -22,7 +22,16 @@
     "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
     "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
     "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
-    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
+    "fo:vo": "python scripts/fakeout-vo.py",
+    "fo:audio": "python scripts/fakeout-score.py",
+    "fo:srt": "python scripts/fakeout-srt.py ../outputs-v3/subtitles.srt",
+    "fo:stills": "node scripts/breakout-stills.mjs FakeoutV3 out/fakeout/stills 30 560 1250 1990 2300 2600",
+    "fo:cover": "remotion still FakeoutV3Cover ../outputs-v3/cover.png",
+    "fo:cover:gpu": "remotion still FakeoutV3Cover ../outputs-v3/cover.png --gl=angle",
+    "fo:render": "remotion render FakeoutV3 out/fakeout/false-breakout-v3.mp4 --concurrency=1 --audio-codec=aac --audio-bitrate=320k",
+    "fo:render:gpu": "remotion render FakeoutV3 out/fakeout/false-breakout-v3.mp4 --gl=angle --concurrency=50% --audio-codec=aac --audio-bitrate=320k",
+    "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v3.mp4"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

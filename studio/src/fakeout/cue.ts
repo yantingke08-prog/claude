@@ -40,3 +40,16 @@ export const track = (f: number, ks: [number, number, ((t: number) => number)?][
 export const pulse = (f: number, a: number, tau = 8) => (f < a ? 0 : Math.exp(-(f - a) / tau));
 
 export { TL };
+
+/** rough spoken weight of a character: pauses at punctuation, Latin letters read fast */
+const wt = (ch: string) => ("，。：；？！、".includes(ch) ? 1.6 : /[A-Za-z]/.test(ch) ? 0.45 : 1);
+/** frame at which `sub` starts being spoken inside line `id` (estimated from character weights) */
+export const Lc = (id: string, sub: string) => {
+  const l = lines[id];
+  const i = l.text.indexOf(sub);
+  if (i < 0) throw new Error(`"${sub}" not in ${id}`);
+  const chars = [...l.text];
+  const pre = [...l.text.slice(0, i)].reduce((a, c) => a + wt(c), 0);
+  const all = chars.reduce((a, c) => a + wt(c), 0);
+  return Math.round(l.from + (l.to - l.from) * (pre / all));
+};

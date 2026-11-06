@@ -1,7 +1,8 @@
 // What the film is doing on any frame: one pure function, keyed to the narration lines.
 // Three places in one 3D world:
-//   "story" (far right): one tall chart. The hook builds it bar by bar, then fans out the three
-//          endings from the shared breakout bar, and each ending gets the full screen on its own.
+//   "story" (far right): one tall chart. The hook builds it bar by bar, splits it into three stacked
+//          full charts (one per ending) from the shared breakout bar, and each ending then gets the
+//          full screen on its own.
 //   "main"  (origin): the full 86-bar chart of ending C, where the mechanism and signals are explained.
 //   "rows"  (middle): the three-row comparison used to respond, and the closing collapse.
 import * as THREE from "three";
@@ -32,6 +33,13 @@ export const sy = (p: number) => (p - LEVEL) * 0.2;
 /** story volume strip: baseline, max height, first bar shown */
 export const ST_VOL = { y: sy(4938), h: 2.6, i0: -21 };
 export const stX = (i: number) => X_ST + bx(i);
+/**
+ * The fork: the one chart splits into three full charts stacked on the same price scale, one per
+ * ending. Panel o maps a price to story-local y; split 0 is the single chart, 1 the stacked panel.
+ */
+export const TRI = { mid: 4996, k: 0.09, gap: 12, y0: sy(4972), lo: 4945, hi: 5047 };
+const TRI_OFF: Record<Outcome, number> = { A: 1, B: 0, C: -1 };
+export const panelY = (o: Outcome, p: number, split: number) => sy(p) + (TRI.y0 + TRI_OFF[o] * TRI.gap + (p - TRI.mid) * TRI.k - sy(p)) * split;
 
 // ---------------------------------------------------------------- rows (the comparison page)
 export const X_ROWS = 400;
@@ -91,25 +99,25 @@ const S0 = S("signals");
 const R0 = S("respond");
 /** push / pull timings (frames), shared with the HUD focus frames */
 export const PUSH = {
-  prior: [M0 + 44, M0 + 66],
-  close: [S0 + 42, S0 + 64],
+  prior: [M0 + 86, M0 + 114],
+  close: [S0 + 42, S0 + 70],
 } as const;
 
 const mainView = (f: number): View => {
   const z = (a: View, b: View, f0: number, f1: number) => zoom(a, b, span(f, f0, f1, cubicInOut));
   if (f < S0 - 30) {
     let v = z(FULL, V_PRIOR, ...PUSH.prior);
-    v = z(v, V_STOPS, L("m2") - 6, L("m2") + 26);
-    v = z(v, V_WALL, L("m4") - 12, L("m4") + 30);
-    v = z(v, V_DELTA, L("m6") - 8, L("m6") + 30);
-    v = z(v, V_ACCEPT, L("m7") - 10, L("m7") + 30);
-    v = z(v, V_FALL, L("m8") - 10, L("m8") + 24);
-    return z(v, FULL, L("m9") - 6, L("m9") + 22);
+    v = z(v, V_STOPS, L("m2") - 12, L("m2") + 32);
+    v = z(v, V_WALL, L("m4") - 18, L("m4") + 34);
+    v = z(v, V_DELTA, L("m6") - 14, L("m6") + 36);
+    v = z(v, V_ACCEPT, L("m7") - 16, L("m7") + 34);
+    v = z(v, V_FALL, L("m8") - 16, L("m8") + 30);
+    return z(v, FULL, L("m9") - 12, L("m9") + 30);
   }
   let v = z(FULL, V_CLOSE, ...PUSH.close);
-  v = z(v, V_DELTA, L("s3") - 6, L("s3") + 24);
-  v = z(v, V_RETEST, L("s4") - 10, L("s4") + 18);
-  return z(v, FULL, L("s5") - 6, L("s5") + 20);
+  v = z(v, V_DELTA, L("s3") - 12, L("s3") + 30);
+  v = z(v, V_RETEST, L("s4") - 16, L("s4") + 24);
+  return z(v, FULL, L("s5") - 12, L("s5") + 26);
 };
 
 // ---- story chart
@@ -137,7 +145,7 @@ const trackView = (f: number): View => {
   return view(stX(ST_I0 + n - 1.4), sy(trailPrice(n)), lerp(9.5, 7, smooth(k)), lerp(0.5, 0.2, k), lerp(0.14, 0.05, k), 0);
 };
 const RISE = view(stX(-1.4), sy(5001), 6.4, 0.2, 0.05, 0.02);
-export const WIDE = view(stX(-10.5), sy(4969), 34, 0.1, 0.04, -0.035);
+export const WIDE = view(stX(-9), TRI.y0, 36, 0.08, 0.03, -0.068);
 const SOLO: Record<Outcome, View> = {
   A: view(stX(-1.4), sy(4986), 25, 0.2, 0.06, 0),
   B: view(stX(-1.4), sy(4982), 25, -0.14, 0.06, 0),
@@ -153,9 +161,9 @@ const storyView = (f: number): View => {
   let v = trackView(f);
   v = zoom(v, RISE, span(f, E("revealTo") - 14, E("hookPierce") - 4, smooth));
   v = zoom(v, { ...WIDE, w: WIDE.w * (1 - 0.05 * span(f, E("pullTo"), E("soloA"), (x) => x)) }, span(f, E("pullFrom"), E("pullTo"), cubicInOut));
-  v = zoom(v, soloView("A", f), span(f, E("soloA") - 4, E("soloA") + 28, cubicInOut));
-  v = zoom(v, soloView("B", f), span(f, E("swapB") + 2, E("swapB") + 32, cubicInOut));
-  return zoom(v, soloView("C", f), span(f, E("swapC") + 2, E("swapC") + 32, cubicInOut));
+  v = zoom(v, soloView("A", f), span(f, E("soloA") - 4, E("soloA") + 34, cubicInOut));
+  v = zoom(v, soloView("B", f), span(f, E("swapB") + 2, E("swapB") + 40, cubicInOut));
+  return zoom(v, soloView("C", f), span(f, E("swapC") + 2, E("swapC") + 40, cubicInOut));
 };
 
 // ---- rows
@@ -184,8 +192,9 @@ export type Dir = {
     n: number; // bars before the breakout revealed (0..33, fractional)
     u0: number; // breakout bar progress
     ends: Record<Outcome, number>; // ending bars shown per outcome (0..12)
-    trail: number; // fan trails drawn (0..12)
-    trailOp: number;
+    split: Record<Outcome, number>; // 0 = the single chart, 1 = its own stacked panel
+    op: Record<Outcome, number>; // panel opacity
+    tri: number; // the stacked page's labels / frames
     vol: number;
     solo: Record<Outcome, number>; // which ending owns the screen
   };
@@ -232,38 +241,51 @@ export const direct = (f: number): Dir => {
     [E("hookPierce"), U_CROSS.up0],
     [E("hookClose"), 1],
   ]);
+  const [sa, sb, sc] = [E("soloA"), E("swapB"), E("swapC")];
+  // the fork: all three endings grow at once, each in its own panel; A's panel then becomes A's solo,
+  // B and C step aside and come back later as the solo chart's next ending
+  const fan = lin(f, [
+    [E("fanFrom"), 0],
+    [E("fanTo"), N_AFTER],
+  ]);
   const ends: Record<Outcome, number> = {
     A: lin(f, [
-      [E("soloA") - 2, 0],
-      [E("soloA") + 26, N_AFTER],
-      [E("swapB"), N_AFTER],
-      [E("swapB") + 12, 0],
+      [E("fanFrom"), 0],
+      [E("fanTo"), N_AFTER],
+      [sb, N_AFTER],
+      [sb + 18, 0],
     ]),
-    B: lin(f, [
-      [E("swapB") + 10, 0],
-      [E("swapB") + 36, N_AFTER],
-      [E("swapC"), N_AFTER],
-      [E("swapC") + 12, 0],
+    B: f < sb ? fan : lin(f, [
+      [sb + 14, 0],
+      [sb + 46, N_AFTER],
+      [sc, N_AFTER],
+      [sc + 18, 0],
     ]),
-    C: lin(f, [
-      [E("swapC") + 10, 0],
-      [E("swapC") + 36, N_AFTER],
+    C: f < sc ? fan : lin(f, [
+      [sc + 14, 0],
+      [sc + 46, N_AFTER],
     ]),
   };
-  const [sa, sb, sc] = [E("soloA"), E("swapB"), E("swapC")];
-  const solo: Record<Outcome, number> = { A: hold(f, sa, sb + 8, 10), B: hold(f, sb + 8, sc + 8, 10), C: hold(f, sc + 8, M0 + 20, 10) };
+  const splitIn = span(f, E("splitFrom"), E("splitTo"), cubicInOut);
+  const leave = span(f, sa - 4, sa + 18, smooth); // B and C step aside
+  const split: Record<Outcome, number> = {
+    A: splitIn * (1 - span(f, sa - 4, sa + 26, cubicInOut)),
+    B: f < sb ? splitIn : 0,
+    C: f < sc ? splitIn : 0,
+  };
+  const enter = span(f, E("splitFrom") + 4, E("splitFrom") + 12, smooth);
+  const pop: Record<Outcome, number> = { A: 1, B: f < sb ? enter * (1 - leave) : 1, C: f < sc ? enter * (1 - leave) : 1 };
+  const solo: Record<Outcome, number> = { A: hold(f, sa + 10, sb + 8, 12), B: hold(f, sb + 8, sc + 8, 12), C: hold(f, sc + 8, M0 + 20, 12) };
   const story = {
     point: span(f, 0, 10, smooth) * (1 - span(f, E("revealFrom"), E("revealFrom") + 8, smooth)) + 0.25 * pulse(f, E("revealFrom"), 6),
     n,
     u0: u0s,
     ends,
-    trail: lin(f, [
-      [E("fanFrom"), 0],
-      [E("fanTo"), N_AFTER],
-    ]),
-    trailOp: 1 - span(f, E("soloA"), E("soloA") + 24, smooth),
+    split,
+    op: pop,
+    tri: span(f, E("splitTo") - 6, E("splitTo") + 8, smooth) * (1 - leave),
     // volume matters for A and B; C is read from the candles alone
-    vol: span(f, E("soloA") + 10, E("soloA") + 30, smooth) * (1 - span(f, E("swapC"), E("swapC") + 14, smooth)),
+    vol: span(f, sa + 26, sa + 46, smooth) * (1 - span(f, sc, sc + 14, smooth)),
     solo,
   };
 
@@ -271,11 +293,12 @@ export const direct = (f: number): Dir => {
   const w = (a: number, b: number) => hold(f, a, b, 12);
   const act: Record<Outcome, number> = {
     A: 0,
-    B: Math.max(w(L("r2") - 6, L("r3") - 4), w(L("r4") - 6, Le("r4") + 14)),
+    B: Math.max(w(L("r2") - 6, L("r3") - 4), w(L("r4") - 6, Le("r4") + 30)),
     C: w(L("r3") - 6, L("r4") - 4),
   };
   // r0 dims everything under the question; r2..r4 dim whatever is not being explained
-  const focus = Math.max(w(R0, L("r1") - 2), w(L("r2") - 6, Le("r4") + 14));
+  // and in the close the whole page steps back a little so the verdicts read over it
+  const focus = Math.max(w(R0, L("r1") - 2), w(L("r2") - 6, Le("r4") + 30), 0.55 * w(L("e1") - 4, E("rewind0") + 4));
   const merge = span(f, E("merge0"), E("merge1"), cubicInOut);
   const rewind = span(f, E("rewind0"), E("rewind1"), cubicInOut);
   const collapse = span(f, E("collapse0"), E("collapse1"), cubicInOut);

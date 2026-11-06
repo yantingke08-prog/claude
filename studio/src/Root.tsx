@@ -46,9 +46,9 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
     </Folder>
-    <Folder name="Fakeout-v5">
-      <Composition id="FakeoutV5" component={FakeoutFilm} durationInFrames={FO_FRAMES} fps={FO_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
-      <Still id="FakeoutV5Cover" component={FakeoutCover} width={1080} height={1920} />
+    <Folder name="Fakeout-v6">
+      <Composition id="FakeoutV6" component={FakeoutFilm} durationInFrames={FO_FRAMES} fps={FO_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
+      <Still id="FakeoutV6Cover" component={FakeoutCover} width={1080} height={1920} />
     </Folder>
   </>
 );

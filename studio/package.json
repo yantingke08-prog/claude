@@ -25,13 +25,13 @@
     "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
     "fo:vo": "python scripts/fakeout-vo.py",
     "fo:audio": "python scripts/fakeout-score.py",
-    "fo:srt": "python scripts/fakeout-srt.py ../outputs-v5/subtitles.srt",
-    "fo:stills": "node scripts/breakout-stills.mjs FakeoutV5 out/fakeout/stills 30 100 112 150 230 330 560 790 1500 2700 2960 3060 3180 3300 3420 3600 3720 3790 3860",
-    "fo:cover": "remotion still FakeoutV5Cover ../outputs-v5/cover.png",
-    "fo:cover:gpu": "remotion still FakeoutV5Cover ../outputs-v5/cover.png --gl=angle",
-    "fo:render": "remotion render FakeoutV5 out/fakeout/false-breakout-v5.mp4 --concurrency=1 --audio-codec=aac --audio-bitrate=320k",
-    "fo:render:gpu": "remotion render FakeoutV5 out/fakeout/false-breakout-v5.mp4 --gl=angle --concurrency=50% --audio-codec=aac --audio-bitrate=320k",
-    "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v5.mp4 125 138"
+    "fo:srt": "python scripts/fakeout-srt.py ../outputs-v6/subtitles.srt",
+    "fo:stills": "node scripts/breakout-stills.mjs FakeoutV6 out/fakeout/stills 30 100 112 150 230 330 560 790 1500 2700 2960 3060 3180 3300 3420 3600 3720 3790 3860",
+    "fo:cover": "remotion still FakeoutV6Cover ../outputs-v6/cover.png",
+    "fo:cover:gpu": "remotion still FakeoutV6Cover ../outputs-v6/cover.png --gl=angle",
+    "fo:render": "remotion render FakeoutV6 out/fakeout/false-breakout-v6.mp4 --concurrency=1 --audio-codec=aac --audio-bitrate=320k",
+    "fo:render:gpu": "remotion render FakeoutV6 out/fakeout/false-breakout-v6.mp4 --gl=angle --concurrency=50% --audio-codec=aac --audio-bitrate=320k",
+    "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v6.mp4 140 160"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

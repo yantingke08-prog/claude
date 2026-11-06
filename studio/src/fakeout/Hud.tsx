@@ -5,8 +5,8 @@
 import { useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { C } from "./copy";
-import { L, Le, S, TL, backOut, clamp01, expoOut, hold, pulse, smooth, span } from "./cue";
-import { E, PUSH, REGION, ROW_BAND, ROW_I0, ROW_VOL_Y, ST_I0, ST_VOL, X_ROWS, ry, stX, sy, type Dir } from "./director";
+import { FRAMES, L, Lc, Le, S, TL, backOut, clamp01, expoOut, hold, pulse, smooth, span } from "./cue";
+import { E, PUSH, REGION, ROW_BAND, ROW_I0, ROW_VOL_Y, ST_I0, ST_VOL, TRI, X_ROWS, panelY, ry, stX, sy, type Dir } from "./director";
 import { mono, sans, serif } from "./fonts";
 import { AFTER, CHART, LEVEL, N_AFTER, PRIOR_HIGH, bar, bx, fmt, path0, path1, py, type Outcome } from "./market";
 import { PAL, TRAIL_COL, mainBars } from "./Scene";
@@ -86,12 +86,12 @@ const Callout: React.FC<{
   if (f < a || out < 0.01 || !at.ok) return null;
   const T = TYPE[size];
   const s = side === "r" ? 1 : -1;
-  const ring = span(f, a, a + 8, expoOut);
-  const draw = span(f, a + 3, a + 14, smooth);
-  const kn = span(f, a + 12, a + 20, expoOut);
-  const kc = span(f, a + 12, a + 30, expoOut);
-  const kt = span(f, a + 20, a + 28, expoOut);
-  const kd = span(f, a + 26, a + 34, expoOut);
+  const ring = span(f, a, a + 10, expoOut);
+  const draw = span(f, a + 4, a + 20, smooth);
+  const kn = span(f, a + 18, a + 28, expoOut);
+  const kc = span(f, a + 18, a + 42, expoOut);
+  const kt = span(f, a + 28, a + 38, expoOut);
+  const kd = span(f, a + 36, a + 46, expoOut);
   const end = { x: plate.x - s * 2, y: plate.y };
   const shown = count ? fmtN(count.from + (count.to - count.from) * kc, count.dp) : num;
   return (
@@ -221,21 +221,66 @@ const Panel: React.FC<{ k: number; top: number; right?: number; children: React.
     </div>
   );
 
-/** centred serif statement on a soft dark plate */
-const Big: React.FC<{ k: number; top: number; lines: [string, string?]; size?: number; accent?: string; glow?: number }> = ({ k, top, lines, size = 96, accent = PAL.amber, glow = 0 }) =>
-  k < 0.01 ? null : (
-    <div style={{ position: "absolute", left: 0, right: 0, top, textAlign: "center" }}>
-      <div style={{ position: "absolute", left: "50%", top: "50%", width: 1100, height: 360, transform: "translate(-50%,-50%)", background: "radial-gradient(closest-side, rgba(4,6,12,0.88), rgba(4,6,12,0))", opacity: k }} />
-      {lines.filter(Boolean).map((l, i) => {
-        const ki = span(k, i * 0.3, 0.7 + i * 0.3, backOut);
-        return (
-          <div key={i} style={{ position: "relative", ...serif(), fontSize: size, lineHeight: 1.3, color: i ? accent : INK, opacity: Math.min(1, ki * 1.5), transform: `translateY(${(1 - ki) * 24}px)`, letterSpacing: 2, textShadow: glow ? `0 0 ${30 * glow}px rgba(230,246,255,${0.5 * glow})` : undefined }}>
-            {l}
+/**
+ * A full-screen statement: the chart recedes under a dark band, each line types in character by
+ * character when the narration reaches it (blur → sharp, rising), key words light up in amber, and a
+ * glowing rule draws out under the last line.
+ */
+type SLine = { text: string; at: number; size: number; hl?: string; color?: string };
+const Statement: React.FC<{ f: number; lines: SLine[]; end: number; top: number; kicker?: string; scrim?: number; rule?: boolean }> = ({ f, lines, end, top, kicker, scrim = 1, rule = true }) => {
+  const a = lines[0].at;
+  const k = span(f, a - 6, a + 8, smooth) * (1 - span(f, end - 10, end, smooth));
+  if (k < 0.01) return null;
+  const STEP = 1.8;
+  const h = lines.reduce((s, l) => s + l.size * 1.32, 0) + (kicker ? 56 : 0);
+  const last = lines[lines.length - 1];
+  const lastDone = last.at + [...last.text].length * STEP;
+  const kr = span(f, lastDone - 4, lastDone + 16, expoOut);
+  const ruleW = Math.min(900, [...last.text].length * last.size * 0.9);
+  return (
+    <>
+      <div style={{ position: "absolute", inset: 0, opacity: k * scrim, background: `rgba(3,5,10,0.42)` }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: top - 150, height: h + 300, opacity: k * scrim, background: "linear-gradient(180deg, rgba(3,5,10,0) 0%, rgba(3,5,10,0.86) 28%, rgba(3,5,10,0.86) 72%, rgba(3,5,10,0) 100%)" }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top, textAlign: "center", opacity: span(k, 0, 0.4) }}>
+        {kicker && (
+          <div style={{ ...mono(), fontSize: 30, letterSpacing: 12, color: PAL.amber, marginBottom: 22, opacity: span(f, a - 4, a + 10), textShadow: `0 0 18px ${PAL.amber}88` }}>
+            — {kicker} —
           </div>
-        );
-      })}
-    </div>
+        )}
+        {lines.map((l, i) => {
+          const hs = l.hl ? l.text.indexOf(l.hl) : -1;
+          const he = hs + (l.hl?.length ?? 0);
+          return (
+            <div key={i} style={{ ...serif(), fontSize: l.size, lineHeight: 1.32, letterSpacing: 3, whiteSpace: "nowrap" }}>
+              {[...l.text].map((ch, j) => {
+                const kj = span(f, l.at + j * STEP, l.at + j * STEP + 10, expoOut);
+                const hot = j >= hs && j < he;
+                return (
+                  <span
+                    key={j}
+                    style={{
+                      display: "inline-block",
+                      opacity: kj,
+                      transform: `translateY(${(1 - kj) * 0.3 * l.size}px)`,
+                      filter: kj < 0.98 ? `blur(${(1 - kj) * 10}px)` : undefined,
+                      color: hot ? PAL.amber : (l.color ?? INK),
+                      textShadow: hot ? `0 0 ${18 + 22 * kr}px ${PAL.amber}aa, 0 3px 0 #000, 0 0 3px #000` : "0 4px 20px rgba(0,0,0,0.95), 0 0 3px #000",
+                    }}
+                  >
+                    {ch}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        })}
+        {rule && (
+          <div style={{ margin: "18px auto 0", width: ruleW * kr, height: 6, borderRadius: 3, background: `linear-gradient(90deg, ${PAL.amber}00, ${PAL.amber}, ${PAL.amber}00)`, boxShadow: `0 0 22px ${PAL.amber}` }} />
+        )}
+      </div>
+    </>
   );
+};
 
 // ---------------------------------------------------------------- captions
 const KEY = ["假突破", "失败突破", "回踩确认", "直接接受", "回踩", "接受度", "接受", "吸收", "止损", "Delta", "失效点", "限价卖单", "概率", "违规", "背离", "缩小"];
@@ -279,6 +324,12 @@ const SOLO_COUNTS: Record<Outcome, (Count | undefined)[]> = {
   B: [{ from: 5008, to: 4999.5, dp: 2 }, undefined, { from: 0, to: 2300, dp: 0 }],
   C: [{ from: 5008, to: 5016, dp: 2 }, { from: 5016, to: 4978, dp: 2 }, { from: 4978, to: 4950.5, dp: 2 }],
 };
+/** the words each solo callout waits for */
+const SOLO_WORDS: Record<Outcome, string[]> = {
+  A: ["突破后站稳", "成交继续放大", "价格一路走高"],
+  B: ["价格回到关键位", "成交量缩小", "再次上涨"],
+  C: ["冲高留下", "收回关键位", "然后转跌"],
+};
 const SOLO_AXIS: Record<Outcome, number[]> = { A: [5000, 5020, 5040], B: [5000, 5020], C: [4960, 4980, 5000] };
 
 /** a plate position offset from its target in screen pixels (used on the main chart's close-ups) */
@@ -294,13 +345,14 @@ const Story: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   // ---- hook ticker: the newest close while the chart builds, then the breakout bar live
   const nIdx = Math.max(0, Math.min(-ST_I0 - 1, Math.ceil(St.n) - 1));
   const price = St.u0 > 0 ? path0(St.u0) : bar("C", ST_I0 + nIdx).o + (bar("C", ST_I0 + nIdx).c - bar("C", ST_I0 + nIdx).o) * clamp01(St.n - nIdx);
-  const tickK = span(f, E("revealFrom") + 6, E("revealFrom") + 16) * (1 - span(f, E("fanFrom") + 10, E("fanFrom") + 24));
+  const tickK = span(f, E("revealFrom") + 6, E("revealFrom") + 16) * (1 - span(f, E("splitFrom"), E("splitFrom") + 14));
   const above = price >= LEVEL;
   const kick = pulse(f, E("hookPierce"), 6);
   const near = clamp01((price - 4980) / 6);
 
-  // ---- fan: one badge at each trail head
-  const fanK = span(f, E("fanTo") - 16, E("fanTo") - 2, expoOut) * (1 - span(f, E("soloA") - 2, E("soloA") + 10));
+  // ---- the stacked page: a label per chart, and one dashed line through the shared breakout bar
+  const pp = (o: Outcome, i: number, p: number) => pr(stX(i), panelY(o, p, St.split[o]), 0.2);
+  const named = Lc("h2", "三种");
   return (
     <>
       {tickK > 0.01 && (
@@ -320,17 +372,40 @@ const Story: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
           </div>
         </div>
       )}
-      {fanK > 0.01 &&
-        OUT.map((o) => {
-          // A sits above its trail, B in the gap between B and the level, C under its own head
-          const anchor = o === "A" ? sp(9, 5046, 0.25) : o === "B" ? sp(9, 5009, 0.25) : sp(11, 4944, 0.25);
-          return (
-            <div key={o} style={{ position: "absolute", right: 1080 - anchor.x, top: anchor.y - 26, display: "flex", alignItems: "center", gap: 10, padding: "3px 14px 5px 5px", background: PLATE, borderRadius: 10, opacity: fanK, transform: `translateX(${(1 - fanK) * 20}px)`, whiteSpace: "nowrap" }}>
-              <span style={{ ...mono(), fontSize: 30, color: "#04060c", background: ROW_COL[o], borderRadius: 7, padding: "0 10px" }}>{o}</span>
-              <span style={{ ...sans(700), fontSize: 34, color: INK }}>{C.rows[o][1]}</span>
-            </div>
-          );
-        })}
+      {St.tri > 0.01 && (
+        <div style={{ position: "absolute", inset: 0, opacity: St.tri }}>
+          {(() => {
+            const t0 = pp("A", 0, TRI.hi + 7);
+            const t1 = pp("C", 0, TRI.lo - 1);
+            const kl = span(f, E("splitTo") - 6, E("splitTo") + 16, smooth);
+            return (
+              <>
+                <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+                  <line x1={t0.x} y1={t0.y} x2={t0.x + (t1.x - t0.x) * kl} y2={t0.y + (t1.y - t0.y) * kl} stroke={PAL.amber} strokeWidth={3} strokeDasharray="12 9" style={{ filter: `drop-shadow(0 0 6px ${PAL.amber})` }} />
+                </svg>
+                <div style={{ position: "absolute", left: t0.x - 12, top: t0.y - 50, ...sans(700), fontSize: 32, color: "#04060c", background: PAL.amber, padding: "1px 14px 3px", borderRadius: 8, opacity: kl, whiteSpace: "nowrap", boxShadow: `0 0 24px ${PAL.amber}66` }}>{C.same}</div>
+              </>
+            );
+          })()}
+          {OUT.map((o, i) => {
+            const ki = span(f, named + i * 9, named + i * 9 + 12, expoOut);
+            const lab = pp(o, ST_I0 - 0.4, TRI.hi + 4);
+            const lv = pp(o, N_AFTER + 0.9, LEVEL);
+            const c0 = pp(o, ST_I0 - 0.9, TRI.hi + 7.5),
+              c1 = pp(o, N_AFTER + 2.6, TRI.lo - 1.5);
+            return (
+              <div key={o}>
+                <div style={{ position: "absolute", left: c0.x, top: c0.y, width: c1.x - c0.x, height: c1.y - c0.y, borderRadius: 14, border: `2px solid ${ROW_COL[o]}33`, background: "rgba(140,160,200,0.035)" }} />
+                <div style={{ position: "absolute", left: lab.x, top: lab.y - 26, display: "flex", alignItems: "center", gap: 12, padding: "3px 16px 5px 5px", background: PLATE, borderRadius: 10, border: `2px solid ${ROW_COL[o]}88`, boxShadow: `0 0 26px ${ROW_COL[o]}44`, opacity: ki, transform: `translateX(${(1 - ki) * -24}px)`, whiteSpace: "nowrap" }}>
+                  <span style={{ ...mono(), fontSize: 32, color: "#04060c", background: ROW_COL[o], borderRadius: 7, padding: "0 11px" }}>{o}</span>
+                  <span style={{ ...sans(700), fontSize: 36, color: INK }}>{C.rows[o][1]}</span>
+                </div>
+                <div style={{ position: "absolute", left: lv.x, top: lv.y - 17, ...mono(), fontSize: 24, color: SOFT, padding: "0 6px", background: "rgba(8,11,18,0.7)", borderRadius: 5 }}>5000</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {OUT.map((o) => {
         const k = St.solo[o] * (o === "C" ? 1 - span(f, L("c5") - 6, L("c5") + 4) : 1);
@@ -339,7 +414,7 @@ const Story: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
         const spots = SOLO_SPOTS[o];
         const copy = C[o.toLowerCase() as "a" | "b" | "c"];
         const line = o === "A" ? "c2" : o === "B" ? "c3" : "c4";
-        const at0 = [L(line) + 50, L(line) + 96, L(line) + (o === "B" ? 156 : 136)];
+        const at0 = SOLO_WORDS[o].map((w) => Lc(line, w));
         const end = o === "A" ? E("swapB") + 4 : o === "B" ? E("swapC") + 4 : L("c5") + 2;
         return (
           <div key={o}>
@@ -395,8 +470,15 @@ const Story: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
         );
       })}
 
-      <Big k={hold(f, L("c5") + 2, L("c5") + 76, 10)} top={168} lines={[C.knock[0], C.knock[1]]} size={66} />
-      <Big k={hold(f, L("c5") + 70, S("mechanism") + 8, 10)} top={196} lines={[C.toC]} size={66} />
+      <Statement
+        f={f}
+        top={250}
+        end={S("mechanism") - 4}
+        lines={[
+          { text: C.knock[0], at: L("c5"), size: 92 },
+          { text: C.knock[1], at: Lc("c5", "被接受"), size: 92, hl: "被接受" },
+        ]}
+      />
     </>
   );
 };
@@ -461,7 +543,7 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   const rp = (o: Outcome, i: number, p: number, z = 0.2) => rowPt(d, pr, o, bx(i), ry(p), z);
   const r0 = S("respond"),
     e0 = S("close");
-  const steps = [L("r1"), L("r1") + 44, L("r2"), L("r4"), L("r4") + 54];
+  const steps = [L("r1"), Lc("r1", "等接受"), L("r2"), Lc("r4", "先设好"), Lc("r4", "控制")];
   const cur = steps.filter((a) => f >= a).length - 1;
   const kc = span(f, steps[Math.max(0, cur)], steps[Math.max(0, cur)] + 8, expoOut);
   const kSteps = hold(f, L("r1") - 4, e0 + 6, 12);
@@ -469,14 +551,24 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
     bot = rowRect(d, pr, "C");
   const xb = rp("A", 0, LEVEL).x;
   const kNo = hold(f, L("r1") + 2, L("r2") - 2, 10);
-  const kRisk = hold(f, L("r4") + 26, Le("r4") + 14, 12);
+  const rk = Lc("r4", "控制") - 6; // the risk card arrives with "控制每笔风险"
+  const kRisk = hold(f, rk, Le("r4") + 30, 12);
   const cRow = rowRect(d, pr, "C");
   const entry = rp("B", 5, 5009);
   const stop = rp("B", 5, 4998.5);
-  const riskV = span(f, L("r4") + 50, L("r4") + 80, expoOut);
+  const riskV = span(f, rk + 24, rk + 54, expoOut);
   return (
     <>
-      <Big k={hold(f, r0 + 2, L("r1") - 4, 10)} top={820} lines={[C.howQ]} size={78} />
+      <Statement
+        f={f}
+        top={700}
+        end={L("r1") - 2}
+        kicker={C.kickHow}
+        lines={[
+          { text: C.howQ[0], at: r0 + 2, size: 84 },
+          { text: C.howQ[1], at: Lc("r0", "应该"), size: 132, hl: "如何应对" },
+        ]}
+      />
 
       {/* five steps along the top; the current one is spelled out */}
       {kSteps > 0.01 && (
@@ -502,7 +594,7 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
 
       {/* B: the plan lives in the dimmed A row, the leader runs down to B's retest */}
       <Callout f={f} a={L("r2") + 12} b={L("r3") - 4} at={rp("B", 3, 5000.75)} plate={rp("A", -1.5, 4971)} side="l" color={PAL.amber} count={{ from: 5008, to: 4999.5, dp: 2 }} title={C.planB[0]} note={C.planB[1]} size="lg" />
-      <RowLine d={d} pr={pr} o="B" p={4998.5} i0={2} k={Math.max(hold(f, L("r2") + 46, L("r3") - 2, 12), hold(f, L("r4") - 4, Le("r4") + 14, 12))} label={C.invalidB} />
+      <RowLine d={d} pr={pr} o="B" p={4998.5} i0={2} k={Math.max(hold(f, L("r2") + 46, L("r3") - 2, 12), hold(f, L("r4") - 4, Le("r4") + 30, 12))} label={C.invalidB} />
 
       {/* C: the plan lives in the dimmed B row, the leader runs down to C's failed rebound */}
       <Callout f={f} a={L("r3") + 12} b={L("r4") - 4} at={rp("C", 4, 4998.5)} plate={rp("B", -1.5, 4971)} side="l" color={PAL.down} count={{ from: 4978, to: 4998.5, dp: 2 }} title={C.planC[0]} note={C.planC[1]} size="lg" />
@@ -514,7 +606,7 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
           <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
             <line x1={entry.x + 30} y1={entry.y} x2={entry.x + 30} y2={stop.y} stroke={PAL.amber} strokeWidth={3} />
             <line x1={entry.x + 22} y1={entry.y} x2={entry.x + 38} y2={entry.y} stroke={PAL.amber} strokeWidth={3} />
-            <polyline points={partial([{ x: entry.x + 30, y: (entry.y + stop.y) / 2 }, { x: entry.x + 30, y: cRow.y + 40 }], span(f, L("r4") + 26, L("r4") + 40))} fill="none" stroke={PAL.amber} strokeWidth={3} />
+            <polyline points={partial([{ x: entry.x + 30, y: (entry.y + stop.y) / 2 }, { x: entry.x + 30, y: cRow.y + 40 }], span(f, rk, rk + 14))} fill="none" stroke={PAL.amber} strokeWidth={3} />
           </svg>
           <div style={{ position: "absolute", left: 56, right: 56, top: cRow.y + 40, padding: "18px 30px 20px", background: "rgba(8,11,18,0.9)", border: `2px solid ${PAL.amber}`, borderRadius: 18, transform: `translateY(${(1 - kRisk) * 24}px)` }}>
             <div style={{ ...serif(), fontSize: 50, color: PAL.amber }}>{C.riskTitle}</div>
@@ -524,7 +616,7 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
                 [C.riskRows[1], C.riskStop, INK],
                 [C.riskRows[2], `${(10.5 * riskV).toFixed(2)} ${C.pts}`, PAL.amber],
               ].map(([k, v, col], i) => {
-                const ki = span(f, L("r4") + 34 + i * 10, L("r4") + 44 + i * 10, expoOut);
+                const ki = span(f, rk + 8 + i * 10, rk + 18 + i * 10, expoOut);
                 return (
                   <div key={k} style={{ opacity: ki, transform: `translateY(${(1 - ki) * 10}px)` }}>
                     <div style={{ ...sans(500), fontSize: 34, color: SOFT }}>{k}</div>
@@ -533,7 +625,7 @@ const Respond: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
                 );
               })}
             </div>
-            <div style={{ ...sans(500), fontSize: 36, color: INK, marginTop: 10, opacity: span(f, L("r4") + 80, L("r4") + 90) }}>{C.riskNote}</div>
+            <div style={{ ...sans(500), fontSize: 36, color: INK, marginTop: 10, opacity: span(f, rk + 56, rk + 66) }}>{C.riskNote}</div>
           </div>
         </div>
       )}
@@ -545,37 +637,47 @@ const Close: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   const f = d.f;
   if (d.world !== "rows") return null;
   const rp = (o: Outcome, i: number, p: number) => rowPt(d, pr, o, bx(i), ry(p), 0);
-  const kAfter = hold(f, L("e2") + 30, E("rewind0") + 4, 12);
+  const ka = Lc("e2", "而在突破之后");
+  const kAfter = hold(f, ka - 4, E("rewind0") + 4, 12);
+  const vAt = [Lc("e2", "有没有成交接力"), Lc("e2", "有没有守住"), Lc("e2", "有没有守住") + 40];
   const top = rowRect(d, pr, "A"),
     bot = rowRect(d, pr, "C");
   const xb = rp("A", 0.5, LEVEL).x;
   const lvl = pr(X_ROWS + bx(-3), d.rows.y.B + ry(LEVEL), 0);
-  const qK = span(f, E("question"), E("question") + 12, expoOut);
+  // labels over the busy comparison page: solid plate, a glowing border in the row's colour, outlined text
+  const lit = (col: string) => ({ background: "rgba(5,7,12,0.94)", border: `2px solid ${col}`, boxShadow: `0 0 0 1px #000, 0 0 28px ${col}88, 0 10px 30px rgba(0,0,0,0.6)`, textShadow: `0 0 2px #000, 0 2px 0 #000, 0 0 18px ${col}99` });
   return (
     <>
-      <Big k={hold(f, L("e1") - 4, L("e3") - 10, 10)} top={150} lines={[C.why]} size={60} />
+      <Statement
+        f={f}
+        top={700}
+        end={ka - 2}
+        scrim={0.9}
+        lines={[
+          { text: C.why[0], at: L("e1"), size: 76 },
+          { text: C.why[1], at: Lc("e1", "为什么"), size: 96, hl: "结局不同" },
+        ]}
+      />
       {kAfter > 0.01 && (
         <div style={{ position: "absolute", inset: 0, opacity: kAfter }}>
-          <div style={{ position: "absolute", left: xb - 2, top: top.y, width: 4, height: (bot.y + bot.h - top.y) * span(f, L("e2") + 30, L("e2") + 46, smooth), background: PAL.amber, boxShadow: `0 0 16px ${PAL.amber}` }} />
-          <div style={{ position: "absolute", left: xb + 14, top: top.y - 58, ...sans(700), fontSize: 36, color: INK, whiteSpace: "nowrap", padding: "2px 14px 4px", background: PLATE, borderRadius: 8, borderLeft: `5px solid ${PAL.amber}` }}>{C.after} →</div>
+          <div style={{ position: "absolute", left: xb - 3, top: top.y, width: 6, height: (bot.y + bot.h - top.y) * span(f, ka - 4, ka + 14, smooth), background: PAL.amber, boxShadow: `0 0 22px ${PAL.amber}` }} />
+          <div style={{ position: "absolute", left: xb + 16, top: top.y - 66, ...sans(700), fontSize: 42, color: INK, whiteSpace: "nowrap", padding: "2px 18px 6px", borderRadius: 10, ...lit(PAL.amber), borderLeft: `7px solid ${PAL.amber}` }}>{C.after} →</div>
           {OUT.map((o, i) => {
             const r = rowRect(d, pr, o);
-            const ki = span(f, L("e2") + 96 + i * 30, L("e2") + 106 + i * 30, expoOut);
+            const ki = span(f, vAt[i], vAt[i] + 12, backOut);
+            const [mark, ...rest] = [...C.verdict[o]];
             return (
-              <div key={o} style={{ position: "absolute", right: 1080 - (r.x + r.w) + 18, top: r.y + r.h - 70, ...serif(), fontSize: 42, color: INK, padding: "2px 18px 6px", background: PLATE, borderRadius: 10, borderRight: `6px solid ${ROW_COL[o]}`, opacity: ki, transform: `translateX(${(1 - ki) * 24}px)` }}>
-                {C.verdict[o]}
+              <div key={o} style={{ position: "absolute", right: 1080 - (r.x + r.w) + 14, top: r.y + r.h - 96, ...serif(), fontSize: 54, color: INK, padding: "4px 24px 10px", borderRadius: 14, ...lit(ROW_COL[o]), borderRight: `8px solid ${ROW_COL[o]}`, opacity: Math.min(1, ki * 1.4), transform: `translateX(${(1 - ki) * 40}px) scale(${0.9 + 0.1 * ki})`, transformOrigin: "right center", whiteSpace: "nowrap" }}>
+                <span style={{ color: ROW_COL[o], marginRight: 8 }}>{mark}</span>
+                {rest.join("").trim()}
               </div>
             );
           })}
         </div>
       )}
-      <Big k={hold(f, L("e3") - 2, E("question") + 2, 10)} top={560} lines={[C.endQ1]} size={60} />
-      {qK > 0.01 && (
-        <div style={{ position: "absolute", left: 0, right: 0, top: lvl.y + 70, textAlign: "center", opacity: qK, transform: `translateY(${(1 - qK) * 30}px) scale(${1.08 - 0.08 * qK})` }}>
-          <div style={{ ...serif(), fontSize: 110, color: INK, letterSpacing: 4, textShadow: "0 0 40px rgba(230,246,255,0.35)" }}>{C.endQ2}</div>
-        </div>
-      )}
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1480, textAlign: "center", opacity: span(f, E("question") + 24, E("question") + 40) }}>
+      <Statement f={f} top={lvl.y - 270} end={FRAMES + 10} kicker={C.kickEnd} rule={false} scrim={0.7} lines={[{ text: C.endQ1, at: L("e3"), size: 80 }]} />
+      <Statement f={f} top={lvl.y + 64} end={FRAMES + 10} scrim={0} lines={[{ text: C.endQ2, at: E("question"), size: 128, hl: "被接受" }]} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1500, textAlign: "center", opacity: span(f, E("question") + 30, E("question") + 46) }}>
         <span style={{ ...sans(500), fontSize: 34, letterSpacing: 3, color: INK, padding: "6px 22px", background: "rgba(6,8,14,0.78)", borderRadius: 10 }}>{C.disclaimer}</span>
       </div>
     </>
@@ -627,8 +729,20 @@ export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
 
       {/* ================= MECHANISM (main chart) ================= */}
       {main && (
+        <Statement
+          f={f}
+          top={330}
+          end={Lc("m1", "先看") + 2}
+          scrim={0.8}
+          lines={[
+            { text: C.toC[0], at: L("m1") + 6, size: 120, hl: C.toC[0] },
+            { text: C.toC[1], at: Lc("m1", "是怎么"), size: 92 },
+          ]}
+        />
+      )}
+      {main && (
         <>
-          <Callout f={f} a={PUSH.prior[1] + 2} b={L("m2") + 6} at={pr(bx(PRIOR_HIGH), py(5000), 0)} plate={off(pr(bx(PRIOR_HIGH), py(5000), 0), 74, -138)} side="r" num="5000.00" title={C.priorHigh[0].replace(" 5000.00", "")} note={C.priorHigh[1]} />
+          <Callout f={f} a={Math.max(PUSH.prior[1] - 6, Lc("m1", "关键位上方"))} b={L("m2") + 6} at={pr(bx(PRIOR_HIGH), py(5000), 0)} plate={off(pr(bx(PRIOR_HIGH), py(5000), 0), 74, -138)} side="r" num="5000.00" title={C.priorHigh[0].replace(" 5000.00", "")} note={C.priorHigh[1]} />
           <Callout f={f} a={L("m2") + 34} b={L("m4") - 6} at={pr(-0.9, py(5006.5), 0.3)} plate={off(pr(-0.9, py(5006.5), 0.3), -54, -188)} side="l" title={C.buyStops[0]} note={C.buyStops[1]} />
           <Callout f={f} a={L("m4") + 32} b={L("m5") + 24} at={pr(bx(1) - 1.15, py(5016), 0.4)} plate={off(pr(bx(1) - 1.15, py(5016), 0.4), -64, -138)} side="l" color={PAL.violet} title={C.sellWall[0]} note={C.sellWall[1]} />
         </>
@@ -682,7 +796,7 @@ export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
           );
           return (
             <>
-              {both(L("m6") + 6, Le("m6") + 14, L("m6") + 170)}
+              {both(L("m6") + 6, Le("m6") + 14, Lc("m6", "这是背离"))}
               {both(L("s3") + 6, Le("s3") + 10, L("s3") + 60)}
               {(() => {
                 const k = d.deltaStrip;
@@ -695,7 +809,7 @@ export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
         })()}
       {main && (
         <>
-          <Callout f={f} a={L("m7") + 30} b={Le("m7") + 14} at={pr(bx(2), py(5018), 0.7)} plate={off(pr(bx(2), py(5018), 0.7), 54, -178)} side="r" num="≈ 0" title={C.accept[0].replace(" ≈ 0", "")} note={C.accept[1]} />
+          <Callout f={f} a={Lc("m7", "新高处")} b={Le("m7") + 14} at={pr(bx(2), py(5018), 0.7)} plate={off(pr(bx(2), py(5018), 0.7), 54, -178)} side="r" num="≈ 0" title={C.accept[0].replace(" ≈ 0", "")} note={C.accept[1]} />
           <Callout f={f} a={E("crash") + 10} b={L("m9") - 4} at={pr(bx(2) - 1.2, py(4992), 0.4)} plate={off(pr(bx(2) - 1.2, py(4992), 0.4), 74, 242)} side="r" color={PAL.down} title={C.sellStops[0]} note={C.sellStops[1]} />
         </>
       )}
@@ -713,18 +827,18 @@ export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
                   </div>
                 );
               })}
-              <div style={{ ...serif(), fontSize: 60, color: PAL.amber, opacity: span(f, L("m9") + 50, L("m9") + 60), marginTop: 2 }}>{C.notManip}</div>
-              <div style={{ height: 1, background: "rgba(245,247,250,0.18)", margin: "14px 0", opacity: span(f, L("m9") + 80, L("m9") + 90) }} />
-              <div style={{ opacity: span(f, L("m9") + 96, L("m9") + 106) }}>
+              <div style={{ ...serif(), fontSize: 60, color: PAL.amber, opacity: span(f, Lc("m9", "不是操纵"), Lc("m9", "不是操纵") + 10), marginTop: 2 }}>{C.notManip}</div>
+              <div style={{ height: 1, background: "rgba(245,247,250,0.18)", margin: "14px 0", opacity: span(f, Lc("m9", "虚假挂单") - 8, Lc("m9", "虚假挂单")) }} />
+              <div style={{ opacity: span(f, Lc("m9", "虚假挂单"), Lc("m9", "虚假挂单") + 10) }}>
                 <div style={{ ...sans(700), fontSize: 40, color: "#ff97a3" }}>{C.spoof[0]}</div>
-                <div style={{ ...sans(500), fontSize: 34, color: SOFT, marginTop: 4, opacity: span(f, L("m9") + 104, L("m9") + 114) }}>{C.spoof[1]}</div>
+                <div style={{ ...sans(500), fontSize: 34, color: SOFT, marginTop: 4, opacity: span(f, Lc("m9", "虚假挂单") + 8, Lc("m9", "虚假挂单") + 18) }}>{C.spoof[1]}</div>
               </div>
             </Panel>
           );
         })()}
 
       {/* ================= SIGNALS (main chart) ================= */}
-      <Big k={main ? hold(f, L("s1"), PUSH.close[0] + 4, 10) : 0} top={330} lines={[C.signalsTitle]} size={96} />
+      {main && <Statement f={f} top={330} end={PUSH.close[0] + 4} scrim={0.6} lines={[{ text: C.signalsTitle, at: L("s1") + 4, size: 120, hl: "三个" }]} />}
       {main &&
         (() => {
           const k = hold(f, PUSH.close[0], r0, 12);

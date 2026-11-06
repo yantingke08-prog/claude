@@ -1,6 +1,6 @@
 // The 3D set, three places in one world:
-//   story: a tall chart that builds bar by bar from a point of light, fans the three endings out of the
-//          shared breakout bar as light trails, and shows each ending on its own;
+//   story: a tall chart that builds bar by bar from a point of light, splits into three full charts
+//          stacked on one price scale (one per ending), and then shows each ending on its own;
 //   main:  the 86-bar chart of ending C on a dark glass board with a laser tripwire at the prior high,
 //          stop orders as amber capsules and resting sell liquidity as a violet glass brick wall;
 //   rows:  the three-row comparison, which in the finale rewinds, merges and folds into the level.
@@ -11,7 +11,7 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { CameraRig } from "../components/Stage";
 import { mulberry32 } from "../lib/rng";
 import { FPS, hold } from "./cue";
-import { ROW_BAND, ROW_I0, ROW_VOL_Y, ROW_Y, ST_I0, ST_VOL, X_ROWS, X_ST, ry, sy, type Dir } from "./director";
+import { ROW_BAND, ROW_I0, ROW_VOL_Y, ROW_Y, ST_I0, ST_VOL, TRI, X_ROWS, X_ST, panelY, ry, sy, type Dir } from "./director";
 import { AFTER, BOARD_TOP, BREAK, CHART, LEVEL, N_AFTER, OUTCOMES, PATHS, PAST, PRIOR_HIGH, bar, bx, liveBar, path0, py, type Bar, type Outcome } from "./market";
 
 export const PAL = {
@@ -526,51 +526,50 @@ const stGrid = (() => {
   g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
   return g;
 })();
-/** the bars the story chart shows on this frame, with their indices */
-export const storyBars = (d: Dir) => {
+/** the bars of one story panel on this frame, with their indices. Panel A always carries the shared
+ *  history; B and C carry their own copy only while the chart is split into three. */
+export const storyBars = (d: Dir, o: Outcome) => {
   const S = d.story;
-  const out: { b: Bar; i: number; glow: number; o?: Outcome }[] = [];
-  for (let i = ST_I0; i < 0; i++) {
-    const j = i - ST_I0;
-    const k = Math.min(1, Math.max(0, S.n - j));
-    // a fresh bar flares, then settles over the next few bars
-    if (k > 0.01) out.push({ b: grow(bar("C", i), k), i, glow: 1.4 * (1 - Math.min(1, Math.max(0, (S.n - j - 1) / 2.5))) });
-  }
-  if (S.u0 > 0.001) out.push({ b: liveBar(BREAK, path0, S.u0), i: 0, glow: d.flash * 0.6 });
-  for (const o of OUTCOMES)
-    for (let i = 1; i <= N_AFTER; i++) {
-      const k = Math.min(1, Math.max(0, S.ends[o] - (i - 1)));
-      if (k > 0.01) out.push({ b: grow(AFTER[o][i - 1], k), i, glow: 0, o });
+  const out: { b: Bar; i: number; glow: number; op: number }[] = [];
+  if (o === "A" || S.split[o] > 0.01) {
+    for (let i = ST_I0; i < 0; i++) {
+      const j = i - ST_I0;
+      const k = Math.min(1, Math.max(0, S.n - j));
+      // a fresh bar flares, then settles over the next few bars; the oldest bars sit too low for the
+      // stacked panels and step out while the chart splits
+      if (k > 0.01) out.push({ b: grow(bar("C", i), k), i, glow: 1.4 * (1 - Math.min(1, Math.max(0, (S.n - j - 1) / 2.5))), op: i < ST_I0 + 6 ? 1 - S.split[o] : 1 });
     }
+    if (S.u0 > 0.001) out.push({ b: liveBar(BREAK, path0, S.u0), i: 0, glow: d.flash * 0.6 + 0.5 * S.split[o] * S.tri, op: 1 });
+  }
+  for (let i = 1; i <= N_AFTER; i++) {
+    const k = Math.min(1, Math.max(0, S.ends[o] - (i - 1)));
+    if (k > 0.01) out.push({ b: grow(AFTER[o][i - 1], k), i, glow: 0, op: 1 });
+  }
   return out;
 };
 const stGlass = new THREE.MeshPhysicalMaterial({ color: "#070b14", roughness: 0.32, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.2, transparent: true });
-const StoryChart: React.FC<{ d: Dir }> = ({ d }) => {
+const StoryPanel: React.FC<{ d: Dir; o: Outcome }> = ({ d, o }) => {
   const S = d.story;
-  const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#9fb2d8", transparent: true, opacity: 0.1, depthWrite: false }), []);
-  const laserMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PAL.laser, toneMapped: false }), []);
+  const laserMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PAL.laser, toneMapped: false, transparent: true }), []);
   const haloMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8fd8ff", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), []);
-  laserMat.color.set(PAL.laser).multiplyScalar(1.3 + d.laser * 1.1);
-  haloMat.opacity = 0.08 + 0.08 * d.laser;
-  const bars = storyBars(d);
-  // the board, grid and wire light up as the chart starts to build
+  const op = S.op[o];
+  if (op < 0.01) return null;
+  const sp = S.split[o];
+  const ym = (p: number) => panelY(o, p, sp);
   const lit = Math.min(1, S.n / 5);
-  gridMat.opacity = 0.1 * lit;
-  stGlass.opacity = lit;
+  // only one wire while the chart is single (B and C would sit exactly on top of A's)
+  const wire = o === "A" ? lit : sp > 0.01 ? op : 0;
+  laserMat.color.set(PAL.laser).multiplyScalar(1.3 + d.laser * 1.1);
+  laserMat.opacity = wire;
+  haloMat.opacity = (0.08 + 0.08 * d.laser) * wire;
   const len = ST_X1 - ST_X0;
-  const mid = (ST_X0 + ST_X1) / 2;
-  const vol = bars.filter(({ i }) => i >= ST_VOL.i0).map(({ b, i }) => ({ b, x: bx(i) }));
+  const bars = storyBars(d, o);
+  const vol = o === "A" || sp < 0.01 ? bars.filter(({ i }) => i >= ST_VOL.i0).map(({ b, i }) => ({ b, x: bx(i) })) : [];
   return (
-    <group position={[X_ST, 0, 0]}>
-      {lit > 0.01 && (
-        <mesh material={stGlass} position={[mid, sy(4960), -0.8]}>
-          <planeGeometry args={[len + 4, 60]} />
-        </mesh>
-      )}
-      <lineSegments geometry={stGrid} material={gridMat} position={[0, 0, -0.75]} />
-      {lit > 0.01 && (
+    <group>
+      {wire > 0.01 && (
         // the wire draws itself out from the left edge
-        <group position={[ST_X0 + (len / 2) * lit, sy(LEVEL), 0]} scale={[1, lit, 1]} rotation={[0, 0, Math.PI / 2]}>
+        <group position={[ST_X0 + (len / 2) * lit, ym(LEVEL), 0]} scale={[1, lit, 1]} rotation={[0, 0, Math.PI / 2]}>
           <mesh material={laserMat}>
             <cylinderGeometry args={[0.016, 0.016, len, 8]} />
           </mesh>
@@ -579,12 +578,32 @@ const StoryChart: React.FC<{ d: Dir }> = ({ d }) => {
           </mesh>
         </group>
       )}
-      {bars.map(({ b, i, glow, o }) => (
-        <Candle key={`${o ?? "s"}${i}`} bar={b} x={bx(i)} ym={sy} wick={0.024} glow={glow} />
+      {bars.map(({ b, i, glow, op: bo }) => (
+        <Candle key={i} bar={b} x={bx(i)} ym={ym} wick={0.024} glow={glow} op={op * bo} />
       ))}
-      <VolumeBarsAt bars={vol} y0={ST_VOL.y} max={ST_VOL.h} k={S.vol} />
+      {vol.length > 0 && <VolumeBarsAt bars={vol} y0={ST_VOL.y} max={ST_VOL.h} k={S.vol} />}
+    </group>
+  );
+};
+const StoryChart: React.FC<{ d: Dir }> = ({ d }) => {
+  const S = d.story;
+  const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#9fb2d8", transparent: true, opacity: 0.1, depthWrite: false }), []);
+  // the board and grid light up as the chart starts to build; the grid belongs to the single chart
+  const lit = Math.min(1, S.n / 5);
+  gridMat.opacity = 0.1 * lit * (1 - S.split.A);
+  stGlass.opacity = lit;
+  const len = ST_X1 - ST_X0;
+  const mid = (ST_X0 + ST_X1) / 2;
+  return (
+    <group position={[X_ST, 0, 0]}>
+      {lit > 0.01 && (
+        <mesh material={stGlass} position={[mid, sy(4960), -0.8]}>
+          <planeGeometry args={[len + 4, 60]} />
+        </mesh>
+      )}
+      <lineSegments geometry={stGrid} material={gridMat} position={[0, 0, -0.75]} />
       {OUTCOMES.map((o) => (
-        <Trail key={o} o={o} k={S.trail} op={S.trailOp} ym={sy} />
+        <StoryPanel key={o} d={d} o={o} />
       ))}
       <GlowPoint k={S.point} at={[bx(ST_I0), sy(bar("C", ST_I0).o), 0.1]} t={d.t} />
     </group>

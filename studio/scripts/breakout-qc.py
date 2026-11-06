@@ -14,6 +14,7 @@ from pathlib import Path
 _ff = shutil.which("ffmpeg")
 BIN = Path(_ff).parent if _ff else Path.home() / "AppData/Local/Microsoft/WinGet/Links"
 path = sys.argv[1]
+lo, hi = (float(sys.argv[2]), float(sys.argv[3])) if len(sys.argv) > 3 else (60.0, 90.0)  # allowed duration window, seconds
 
 
 def run(*args):
@@ -27,7 +28,7 @@ dur = float(probe["format"]["duration"])
 num, den = map(int, v["r_frame_rate"].split("/"))
 checks = []
 ok = lambda name, cond, info: checks.append((name, bool(cond), info))  # noqa: E731
-ok("duration 60-90s", 60 <= dur <= 90, f"{dur:.2f}s")
+ok(f"duration {lo:g}-{hi:g}s", lo <= dur <= hi, f"{dur:.2f}s")
 ok("1920x1080 or 1080x1920", (v["width"], v["height"]) in ((1920, 1080), (1080, 1920)), f'{v["width"]}x{v["height"]}')
 ok("30 fps", num / den == 30, f"{num}/{den}")
 ok("H.264 + AAC", v["codec_name"] == "h264" and a["codec_name"] == "aac", f'{v["codec_name"]} / {a["codec_name"]} {a.get("sample_rate")}Hz')

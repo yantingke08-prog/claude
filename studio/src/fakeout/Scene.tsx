@@ -1,4 +1,4 @@
-// The 3D set: an ~80-bar chart on a dark glass board in a hazy stage, a laser tripwire at the prior high,
+// The 3D set: the three-row comparison page, and an 86-bar chart on a dark glass board with a laser tripwire at the prior high,
 // physical red/green candles, stop orders as amber capsules, resting sell liquidity as a
 // violet glass brick wall, and the light/particle events that sell each beat.
 import { Environment, Lightformer, Line } from "@react-three/drei";
@@ -7,9 +7,9 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CameraRig } from "../components/Stage";
 import { mulberry32 } from "../lib/rng";
-import { FPS, S, hold, span } from "./cue";
-import { barU, type Dir } from "./director";
-import { BOARD_TOP, CHART, FAIL_OPEN, GOOD_BREAK, LEVEL, OUTCOMES, PAST, bx, failPath, liveBar, py, type Bar } from "./market";
+import { FPS, hold } from "./cue";
+import { ROW_BAND, ROW_DELTA_Y, ROW_I0, ROW_VOL_Y, X_ROWS, ry, type Dir } from "./director";
+import { AFTER, BOARD_TOP, BREAK, CHART, LEVEL, N_AFTER, PATHS, PAST, PRIOR_HIGH, bar, bx, liveBar, path0, py, type Bar, type Outcome } from "./market";
 
 export const PAL = {
   bg: "#04060c",
@@ -34,7 +34,7 @@ const roundedBox = (h: number) => {
 const candleMat = (color: string) =>
   new THREE.MeshPhysicalMaterial({ color, emissive: color, emissiveIntensity: 0.32, roughness: 0.22, metalness: 0.05, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true });
 
-const Candle: React.FC<{ bar: Bar; x: number; op?: number; glow?: number }> = ({ bar, x, op = 1, glow = 0 }) => {
+const Candle: React.FC<{ bar: Bar; x: number; op?: number; glow?: number; ym?: (p: number) => number; wick?: number }> = ({ bar, x, op = 1, glow = 0, ym = py, wick: wr = 0.022 }) => {
   const up = bar.c >= bar.o;
   const mats = useMemo(() => ({ up: candleMat(PAL.up), down: candleMat(PAL.down), wickUp: new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.up).multiplyScalar(1.6), transparent: true, toneMapped: false }), wickDown: new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.down).multiplyScalar(1.6), transparent: true, toneMapped: false }) }), []);
   if (op < 0.01) return null;
@@ -44,15 +44,15 @@ const Candle: React.FC<{ bar: Bar; x: number; op?: number; glow?: number }> = ({
   body.depthWrite = op > 0.95;
   body.emissiveIntensity = 0.32 + glow * 1.4;
   wick.opacity = op * 0.95;
-  const top = py(Math.max(bar.o, bar.c));
-  const bot = py(Math.min(bar.o, bar.c));
-  const hi = py(bar.h);
-  const lo = py(bar.l);
+  const top = ym(Math.max(bar.o, bar.c));
+  const bot = ym(Math.min(bar.o, bar.c));
+  const hi = ym(bar.h);
+  const lo = ym(bar.l);
   return (
     <group position={[x, 0, 0]}>
       <mesh geometry={roundedBox(top - bot)} material={body} position={[0, (top + bot) / 2, 0]} />
       <mesh material={wick} position={[0, (hi + lo) / 2, 0]}>
-        <cylinderGeometry args={[0.022, 0.022, Math.max(0.01, hi - lo), 8]} />
+        <cylinderGeometry args={[wr, wr, Math.max(0.01, hi - lo), 8]} />
       </mesh>
     </group>
   );
@@ -240,13 +240,13 @@ const Sparks: React.FC<{ age: number; origin: [number, number, number]; color: s
   return <points geometry={geo} material={mat} frustumCulled={false} />;
 };
 
-const Shockwave: React.FC<{ a: number; age: number; color: string }> = ({ a, age, color }) => {
+const Shockwave: React.FC<{ a: number; age: number; color: string; x?: number }> = ({ a, age, color, x = 0 }) => {
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }), [color]);
   if (a < 0.02) return null;
   mat.opacity = a * 0.9;
   const s = 0.3 + (age / FPS) * 5;
   return (
-    <mesh material={mat} rotation={[-Math.PI / 2, 0, 0]} position={[0, LY, 0]} scale={s}>
+    <mesh material={mat} rotation={[-Math.PI / 2, 0, 0]} position={[x, LY, 0]} scale={s}>
       <ringGeometry args={[0.92, 1, 96]} />
     </mesh>
   );
@@ -266,7 +266,7 @@ const orderCloud = (seed: number, n: number, y0: number, y1: number): Pt[] => {
   return out;
 };
 const BUY_STOPS = orderCloud(11, 200, py(5001.5), py(5006.5));
-const SELL_STOPS = orderCloud(12, 200, py(4986), py(4998.5));
+const SELL_STOPS = orderCloud(12, 200, py(4986), py(4998.5)).map((p) => ({ ...p, x: p.x + bx(2) }));
 
 /** stop orders: idle amber capsules; once triggered each becomes a streak in its direction */
 const Stops: React.FC<{ pts: Pt[]; show: number; fire: number; dir: 1 | -1; t: number; to: number }> = ({ pts, show, fire, dir, t, to }) => {
@@ -309,7 +309,7 @@ const Stream: React.FC<{ k: number; t: number; to: number }> = ({ k, t, to }) =>
   const n = 70;
   const { mesh, seeds } = useMemo(() => {
     const r = mulberry32(21);
-    const seeds = Array.from({ length: n }, () => ({ x: (r() - 0.5) * 1.8, z: (r() - 0.5) * 1.1, ph: r(), sp: 0.7 + r() * 0.6 }));
+    const seeds = Array.from({ length: n }, () => ({ x: bx(1) + (r() - 0.5) * 1.8, z: (r() - 0.5) * 1.1, ph: r(), sp: 0.7 + r() * 0.6 }));
     const mesh = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.03, 0.4, 3, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.up).multiplyScalar(3), toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), n);
     mesh.frustumCulled = false;
     return { mesh, seeds };
@@ -328,7 +328,7 @@ const Stream: React.FC<{ k: number; t: number; to: number }> = ({ k, t, to }) =>
 };
 
 /** resting sell limit orders: a wall of violet glass bricks that gets chewed and refills */
-const WALL = { x0: -1.25, x1: 1.25, y0: py(5005.5), y1: py(5021), z0: -0.75, z1: 0.75, nx: 7, ny: 7, nz: 3 };
+const WALL = { x0: bx(1) - 1.25, x1: bx(1) + 1.25, y0: py(5005.5), y1: py(5021), z0: -0.75, z1: 0.75, nx: 7, ny: 7, nz: 3 };
 const Wall: React.FC<{ show: number; hit: number; t: number }> = ({ show, hit, t }) => {
   const { mesh, cells } = useMemo(() => {
     const r = mulberry32(41);
@@ -396,29 +396,47 @@ const AcceptZone: React.FC<{ show: number; fill: number }> = ({ show, fill }) =>
   );
 };
 
-const DeltaBars: React.FC<{ k: number }> = ({ k }) => {
-  const mat = useMemo(() => new THREE.MeshPhysicalMaterial({ color: PAL.amber, emissive: PAL.amber, emissiveIntensity: 0.6, roughness: 0.25, clearcoat: 1, transparent: true }), []);
-  if (k < 0.01) return null;
-  mat.opacity = k;
-  const a = { x: bx(-11) };
-  const b = { x: bx(0) };
+/** dashed line from the prior high to the new high: price higher, delta smaller */
+const DeltaLine: React.FC<{ k: number }> = ({ k }) =>
+  k < 0.01 ? null : <Line points={[[bx(PRIOR_HIGH), py(5000) + 0.12, 0.2], [bx(1), py(5016) + 0.12, 0.2]]} color="#ffffff" lineWidth={3} dashed dashSize={0.18} gapSize={0.12} transparent opacity={k * 0.9} />;
+
+/** order-flow delta as glowing bars from a zero line: up when buyers lead (red), down when sellers lead (green) */
+const DELTA_MAX = 1150;
+const strip = {
+  pos: new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.up).multiplyScalar(1.5), transparent: true, toneMapped: false }),
+  neg: new THREE.MeshBasicMaterial({ color: new THREE.Color(PAL.down).multiplyScalar(1.5), transparent: true, toneMapped: false }),
+  vUp: new THREE.MeshStandardMaterial({ color: PAL.up, emissive: PAL.up, emissiveIntensity: 0.25, transparent: true, roughness: 0.4 }),
+  vDn: new THREE.MeshStandardMaterial({ color: PAL.down, emissive: PAL.down, emissiveIntensity: 0.25, transparent: true, roughness: 0.4 }),
+  zero: new THREE.MeshBasicMaterial({ color: "#c9d4ea", transparent: true }),
+  box: new THREE.BoxGeometry(1, 1, 1),
+};
+type Placed = { b: Bar; x: number };
+const DeltaBarsAt: React.FC<{ bars: Placed[]; y0: number; half: number; k: number; w?: number }> = ({ bars, y0, half, k, w = 0.3 }) => {
+  if (k < 0.01 || !bars.length) return null;
+  strip.pos.opacity = strip.neg.opacity = k;
+  strip.zero.opacity = 0.35 * k;
+  const xs = bars.map((b) => b.x);
+  const a = Math.min(...xs),
+    b = Math.max(...xs);
   return (
     <group>
-      <Line points={[[a.x, py(5000) + 0.12, 0], [b.x, py(5013) + 0.12, 0]]} color="#ffffff" lineWidth={3} dashed dashSize={0.18} gapSize={0.12} transparent opacity={k * 0.9} />
+      <mesh geometry={strip.box} material={strip.zero} position={[(a + b) / 2, y0, 0]} scale={[b - a + 0.6, 0.012, 0.012]} />
+      {bars.map(({ b: bar_, x }) => {
+        const h = Math.max(0.01, (Math.abs(bar_.d) / DELTA_MAX) * half * k);
+        return <mesh key={x} geometry={strip.box} material={bar_.d >= 0 ? strip.pos : strip.neg} position={[x, y0 + (bar_.d >= 0 ? h / 2 : -h / 2), 0]} scale={[w, h, w * 0.6]} />;
+      })}
     </group>
   );
 };
-
-const InvalidPlane: React.FC<{ k: number }> = ({ k }) => {
-  const mat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#ffd9a0", transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }), []);
+const VolumeBarsAt: React.FC<{ bars: Placed[]; y0: number; max: number; k: number }> = ({ bars, y0, max, k }) => {
   if (k < 0.01) return null;
-  mat.opacity = 0.16 * k;
+  strip.vUp.opacity = strip.vDn.opacity = 0.85 * k;
   return (
     <group>
-      <mesh material={mat} position={[1.6, py(5016), 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.6, 1.8]} />
-      </mesh>
-      <Line points={[[-0.7, py(5016), 0.9], [3.9, py(5016), 0.9]]} color={PAL.amber} lineWidth={3} dashed dashSize={0.16} gapSize={0.1} transparent opacity={k} />
+      {bars.map(({ b, x }) => {
+        const h = Math.max(0.01, (b.v / 3400) * max * k);
+        return <mesh key={x} geometry={strip.box} material={b.c >= b.o ? strip.vUp : strip.vDn} position={[x, y0 + h / 2, 0]} scale={[0.34, h, 0.2]} />;
+      })}
     </group>
   );
 };
@@ -434,17 +452,81 @@ const Marker: React.FC<{ k: number; at: [number, number, number] }> = ({ k, at }
   );
 };
 
+// ------------------------------------------------------------------ the comparison page: one row per outcome
+/** a bar partially revealed: grows out of its open */
+const grow = (b: Bar, k: number): Bar => ({ ...b, h: b.o + (b.h - b.o) * k, l: b.o + (b.l - b.o) * k, c: b.o + (b.c - b.o) * k, v: b.v * k, d: b.d * k });
+const rowGlass = new THREE.MeshPhysicalMaterial({ color: "#070b14", roughness: 0.3, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.2 });
+const rowGrid = (() => {
+  const a: number[] = [];
+  for (const p of [4950, 4975, 5025, 5050]) a.push(bx(ROW_I0) - 0.5, ry(p), 0, bx(N_AFTER) + 0.5, ry(p), 0);
+  for (let i = -10; i <= N_AFTER; i += 10) a.push(bx(i), ry(4942), 0, bx(i), ry(5052), 0);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+  return g;
+})();
+/** the bars one row shows on this frame (shared history, the breakout bar, then its own ending) */
+export const rowBars = (o: Outcome, d: Dir): Placed[] => {
+  const out: Placed[] = [];
+  for (let i = ROW_I0; i < 0; i++) out.push({ b: bar(o, i), x: bx(i) });
+  out.push({ b: liveBar(BREAK, path0, d.rows.u0), x: 0 });
+  for (let i = 1; i <= N_AFTER; i++) {
+    const k = Math.min(1, Math.max(0, d.rows.n - (i - 1)));
+    if (k > 0.01) out.push({ b: grow(AFTER[o][i - 1], k), x: bx(i) });
+  }
+  return out;
+};
+const RowChart: React.FC<{ o: Outcome; d: Dir }> = ({ o, d }) => {
+  const R = d.rows;
+  const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#9fb2d8", transparent: true, depthWrite: false }), []);
+  const laserMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PAL.laser, toneMapped: false, transparent: true }), []);
+  if (R.op[o] < 0.01) return null;
+  const op = R.op[o];
+  gridMat.opacity = 0.12 * op;
+  laserMat.opacity = op;
+  laserMat.color.set(PAL.laser).multiplyScalar(1.3 + d.laser * 0.9);
+  const bars = rowBars(o, d);
+  const x0 = bx(ROW_I0) - 0.7,
+    x1 = bx(N_AFTER) + 0.7;
+  return (
+    <group position={[X_ROWS, R.y[o], 0]} scale={R.s[o]}>
+      {op > 0.95 && (
+        <mesh material={rowGlass} position={[(x0 + x1) / 2, (ROW_BAND.y0 + ROW_BAND.y1) / 2, -0.45]}>
+          <planeGeometry args={[x1 - x0, ROW_BAND.y1 - ROW_BAND.y0]} />
+        </mesh>
+      )}
+      <lineSegments geometry={rowGrid} material={gridMat} position={[0, 0, -0.4]} />
+      <mesh material={laserMat} position={[(x0 + x1) / 2, ry(LEVEL), 0]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.018, 0.018, x1 - x0, 8]} />
+      </mesh>
+      {bars.map(({ b, x }) => (
+        <Candle key={x} bar={b} x={x} ym={ry} wick={0.018} op={op} glow={x === 0 ? d.flash * 0.4 : 0} />
+      ))}
+      <VolumeBarsAt bars={bars} y0={ROW_VOL_Y} max={0.7} k={R.vol[o]} />
+      <DeltaBarsAt bars={bars} y0={ROW_DELTA_Y} half={0.38} k={R.delta[o]} />
+    </group>
+  );
+};
+
 // ------------------------------------------------------------------ assembly
+/** settled + live bars of the main chart (outcome C) on this frame */
+export const mainBars = (d: Dir) => {
+  const out: { b: Bar; i: number }[] = [...PAST];
+  d.main.u.forEach((u, k) => {
+    if (u > 0.001) out.push({ b: liveBar(k === 0 ? BREAK : AFTER.C[k - 1], PATHS[k], u), i: k });
+  });
+  for (let i = 3; i <= N_AFTER; i++) {
+    const k = Math.min(1, Math.max(0, d.main.rest - (i - 3)));
+    if (k > 0.01) out.push({ b: grow(AFTER.C[i - 1], k), i });
+  }
+  return out;
+};
+
 export const Scene: React.FC<{ d: Dir }> = ({ d }) => {
   const f = d.f;
-  const live = liveBar(FAIL_OPEN, failPath, barU(f));
-  const goodBar: Bar = { ...GOOD_BREAK, h: GOOD_BREAK.o + (GOOD_BREAK.h - GOOD_BREAK.o) * d.bar0.grow, c: GOOD_BREAK.o + (GOOD_BREAK.c - GOOD_BREAK.o) * d.bar0.grow };
-  const bar0 = d.bar0.mode === "good" ? goodBar : live;
-  const tip = py(failPath(barU(f)));
-  const speed = Math.abs(py(failPath(barU(f))) - py(failPath(barU(Math.max(0, f - 1)))));
-  const trueFill = f < 600 ? Math.min(1, d.outcomes.true.n / 6) * d.outcomes.true.op : 0;
   const dist = d.cam.pos.distanceTo(d.cam.target);
-  const prior = Math.max(hold(f, 640, 720, 12), d.delta);
+  const prior = Math.max(hold(f, 1190, 1290, 12), d.deltaLine);
+  const bars = mainBars(d);
+  const near = bars.filter(({ i }) => i >= -14).map(({ b, i }) => ({ b, x: bx(i) }));
   return (
     <>
       <CameraRig position={d.cam.pos.toArray() as [number, number, number]} target={d.cam.target.toArray() as [number, number, number]} fov={d.cam.fov} />
@@ -459,38 +541,43 @@ export const Scene: React.FC<{ d: Dir }> = ({ d }) => {
         <Lightformer form="rect" intensity={1.6} color="#88a8ff" position={[-6, 2, -3]} rotation={[0, Math.PI / 2, 0]} scale={[6, 2, 1]} />
         <Lightformer form="ring" intensity={2} color="#ffe2c4" position={[5, 3, 6]} scale={2.4} />
       </Environment>
-      <Beam pos={[-26, 14, -16]} r={16} h={70} color="#3a5cff" i={0.2} tilt={0.18} />
-      <Beam pos={[-2.6, 9.5, -5]} r={3.2} h={16} color="#ffffff" i={0.12} tilt={-0.14} />
-      <Beam pos={[0.2, 9.2, -1]} r={1.8} h={11} color="#fff3e0" i={0.06 + d.flash * 0.25} />
-      <Board />
-      <Dust t={d.t} />
 
-      {PAST.map(({ b, i }) => (
-        <Candle key={i} bar={b} x={bx(i)} glow={i === -11 ? prior : 0} />
-      ))}
-      <Candle bar={bar0} x={0} glow={d.flash * 0.35} />
-      {(["true", "retest", "fail"] as const).map((id) =>
-        OUTCOMES[id].map((b, i) => {
-          const o = d.outcomes[id];
-          const vis = Math.min(1, Math.max(0, o.n - i));
-          return vis > 0.01 && o.op > 0.01 ? <Candle key={id + i} bar={{ ...b, h: b.o + (b.h - b.o) * vis, l: b.o + (b.l - b.o) * vis, c: b.o + (b.c - b.o) * vis }} x={bx(i + 1)} op={o.op * Math.min(1, vis * 3)} /> : null;
-        }),
+      {d.world === "main" ? (
+        <>
+          <Beam pos={[-26, 14, -16]} r={16} h={70} color="#3a5cff" i={0.2} tilt={0.18} />
+          <Beam pos={[-2.6, 9.5, -5]} r={3.2} h={16} color="#ffffff" i={0.12} tilt={-0.14} />
+          <Beam pos={[0.2, 9.2, -1]} r={1.8} h={11} color="#fff3e0" i={0.06 + d.flash * 0.25} />
+          <Board />
+          <Dust t={d.t} />
+          {bars.map(({ b, i }) => (
+            <Candle key={i} bar={b} x={bx(i)} glow={i === PRIOR_HIGH ? prior : 0} />
+          ))}
+          <Laser i={d.laser} w={d.view.w} />
+          <Sparks age={(f - d.sparks[1].at) / FPS} origin={d.sparks[1].origin} color={d.sparks[1].color} seed={6} />
+          <Shockwave a={d.shock.a} age={d.shock.at} color={PAL.down} x={d.shock.x} />
+          <Marker k={prior} at={[bx(PRIOR_HIGH), py(5000), 0.32]} />
+          <Stops pts={BUY_STOPS} show={d.buyStops.show} fire={d.buyStops.fire} dir={1} t={d.t} to={WALL.y0 + 0.2} />
+          <Stops pts={SELL_STOPS} show={d.sellStops.show} fire={d.sellStops.fire} dir={-1} t={d.t} to={py(4968)} />
+          <Stream k={d.stream} t={d.t} to={WALL.y0 + 0.15} />
+          <Wall show={d.wall.show} hit={d.wall.hit} t={d.t} />
+          <AcceptZone show={d.accept} fill={0} />
+          <DeltaLine k={d.deltaLine} />
+          <DeltaBarsAt bars={near} y0={py(4930)} half={1.5} k={d.deltaStrip} w={0.34} />
+        </>
+      ) : (
+        <>
+          <spotLight position={[X_ROWS, 30, 18]} angle={0.5} penumbra={0.9} intensity={160} distance={80} color="#ffffff" />
+          <Beam pos={[X_ROWS - 6, 26, -14]} r={12} h={60} color="#3a5cff" i={0.16} tilt={0.18} />
+          <Beam pos={[X_ROWS + 6, 26, -12]} r={9} h={60} color="#ffffff" i={0.08} tilt={-0.14} />
+          <group position={[X_ROWS + 25, 2, 0]}>
+            <Dust t={d.t} />
+          </group>
+          {(["B", "A", "C"] as const).map((o) => (
+            <RowChart key={o} o={o} d={d} />
+          ))}
+          <Sparks age={(f - d.sparks[0].at) / FPS} origin={d.sparks[0].origin} color={d.sparks[0].color} seed={5} />
+        </>
       )}
-
-      <Laser i={d.laser} w={d.view.w} />
-      {d.sparks.map((s, i) => (
-        <Sparks key={i} age={(f - s.at) / FPS} origin={[0, LY, 0.1]} color={i === 2 ? "#ffd27a" : "#ffffff"} seed={i + 5} />
-      ))}
-      <Shockwave a={d.shock.a} age={d.shock.at} color={PAL.down} />
-      <Marker k={prior} at={[bx(-11), py(5000), 0.32]} />
-
-      <Stops pts={BUY_STOPS} show={d.buyStops.show} fire={d.buyStops.fire} dir={1} t={d.t} to={WALL.y0 + 0.2} />
-      <Stops pts={SELL_STOPS} show={d.sellStops.show} fire={d.sellStops.fire} dir={-1} t={d.t} to={py(4968)} />
-      <Stream k={d.stream} t={d.t} to={WALL.y0 + 0.15} />
-      <Wall show={d.wall.show} hit={d.wall.hit} t={d.t} />
-      <AcceptZone show={Math.max(d.accept, trueFill > 0 ? d.outcomes.true.op * span(f, 270, 290) : 0)} fill={d.accept > 0.01 ? 0 : trueFill} />
-      <DeltaBars k={d.delta} />
-      <InvalidPlane k={d.invalid} />
     </>
   );
 };

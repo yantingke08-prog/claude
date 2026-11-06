@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { AbsoluteFill, Audio, continueRender, delayRender, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { C } from "./copy";
-import { direct, type Dir } from "./director";
+import { E, direct, type Dir } from "./director";
 import { mono, sans, serif } from "./fonts";
 import { Hud } from "./Hud";
 import { PAL, Scene } from "./Scene";
@@ -61,19 +61,18 @@ export const FakeoutFilm: React.FC<{ muted?: boolean; dof?: boolean; dpr?: numbe
   );
 };
 
-/** 9:16 cover: the candle mid-pierce through the wire, title on top. */
+/** 9:16 cover: the three endings side by side under the title */
 export const FakeoutCover: React.FC = () => {
-  const d = direct(22);
-  const cam = { ...d.cam, pos: d.cam.pos.clone().add(new THREE.Vector3(0.6, -0.5, 2.2)) };
+  const d = direct(E("endsTo") + 40);
   return (
     <AbsoluteFill style={{ background: PAL.bg }}>
-      <Cinema d={{ ...d, cam }} bloom={1.2} />
-      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(4,6,12,0.92) 0%, rgba(4,6,12,0.5) 30%, rgba(4,6,12,0) 46%, rgba(4,6,12,0) 78%, rgba(4,6,12,0.85) 100%)" }} />
-      <div style={{ position: "absolute", left: 0, right: 0, top: 220, textAlign: "center" }}>
-        <div style={{ ...mono(), fontSize: 30, letterSpacing: 14, color: PAL.amber }}>{C.titleEn}</div>
-        <div style={{ ...serif(), fontSize: 240, color: "#F5F7FA", lineHeight: 1.2, marginTop: 10, textShadow: `-6px 0 0 ${PAL.up}aa, 6px 0 0 ${PAL.down}aa` }}>{C.title}</div>
-        <div style={{ ...serif(), fontSize: 54, color: "#F5F7FA", marginTop: 20 }}>{C.tagline}</div>
+      <Cinema d={d} bloom={1.1} />
+      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(4,6,12,0.95) 0%, rgba(4,6,12,0.6) 14%, rgba(4,6,12,0) 24%, rgba(4,6,12,0) 74%, rgba(4,6,12,0.9) 100%)" }} />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 110, textAlign: "center" }}>
+        <div style={{ ...mono(), fontSize: 28, letterSpacing: 8, color: PAL.amber }}>{C.titleEn}</div>
+        <div style={{ ...serif(), fontSize: 92, color: "#F5F7FA", lineHeight: 1.25, marginTop: 8, textShadow: `-4px 0 0 ${PAL.up}aa, 4px 0 0 ${PAL.down}aa` }}>{C.title}</div>
       </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1450, textAlign: "center", ...serif(), fontSize: 64, color: "#F5F7FA" }}>{C.endQ2}</div>
       <div style={{ position: "absolute", left: 0, right: 0, bottom: 150, textAlign: "center", ...sans(500), fontSize: 30, letterSpacing: 3, color: "rgba(245,247,250,0.78)" }}>
         {C.tag} · {C.disclaimer}
       </div>

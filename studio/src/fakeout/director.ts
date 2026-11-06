@@ -1,10 +1,13 @@
 // What the film is doing on any frame: one pure function, keyed to the narration lines.
-// Two places in one 3D world: the three-row comparison ("rows", far to the right) and the full
-// 86-bar chart of outcome C ("main"), where the mechanism and the signals are explained.
+// Three places in one 3D world:
+//   "story" (far right): one tall chart. The hook builds it bar by bar, then fans out the three
+//          endings from the shared breakout bar, and each ending gets the full screen on its own.
+//   "main"  (origin): the full 86-bar chart of ending C, where the mechanism and signals are explained.
+//   "rows"  (middle): the three-row comparison used to respond, and the closing collapse.
 import * as THREE from "three";
 import EV from "./events.json";
-import { FPS, L, Le, S, clamp01, cubicInOut, hold, pulse, smooth, span } from "./cue";
-import { CHART, LEVEL, N_AFTER, U_CROSS, bx, py, type Outcome } from "./market";
+import { FPS, L, Le, S, cubicInOut, hold, pulse, smooth, span } from "./cue";
+import { CHART, LEVEL, N_AFTER, U_CROSS, bar, bx, py, type Outcome } from "./market";
 
 // ---------------------------------------------------------------- events
 type EvName = Exclude<keyof typeof EV, "_doc">;
@@ -20,8 +23,18 @@ const lin = (f: number, ks: [number, number][]) => {
   return ks[ks.length - 1][1];
 };
 
+// ---------------------------------------------------------------- story chart
+export const X_ST = 800;
+export const ST_I0 = -33; // first bar of the story chart
+const ST_N = -ST_I0; // bars before the breakout
+/** price → story-local y (taller than the main chart so a single ending fills the portrait frame) */
+export const sy = (p: number) => (p - LEVEL) * 0.2;
+/** story volume strip: baseline, max height, first bar shown */
+export const ST_VOL = { y: sy(4938), h: 2.6, i0: -21 };
+export const stX = (i: number) => X_ST + bx(i);
+
 // ---------------------------------------------------------------- rows (the comparison page)
-export const X_ROWS = 400; // the comparison page lives far to the right of the main chart
+export const X_ROWS = 400;
 export const ROW_I0 = -18; // first bar shown in each row
 export const ROW_Y: Record<Outcome, number> = { A: 9.556, B: 2.19, C: -5.176 };
 /** price → row-local y (candles sit in the upper part of each row band) */
@@ -57,8 +70,8 @@ const zoom = (a: View, b: View, t: number): View => {
 };
 const view = (cx: number, cy: number, w: number, yaw = 0.28, pitch = 0.1, sy = 0.05): View => ({ cx, cy, w, yaw, pitch, sy });
 
+// ---- main chart (ending C in full)
 export const FULL = view((CHART.x0 + CHART.x1) / 2, py(4836), (CHART.x1 - CHART.x0) * 1.08, 0.06, 0.04, 0.06);
-const ROWS_VIEW = view(X_ROWS + bx(-3), 0, 21.5, 0.1, 0.03, 0);
 /** focus regions [bar0, bar1, price0, price1]; the HUD frames these before each push */
 export const REGION = {
   prior: [-13, 2, 4984, 5018],
@@ -98,39 +111,101 @@ const mainView = (f: number): View => {
   v = z(v, V_RETEST, L("s4") - 10, L("s4") + 18);
   return z(v, FULL, L("s5") - 6, L("s5") + 20);
 };
-/** the hook starts close on the shared breakout bar, then pulls back as the chart splits into three rows */
-const HOOK_VIEW = view(X_ROWS + bx(-2), 0, 9, 0.16, 0.05, 0);
+
+// ---- story chart
+/** bars of the story chart revealed by frame f (0..33, fractional); the cadence accelerates */
+export const revealN = (f: number) => {
+  const t = span(f, E("revealFrom"), E("revealTo"), (x) => x);
+  return ST_N * (0.5 * t + 0.5 * t * t);
+};
+const closeAt = (x: number) => {
+  const k = Math.max(0, Math.min(ST_N - 1, x));
+  const i = Math.floor(k);
+  const a = bar("C", ST_I0 + i).c;
+  const b = bar("C", ST_I0 + Math.min(ST_N - 1, i + 1)).c;
+  return a + (b - a) * (k - i);
+};
+/** the price the tracking camera follows: a trailing average of the newest closes */
+const trailPrice = (n: number) => {
+  let s = 0;
+  for (let j = 0; j < 12; j++) s += closeAt(n - 1 - (j / 11) * 6);
+  return s / 12;
+};
+const trackView = (f: number): View => {
+  const n = revealN(f);
+  const k = n / ST_N;
+  return view(stX(ST_I0 + n - 1.4), sy(trailPrice(n)), lerp(9.5, 7, smooth(k)), lerp(0.5, 0.2, k), lerp(0.14, 0.05, k), 0);
+};
+const RISE = view(stX(-1.4), sy(5001), 6.4, 0.2, 0.05, 0.02);
+export const WIDE = view(stX(-10.5), sy(4969), 34, 0.1, 0.04, -0.035);
+const SOLO: Record<Outcome, View> = {
+  A: view(stX(-1.4), sy(4986), 25, 0.2, 0.06, 0),
+  B: view(stX(-1.4), sy(4982), 25, -0.14, 0.06, 0),
+  C: view(stX(-1.4), sy(4977), 25, 0.26, 0.06, 0),
+};
+/** solo starts / ends (frames): each ending holds the screen until the next one takes over */
+const soloSpan = (o: Outcome): [number, number] => (o === "A" ? [E("soloA"), E("swapB")] : o === "B" ? [E("swapB"), E("swapC")] : [E("swapC"), M0]);
+const soloView = (o: Outcome, f: number): View => {
+  const [a, b] = soloSpan(o);
+  return { ...SOLO[o], w: SOLO[o].w * (1 - 0.04 * span(f, a, b, (x) => x)) };
+};
+const storyView = (f: number): View => {
+  let v = trackView(f);
+  v = zoom(v, RISE, span(f, E("revealTo") - 14, E("hookPierce") - 4, smooth));
+  v = zoom(v, { ...WIDE, w: WIDE.w * (1 - 0.05 * span(f, E("pullTo"), E("soloA"), (x) => x)) }, span(f, E("pullFrom"), E("pullTo"), cubicInOut));
+  v = zoom(v, soloView("A", f), span(f, E("soloA") - 4, E("soloA") + 28, cubicInOut));
+  v = zoom(v, soloView("B", f), span(f, E("swapB") + 2, E("swapB") + 32, cubicInOut));
+  return zoom(v, soloView("C", f), span(f, E("swapC") + 2, E("swapC") + 32, cubicInOut));
+};
+
+// ---- rows
+const ROWS_VIEW = view(X_ROWS + bx(-3), 0, 21.5, 0.1, 0.03, 0);
+const FIN1 = view(X_ROWS + bx(0.5), ROW_Y.B + ry(5004), 11.5, 0.16, 0.05, 0);
+const FIN2 = view(X_ROWS + bx(-3), ROW_Y.B + ry(5000), 19, 0.03, 0.02, 0.03);
 const rowsView = (f: number): View => {
-  const k = f < M0 ? span(f, S("compare"), M0, (x) => x) : 0.6;
-  const page = { ...ROWS_VIEW, w: ROWS_VIEW.w * (1.02 - 0.03 * k) };
-  const close = { ...HOOK_VIEW, cy: ROW_Y.B + ry(5001), w: lerp(9, 7.6, span(f, 0, E("fork"), (x) => x)) };
-  return zoom(close, page, span(f, E("fork") - 4, E("forkEnd") + 12, cubicInOut));
+  const base = { ...ROWS_VIEW, w: ROWS_VIEW.w * (1 - 0.025 * span(f, R0, S("close"), (x) => x)) };
+  const v = zoom(base, FIN1, span(f, E("merge0"), E("glow") + 6, cubicInOut));
+  return zoom(v, FIN2, span(f, E("collapse0"), E("question") + 40, cubicInOut));
 };
 
 // ---------------------------------------------------------------- state
 export type Dir = {
   f: number;
   t: number;
-  world: "rows" | "main";
+  world: "story" | "main" | "rows";
   cam: Shot;
   view: View;
   /** black dip used to change places (0 = clear) */
   dip: number;
+  /** depth-of-field amount (hook only) */
+  dof: number;
+  story: {
+    point: number; // the glowing point the film opens on
+    n: number; // bars before the breakout revealed (0..33, fractional)
+    u0: number; // breakout bar progress
+    ends: Record<Outcome, number>; // ending bars shown per outcome (0..12)
+    trail: number; // fan trails drawn (0..12)
+    trailOp: number;
+    vol: number;
+    solo: Record<Outcome, number>; // which ending owns the screen
+  };
   rows: {
-    fork: number; // 0 = one big shared chart, 1 = three rows
-    u0: number; // breakout bar progress in the rows
-    n: number; // ending bars revealed (0..12, fractional)
+    n: number; // ending bars shown (0..12; rewinds in the finale)
     act: Record<Outcome, number>; // highlight per row
     focus: number; // 1 = dim everything that is not active
     y: Record<Outcome, number>;
     s: Record<Outcome, number>;
     op: Record<Outcome, number>;
     vol: Record<Outcome, number>;
-    delta: Record<Outcome, number>;
+    merge: number; // finale: rows slide together
+    fade: number; // finale: candles dissolve, only the level remains
+    trail: number; // finale light trails (0..12)
+    collapse: number; // finale: trails fold onto the level
+    chrome: number; // row labels / frames
   };
   main: { u: [number, number, number]; rest: number };
   laser: number;
-  shock: { a: number; at: number; x: number };
+  shock: { a: number; at: number; x: number; y: number };
   sparks: { at: number; origin: [number, number, number]; color: string }[];
   buyStops: { show: number; fire: number };
   sellStops: { show: number; fire: number };
@@ -147,34 +222,68 @@ const rec = (fn: (o: Outcome) => number) => Object.fromEntries(OUT.map((o) => [o
 
 export const direct = (f: number): Dir => {
   const t = f / FPS;
-  const world = f < M0 || f >= R0 ? ("rows" as const) : ("main" as const);
+  const world = f < M0 ? ("story" as const) : f < R0 ? ("main" as const) : ("rows" as const);
   const dip = Math.max(1 - Math.abs(f - E("toMain")) / 14, 1 - Math.abs(f - E("toRows")) / 14, 0);
 
-  // ---------- rows
-  const fork = span(f, E("fork"), E("forkEnd"), cubicInOut);
-  const u0r = lin(f, [
+  // ---------- story
+  const n = revealN(f);
+  const u0s = lin(f, [
     [E("hookRise"), 0],
     [E("hookPierce"), U_CROSS.up0],
     [E("hookClose"), 1],
   ]);
-  const n = lin(f, [
-    [E("endsFrom"), 0],
-    [E("endsTo"), N_AFTER],
-  ]);
+  const ends: Record<Outcome, number> = {
+    A: lin(f, [
+      [E("soloA") - 2, 0],
+      [E("soloA") + 26, N_AFTER],
+      [E("swapB"), N_AFTER],
+      [E("swapB") + 12, 0],
+    ]),
+    B: lin(f, [
+      [E("swapB") + 10, 0],
+      [E("swapB") + 36, N_AFTER],
+      [E("swapC"), N_AFTER],
+      [E("swapC") + 12, 0],
+    ]),
+    C: lin(f, [
+      [E("swapC") + 10, 0],
+      [E("swapC") + 36, N_AFTER],
+    ]),
+  };
+  const [sa, sb, sc] = [E("soloA"), E("swapB"), E("swapC")];
+  const solo: Record<Outcome, number> = { A: hold(f, sa, sb + 8, 10), B: hold(f, sb + 8, sc + 8, 10), C: hold(f, sc + 8, M0 + 20, 10) };
+  const story = {
+    point: span(f, 0, 10, smooth) * (1 - span(f, E("revealFrom"), E("revealFrom") + 8, smooth)) + 0.25 * pulse(f, E("revealFrom"), 6),
+    n,
+    u0: u0s,
+    ends,
+    trail: lin(f, [
+      [E("fanFrom"), 0],
+      [E("fanTo"), N_AFTER],
+    ]),
+    trailOp: 1 - span(f, E("soloA"), E("soloA") + 24, smooth),
+    // volume matters for A and B; C is read from the candles alone
+    vol: span(f, E("soloA") + 10, E("soloA") + 30, smooth) * (1 - span(f, E("swapC"), E("swapC") + 14, smooth)),
+    solo,
+  };
+
+  // ---------- rows: respond, then the closing collapse
   const w = (a: number, b: number) => hold(f, a, b, 12);
   const act: Record<Outcome, number> = {
-    A: w(L("c2") - 8, L("c3") - 4),
-    B: Math.max(w(L("c3") - 8, L("c4") - 4), w(L("r2") - 6, L("r3") - 4), w(L("r4") - 6, S("close") + 4)),
-    C: Math.max(w(L("c4") - 8, L("c5") - 4), w(L("c5") + 70, M0 + 20), w(L("r3") - 6, S("close") + 4)),
+    A: 0,
+    B: Math.max(w(L("r2") - 6, L("r3") - 4), w(L("r4") - 6, Le("r4") + 14)),
+    C: w(L("r3") - 6, L("r4") - 4),
   };
-  // dim the inactive rows while one is being explained, and everything under the closing question
-  const focus = Math.max(w(L("c2") - 8, L("c5") - 4), w(L("c5") + 70, M0 + 20), w(L("r2") - 6, S("close") + 4), hold(f, L("e3") - 4, 99999, 14));
-  const preY = ROW_Y.B; // the single shared chart is row B before the fork
-  const y = rec((o) => lerp(preY, ROW_Y[o], fork));
+  // r0 dims everything under the question; r2..r4 dim whatever is not being explained
+  const focus = Math.max(w(R0, L("r1") - 2), w(L("r2") - 6, Le("r4") + 14));
+  const merge = span(f, E("merge0"), E("merge1"), cubicInOut);
+  const rewind = span(f, E("rewind0"), E("rewind1"), cubicInOut);
+  const collapse = span(f, E("collapse0"), E("collapse1"), cubicInOut);
+  const y = rec((o) => lerp(ROW_Y[o], ROW_Y.B, merge));
   const s = rec((o) => 1 + 0.06 * act[o]);
-  const op = rec((o) => (o === "B" ? 1 : clamp01(fork * 3)));
-  const vol = rec((o) => act[o] * (f < M0 ? 1 : 0));
-  const delta = rec((o) => (o === "C" ? act.C * (f < M0 ? 1 : 0) : 0));
+  // the outer rows slide onto B, then hand over to it (identical bars would z-fight)
+  const op = rec((o) => (o === "B" ? 1 : 1 - span(f, E("merge1") - 6, E("merge1"), smooth)));
+  const vol = rec((o) => act[o]);
 
   // ---------- main chart: bars 0..2 play live during the mechanism, the rest arrive with the signals
   const u0 = lin(f, [
@@ -199,16 +308,17 @@ export const direct = (f: number): Dir => {
   ]);
 
   // ---------- events
-  const crashes = [E("crash")];
-  const lastCrash = crashes.filter((c) => f >= c).pop() ?? -999;
-  const shock = { a: lastCrash > 0 && world === "main" ? pulse(f, lastCrash, 18) : 0, at: f - lastCrash, x: bx(2) };
-  const hookOrigin: [number, number, number] = [X_ROWS, preY + ry(LEVEL), 0.1];
+  const hp = E("hookPierce");
+  const shock =
+    world === "story"
+      ? { a: f >= hp ? pulse(f, hp, 16) : 0, at: f - hp, x: stX(0), y: sy(LEVEL) }
+      : { a: f >= E("crash") && world === "main" ? pulse(f, E("crash"), 18) : 0, at: f - E("crash"), x: bx(2), y: py(LEVEL) };
   const sparks = [
-    { at: E("hookPierce"), origin: hookOrigin, color: "#ffffff" },
+    { at: hp, origin: [stX(0), sy(LEVEL), 0.1] as [number, number, number], color: "#ffffff" },
     { at: E("pierce"), origin: [0, py(LEVEL), 0.1] as [number, number, number], color: "#ffd27a" },
   ];
-  const laser = 1 + 2.2 * Math.max(pulse(f, E("hookPierce"), 10), pulse(f, E("pierce"), 12)) + 0.6 * hold(f, L("c5"), Le("c5") + 10, 16);
-  const flash = Math.max(pulse(f, E("hookPierce"), 6), 0.6 * pulse(f, E("title"), 6), 0.5 * pulse(f, E("pierce"), 7), 0.6 * pulse(f, E("crash"), 7));
+  const laser = 1 + 2.2 * Math.max(pulse(f, hp, 10), pulse(f, E("pierce"), 12)) + 0.6 * hold(f, L("c5"), Le("c5") + 10, 16) + 1.8 * collapse;
+  const flash = Math.max(pulse(f, hp, 7), 0.5 * pulse(f, E("pierce"), 7), 0.6 * pulse(f, E("crash"), 7), 0.8 * pulse(f, E("glow"), 9), 0.45 * pulse(f, E("collapse1"), 8));
 
   // ---------- mechanism actors (main chart)
   const buyStops = { show: hold(f, L("m2") - 6, Le("m3") + 20, 14), fire: span(f, E("pierce") - 2, E("pierce") + 40, (x) => x) };
@@ -220,18 +330,20 @@ export const direct = (f: number): Dir => {
   const deltaLine = Math.max(hold(f, L("m6") + 70, Le("m6") + 10, 12), hold(f, L("s3") + 30, Le("s3") + 8, 12));
 
   // ---------- camera
-  const v = world === "rows" ? rowsView(f) : mainView(f);
+  const v = world === "story" ? storyView(f) : world === "rows" ? rowsView(f) : mainView(f);
   let c = toShot(v);
-  for (const at of crashes) {
+  const shake = (at: number, dur: number, amp: number) => {
     const k = f - at;
-    if (world === "main" && k >= 0 && k < 16) {
-      const a = (1 - k / 16) ** 2 * 0.01 * v.w;
-      const off = V(Math.sin(k * 6.7) * a, Math.cos(k * 8.9) * a, 0);
-      c = { ...c, pos: c.pos.clone().add(off), target: c.target.clone().add(off) };
-    }
-  }
+    if (k < 0 || k >= dur) return;
+    const a = (1 - k / dur) ** 2 * amp * v.w;
+    const off = V(Math.sin(k * 6.7) * a, Math.cos(k * 8.9) * a, 0);
+    c = { ...c, pos: c.pos.clone().add(off), target: c.target.clone().add(off) };
+  };
+  if (world === "story") shake(hp, 16, 0.014);
+  if (world === "main") shake(E("crash"), 16, 0.01);
+  if (world === "rows") shake(E("glow"), 12, 0.006);
   // handheld drift, very small, scaled to the framing
-  const hh = v.w / (world === "rows" ? 30 : 9);
+  const hh = v.w / (world === "main" ? 9 : 24);
   c.pos.add(V(Math.sin(t * 0.41) * 0.04 * hh, Math.sin(t * 0.33 + 2) * 0.03 * hh, Math.sin(t * 0.27) * 0.03 * hh));
 
   return {
@@ -241,7 +353,25 @@ export const direct = (f: number): Dir => {
     cam: c,
     view: v,
     dip,
-    rows: { fork, u0: u0r, n, act, focus, y, s, op, vol, delta },
+    dof: world === "story" ? 1 - span(f, E("pullFrom"), E("pullTo") + 6, smooth) : 0,
+    story,
+    rows: {
+      n: N_AFTER * (1 - rewind),
+      act,
+      focus,
+      y,
+      s,
+      op,
+      vol,
+      merge,
+      fade: collapse,
+      trail: lin(f, [
+        [E("trail0"), 0],
+        [E("trail1"), N_AFTER],
+      ]),
+      collapse,
+      chrome: 1 - span(f, E("rewind0") - 10, E("rewind0") + 6, smooth),
+    },
     main: { u: [u0, u1, u2], rest },
     laser,
     shock,

@@ -1,6 +1,9 @@
-// The 3D set: the three-row comparison page, and an 86-bar chart on a dark glass board with a laser tripwire at the prior high,
-// physical red/green candles, stop orders as amber capsules, resting sell liquidity as a
-// violet glass brick wall, and the light/particle events that sell each beat.
+// The 3D set, three places in one world:
+//   story: a tall chart that builds bar by bar from a point of light, fans the three endings out of the
+//          shared breakout bar as light trails, and shows each ending on its own;
+//   main:  the 86-bar chart of ending C on a dark glass board with a laser tripwire at the prior high,
+//          stop orders as amber capsules and resting sell liquidity as a violet glass brick wall;
+//   rows:  the three-row comparison, which in the finale rewinds, merges and folds into the level.
 import { Environment, Lightformer, Line } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
@@ -8,8 +11,8 @@ import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeom
 import { CameraRig } from "../components/Stage";
 import { mulberry32 } from "../lib/rng";
 import { FPS, hold } from "./cue";
-import { ROW_BAND, ROW_DELTA_Y, ROW_I0, ROW_VOL_Y, X_ROWS, ry, type Dir } from "./director";
-import { AFTER, BOARD_TOP, BREAK, CHART, LEVEL, N_AFTER, PATHS, PAST, PRIOR_HIGH, bar, bx, liveBar, path0, py, type Bar, type Outcome } from "./market";
+import { ROW_BAND, ROW_I0, ROW_VOL_Y, ROW_Y, ST_I0, ST_VOL, X_ROWS, X_ST, ry, sy, type Dir } from "./director";
+import { AFTER, BOARD_TOP, BREAK, CHART, LEVEL, N_AFTER, OUTCOMES, PATHS, PAST, PRIOR_HIGH, bar, bx, liveBar, path0, py, type Bar, type Outcome } from "./market";
 
 export const PAL = {
   bg: "#04060c",
@@ -240,13 +243,13 @@ const Sparks: React.FC<{ age: number; origin: [number, number, number]; color: s
   return <points geometry={geo} material={mat} frustumCulled={false} />;
 };
 
-const Shockwave: React.FC<{ a: number; age: number; color: string; x?: number }> = ({ a, age, color, x = 0 }) => {
+const Shockwave: React.FC<{ a: number; age: number; color: string; x?: number; y?: number }> = ({ a, age, color, x = 0, y = LY }) => {
   const mat = useMemo(() => new THREE.MeshBasicMaterial({ color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, side: THREE.DoubleSide }), [color]);
   if (a < 0.02) return null;
   mat.opacity = a * 0.9;
   const s = 0.3 + (age / FPS) * 5;
   return (
-    <mesh material={mat} rotation={[-Math.PI / 2, 0, 0]} position={[x, LY, 0]} scale={s}>
+    <mesh material={mat} rotation={[-Math.PI / 2, 0, 0]} position={[x, y, 0]} scale={s}>
       <ringGeometry args={[0.92, 1, 96]} />
     </mesh>
   );
@@ -452,9 +455,143 @@ const Marker: React.FC<{ k: number; at: [number, number, number] }> = ({ k, at }
   );
 };
 
-// ------------------------------------------------------------------ the comparison page: one row per outcome
+// ------------------------------------------------------------------ light trails (the endings as paths)
+/** close-to-close path of one ending from the breakout bar, drawn to length k (bars), optionally folded onto the level */
+const trailPts = (o: Outcome, k: number, ym: (p: number) => number, fold = 0): [number, number, number][] => {
+  const closes = [BREAK.c, ...AFTER[o].map((b) => b.c)];
+  const p = (j: number) => ym(closes[j] + (LEVEL - closes[j]) * fold);
+  const pts: [number, number, number][] = [[0, p(0), 0.25]];
+  const n = Math.min(N_AFTER, k);
+  for (let j = 1; j <= Math.floor(n); j++) pts.push([bx(j), p(j), 0.25]);
+  const fr = n - Math.floor(n);
+  if (fr > 0.01 && n < N_AFTER) {
+    const j = Math.floor(n);
+    pts.push([bx(j) + (bx(j + 1) - bx(j)) * fr, p(j) + (p(j + 1) - p(j)) * fr, 0.25]);
+  }
+  return pts;
+};
+export const TRAIL_COL: Record<Outcome, string> = { A: PAL.up, B: PAL.amber, C: PAL.down };
+const headMat = new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false, transparent: true });
+const Trail: React.FC<{ o: Outcome; k: number; op: number; ym: (p: number) => number; fold?: number; width?: number }> = ({ o, k, op, ym, fold = 0, width = 5 }) => {
+  if (op < 0.01 || k < 0.05) return null;
+  const pts = trailPts(o, k, ym, fold);
+  if (pts.length < 2) return null;
+  const hot = new THREE.Color(TRAIL_COL[o]).multiplyScalar(2.2);
+  const head = pts[pts.length - 1];
+  headMat.opacity = op;
+  return (
+    <group>
+      <Line points={pts} color={TRAIL_COL[o]} lineWidth={width * 3.6} transparent opacity={0.22 * op} depthWrite={false} />
+      <Line points={pts} color={hot} lineWidth={width} transparent opacity={op} depthWrite={false} toneMapped={false} />
+      {k < N_AFTER - 0.05 && (
+        <mesh material={headMat} position={head}>
+          <sphereGeometry args={[0.09, 16, 12]} />
+        </mesh>
+      )}
+    </group>
+  );
+};
+
+/** the point of light the film opens on */
+const GlowPoint: React.FC<{ k: number; at: [number, number, number]; t: number }> = ({ k, at, t }) => {
+  const core = useMemo(() => new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false, transparent: true }), []);
+  const halo = useMemo(() => new THREE.MeshBasicMaterial({ color: "#ffd9a8", toneMapped: false, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), []);
+  if (k < 0.01) return null;
+  const breathe = 1 + 0.12 * Math.sin(t * 9);
+  core.color.set("#ffffff").multiplyScalar(2 + 2 * k);
+  core.opacity = Math.min(1, k * 1.4);
+  halo.opacity = 0.35 * k;
+  return (
+    <group position={at}>
+      <mesh material={core} scale={k * breathe}>
+        <sphereGeometry args={[0.07, 20, 14]} />
+      </mesh>
+      <mesh material={halo} scale={k * breathe}>
+        <sphereGeometry args={[0.32, 20, 14]} />
+      </mesh>
+    </group>
+  );
+};
+
+// ------------------------------------------------------------------ the story chart
 /** a bar partially revealed: grows out of its open */
 const grow = (b: Bar, k: number): Bar => ({ ...b, h: b.o + (b.h - b.o) * k, l: b.o + (b.l - b.o) * k, c: b.o + (b.c - b.o) * k, v: b.v * k, d: b.d * k });
+const ST_X0 = bx(ST_I0) - 1.2;
+const ST_X1 = bx(N_AFTER) + 1.6;
+const stGrid = (() => {
+  const a: number[] = [];
+  for (let p = 4860; p <= 5060; p += 20) a.push(ST_X0, sy(p), 0, ST_X1, sy(p), 0);
+  for (let i = -30; i <= N_AFTER; i += 6) a.push(bx(i), sy(4850), 0, bx(i), sy(5070), 0);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+  return g;
+})();
+/** the bars the story chart shows on this frame, with their indices */
+export const storyBars = (d: Dir) => {
+  const S = d.story;
+  const out: { b: Bar; i: number; glow: number; o?: Outcome }[] = [];
+  for (let i = ST_I0; i < 0; i++) {
+    const j = i - ST_I0;
+    const k = Math.min(1, Math.max(0, S.n - j));
+    // a fresh bar flares, then settles over the next few bars
+    if (k > 0.01) out.push({ b: grow(bar("C", i), k), i, glow: 1.4 * (1 - Math.min(1, Math.max(0, (S.n - j - 1) / 2.5))) });
+  }
+  if (S.u0 > 0.001) out.push({ b: liveBar(BREAK, path0, S.u0), i: 0, glow: d.flash * 0.6 });
+  for (const o of OUTCOMES)
+    for (let i = 1; i <= N_AFTER; i++) {
+      const k = Math.min(1, Math.max(0, S.ends[o] - (i - 1)));
+      if (k > 0.01) out.push({ b: grow(AFTER[o][i - 1], k), i, glow: 0, o });
+    }
+  return out;
+};
+const stGlass = new THREE.MeshPhysicalMaterial({ color: "#070b14", roughness: 0.32, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.2, transparent: true });
+const StoryChart: React.FC<{ d: Dir }> = ({ d }) => {
+  const S = d.story;
+  const gridMat = useMemo(() => new THREE.LineBasicMaterial({ color: "#9fb2d8", transparent: true, opacity: 0.1, depthWrite: false }), []);
+  const laserMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PAL.laser, toneMapped: false }), []);
+  const haloMat = useMemo(() => new THREE.MeshBasicMaterial({ color: "#8fd8ff", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), []);
+  laserMat.color.set(PAL.laser).multiplyScalar(1.3 + d.laser * 1.1);
+  haloMat.opacity = 0.08 + 0.08 * d.laser;
+  const bars = storyBars(d);
+  // the board, grid and wire light up as the chart starts to build
+  const lit = Math.min(1, S.n / 5);
+  gridMat.opacity = 0.1 * lit;
+  stGlass.opacity = lit;
+  const len = ST_X1 - ST_X0;
+  const mid = (ST_X0 + ST_X1) / 2;
+  const vol = bars.filter(({ i }) => i >= ST_VOL.i0).map(({ b, i }) => ({ b, x: bx(i) }));
+  return (
+    <group position={[X_ST, 0, 0]}>
+      {lit > 0.01 && (
+        <mesh material={stGlass} position={[mid, sy(4960), -0.8]}>
+          <planeGeometry args={[len + 4, 60]} />
+        </mesh>
+      )}
+      <lineSegments geometry={stGrid} material={gridMat} position={[0, 0, -0.75]} />
+      {lit > 0.01 && (
+        // the wire draws itself out from the left edge
+        <group position={[ST_X0 + (len / 2) * lit, sy(LEVEL), 0]} scale={[1, lit, 1]} rotation={[0, 0, Math.PI / 2]}>
+          <mesh material={laserMat}>
+            <cylinderGeometry args={[0.016, 0.016, len, 8]} />
+          </mesh>
+          <mesh material={haloMat}>
+            <cylinderGeometry args={[0.08, 0.08, len, 12, 1, true]} />
+          </mesh>
+        </group>
+      )}
+      {bars.map(({ b, i, glow, o }) => (
+        <Candle key={`${o ?? "s"}${i}`} bar={b} x={bx(i)} ym={sy} wick={0.024} glow={glow} />
+      ))}
+      <VolumeBarsAt bars={vol} y0={ST_VOL.y} max={ST_VOL.h} k={S.vol} />
+      {OUTCOMES.map((o) => (
+        <Trail key={o} o={o} k={S.trail} op={S.trailOp} ym={sy} />
+      ))}
+      <GlowPoint k={S.point} at={[bx(ST_I0), sy(bar("C", ST_I0).o), 0.1]} t={d.t} />
+    </group>
+  );
+};
+
+// ------------------------------------------------------------------ the comparison page: one row per outcome
 const rowGlass = new THREE.MeshPhysicalMaterial({ color: "#070b14", roughness: 0.3, metalness: 0.6, clearcoat: 1, clearcoatRoughness: 0.2 });
 const rowGrid = (() => {
   const a: number[] = [];
@@ -467,8 +604,7 @@ const rowGrid = (() => {
 /** the bars one row shows on this frame (shared history, the breakout bar, then its own ending) */
 export const rowBars = (o: Outcome, d: Dir): Placed[] => {
   const out: Placed[] = [];
-  for (let i = ROW_I0; i < 0; i++) out.push({ b: bar(o, i), x: bx(i) });
-  out.push({ b: liveBar(BREAK, path0, d.rows.u0), x: 0 });
+  for (let i = ROW_I0; i <= 0; i++) out.push({ b: bar(o, i), x: bx(i) });
   for (let i = 1; i <= N_AFTER; i++) {
     const k = Math.min(1, Math.max(0, d.rows.n - (i - 1)));
     if (k > 0.01) out.push({ b: grow(AFTER[o][i - 1], k), x: bx(i) });
@@ -481,28 +617,31 @@ const RowChart: React.FC<{ o: Outcome; d: Dir }> = ({ o, d }) => {
   const laserMat = useMemo(() => new THREE.MeshBasicMaterial({ color: PAL.laser, toneMapped: false, transparent: true }), []);
   if (R.op[o] < 0.01) return null;
   const op = R.op[o];
-  gridMat.opacity = 0.12 * op;
+  const body = op * (1 - R.fade);
+  gridMat.opacity = 0.12 * body * (1 - R.merge);
   laserMat.opacity = op;
   laserMat.color.set(PAL.laser).multiplyScalar(1.3 + d.laser * 0.9);
   const bars = rowBars(o, d);
   const x0 = bx(ROW_I0) - 0.7,
     x1 = bx(N_AFTER) + 0.7;
+  // in the finale the level stretches past the frame: it is all that is left
+  const ext = 30 * R.collapse;
+  const thick = 1 + R.collapse * 1.4;
   return (
     <group position={[X_ROWS, R.y[o], 0]} scale={R.s[o]}>
-      {op > 0.95 && (
+      {R.merge < 0.01 && (
         <mesh material={rowGlass} position={[(x0 + x1) / 2, (ROW_BAND.y0 + ROW_BAND.y1) / 2, -0.45]}>
           <planeGeometry args={[x1 - x0, ROW_BAND.y1 - ROW_BAND.y0]} />
         </mesh>
       )}
       <lineSegments geometry={rowGrid} material={gridMat} position={[0, 0, -0.4]} />
-      <mesh material={laserMat} position={[(x0 + x1) / 2, ry(LEVEL), 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.018, 0.018, x1 - x0, 8]} />
+      <mesh material={laserMat} position={[(x0 + x1) / 2, ry(LEVEL), 0]} rotation={[0, 0, Math.PI / 2]} scale={[thick, 1, thick]}>
+        <cylinderGeometry args={[0.018, 0.018, x1 - x0 + ext * 2, 8]} />
       </mesh>
       {bars.map(({ b, x }) => (
-        <Candle key={x} bar={b} x={x} ym={ry} wick={0.018} op={op} glow={x === 0 ? d.flash * 0.4 : 0} />
+        <Candle key={x} bar={b} x={x} ym={ry} wick={0.018} op={body} glow={x === 0 ? d.flash * 0.7 : 0} />
       ))}
-      <VolumeBarsAt bars={bars} y0={ROW_VOL_Y} max={0.7} k={R.vol[o]} />
-      <DeltaBarsAt bars={bars} y0={ROW_DELTA_Y} half={0.38} k={R.delta[o]} />
+      <VolumeBarsAt bars={bars} y0={ROW_VOL_Y} max={0.7} k={R.vol[o] * body} />
     </group>
   );
 };
@@ -525,8 +664,7 @@ export const Scene: React.FC<{ d: Dir }> = ({ d }) => {
   const f = d.f;
   const dist = d.cam.pos.distanceTo(d.cam.target);
   const prior = Math.max(hold(f, 1190, 1290, 12), d.deltaLine);
-  const bars = mainBars(d);
-  const near = bars.filter(({ i }) => i >= -14).map(({ b, i }) => ({ b, x: bx(i) }));
+  const R = d.rows;
   return (
     <>
       <CameraRig position={d.cam.pos.toArray() as [number, number, number]} target={d.cam.target.toArray() as [number, number, number]} fov={d.cam.fov} />
@@ -542,40 +680,66 @@ export const Scene: React.FC<{ d: Dir }> = ({ d }) => {
         <Lightformer form="ring" intensity={2} color="#ffe2c4" position={[5, 3, 6]} scale={2.4} />
       </Environment>
 
-      {d.world === "main" ? (
+      {d.world === "story" && (
         <>
-          <Beam pos={[-26, 14, -16]} r={16} h={70} color="#3a5cff" i={0.2} tilt={0.18} />
-          <Beam pos={[-2.6, 9.5, -5]} r={3.2} h={16} color="#ffffff" i={0.12} tilt={-0.14} />
-          <Beam pos={[0.2, 9.2, -1]} r={1.8} h={11} color="#fff3e0" i={0.06 + d.flash * 0.25} />
-          <Board />
-          <Dust t={d.t} />
-          {bars.map(({ b, i }) => (
-            <Candle key={i} bar={b} x={bx(i)} glow={i === PRIOR_HIGH ? prior : 0} />
-          ))}
-          <Laser i={d.laser} w={d.view.w} />
-          <Sparks age={(f - d.sparks[1].at) / FPS} origin={d.sparks[1].origin} color={d.sparks[1].color} seed={6} />
-          <Shockwave a={d.shock.a} age={d.shock.at} color={PAL.down} x={d.shock.x} />
-          <Marker k={prior} at={[bx(PRIOR_HIGH), py(5000), 0.32]} />
-          <Stops pts={BUY_STOPS} show={d.buyStops.show} fire={d.buyStops.fire} dir={1} t={d.t} to={WALL.y0 + 0.2} />
-          <Stops pts={SELL_STOPS} show={d.sellStops.show} fire={d.sellStops.fire} dir={-1} t={d.t} to={py(4968)} />
-          <Stream k={d.stream} t={d.t} to={WALL.y0 + 0.15} />
-          <Wall show={d.wall.show} hit={d.wall.hit} t={d.t} />
-          <AcceptZone show={d.accept} fill={0} />
-          <DeltaLine k={d.deltaLine} />
-          <DeltaBarsAt bars={near} y0={py(4930)} half={1.5} k={d.deltaStrip} w={0.34} />
+          <spotLight position={[X_ST - 2, 24, 16]} angle={0.55} penumbra={0.9} intensity={140 * Math.min(1, d.story.n / 5)} distance={80} color="#ffffff" />
+          <Beam pos={[X_ST - 18, 22, -14]} r={12} h={60} color="#3a5cff" i={0.16 * Math.min(1, d.story.n / 8)} tilt={0.18} />
+          <Beam pos={[X_ST + 1, 16, -6]} r={3.4} h={26} color="#fff3e0" i={0.05 + d.flash * 0.3} tilt={-0.1} />
+          <group position={[X_ST + 18, 0, 0]}>
+            <Dust t={d.t} />
+          </group>
+          <StoryChart d={d} />
+          <Sparks age={(f - d.sparks[0].at) / FPS} origin={d.sparks[0].origin} color={d.sparks[0].color} seed={5} n={320} />
+          <Shockwave a={d.shock.a} age={d.shock.at} color="#dff4ff" x={d.shock.x} y={d.shock.y} />
         </>
-      ) : (
+      )}
+
+      {d.world === "main" &&
+        (() => {
+          const bars = mainBars(d);
+          const near = bars.filter(({ i }) => i >= -14).map(({ b, i }) => ({ b, x: bx(i) }));
+          return (
+            <>
+              <Beam pos={[-26, 14, -16]} r={16} h={70} color="#3a5cff" i={0.2} tilt={0.18} />
+              <Beam pos={[-2.6, 9.5, -5]} r={3.2} h={16} color="#ffffff" i={0.12} tilt={-0.14} />
+              <Beam pos={[0.2, 9.2, -1]} r={1.8} h={11} color="#fff3e0" i={0.06 + d.flash * 0.25} />
+              <Board />
+              <Dust t={d.t} />
+              {bars.map(({ b, i }) => (
+                <Candle key={i} bar={b} x={bx(i)} glow={i === PRIOR_HIGH ? prior : 0} />
+              ))}
+              <Laser i={d.laser} w={d.view.w} />
+              <Sparks age={(f - d.sparks[1].at) / FPS} origin={d.sparks[1].origin} color={d.sparks[1].color} seed={6} />
+              <Shockwave a={d.shock.a} age={d.shock.at} color={PAL.down} x={d.shock.x} y={d.shock.y} />
+              <Marker k={prior} at={[bx(PRIOR_HIGH), py(5000), 0.32]} />
+              <Stops pts={BUY_STOPS} show={d.buyStops.show} fire={d.buyStops.fire} dir={1} t={d.t} to={WALL.y0 + 0.2} />
+              <Stops pts={SELL_STOPS} show={d.sellStops.show} fire={d.sellStops.fire} dir={-1} t={d.t} to={py(4968)} />
+              <Stream k={d.stream} t={d.t} to={WALL.y0 + 0.15} />
+              <Wall show={d.wall.show} hit={d.wall.hit} t={d.t} />
+              <AcceptZone show={d.accept} fill={0} />
+              <DeltaLine k={d.deltaLine} />
+              <DeltaBarsAt bars={near} y0={py(4930)} half={1.5} k={d.deltaStrip} w={0.34} />
+            </>
+          );
+        })()}
+
+      {d.world === "rows" && (
         <>
-          <spotLight position={[X_ROWS, 30, 18]} angle={0.5} penumbra={0.9} intensity={160} distance={80} color="#ffffff" />
+          <spotLight position={[X_ROWS, 30, 18]} angle={0.5} penumbra={0.9} intensity={160 * (1 - R.fade * 0.7)} distance={80} color="#ffffff" />
           <Beam pos={[X_ROWS - 6, 26, -14]} r={12} h={60} color="#3a5cff" i={0.16} tilt={0.18} />
-          <Beam pos={[X_ROWS + 6, 26, -12]} r={9} h={60} color="#ffffff" i={0.08} tilt={-0.14} />
+          <Beam pos={[X_ROWS + 6, 26, -12]} r={9} h={60} color="#ffffff" i={0.08 + d.flash * 0.2} tilt={-0.14} />
           <group position={[X_ROWS + 25, 2, 0]}>
             <Dust t={d.t} />
           </group>
           {(["B", "A", "C"] as const).map((o) => (
             <RowChart key={o} o={o} d={d} />
           ))}
-          <Sparks age={(f - d.sparks[0].at) / FPS} origin={d.sparks[0].origin} color={d.sparks[0].color} seed={5} />
+          {/* finale: the three endings leave the breakout bar as light trails, then fold onto the level */}
+          <group position={[X_ROWS, ROW_Y.B, 0]}>
+            {OUTCOMES.map((o) => (
+              <Trail key={o} o={o} k={R.trail} op={1 - Math.min(1, Math.max(0, (R.collapse - 0.75) / 0.25))} ym={ry} fold={R.collapse} width={6} />
+            ))}
+          </group>
         </>
       )}
     </>

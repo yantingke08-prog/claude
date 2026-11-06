@@ -30,8 +30,8 @@ const Settle: React.FC = () => {
 };
 
 /** WebGL set + lens: ACES tone mapping, focus on the subject, bloom on emissives, grain. */
-/** dpr: pixel ratio of the 3D layer (1 = native 1080×1920; 0.75 speeds up CPU-only renders) */
-const Cinema: React.FC<{ d: Dir; bloom?: number; dof?: boolean; dpr?: number }> = ({ d, bloom = 0.9, dof = false, dpr = 1 }) => {
+/** dpr: pixel ratio of the 3D layer (1 = native 1080×1920; 0.75 speeds up CPU-only renders). Depth of field runs in the hook only. */
+const Cinema: React.FC<{ d: Dir; bloom?: number; dpr?: number }> = ({ d, bloom = 0.9, dpr = 1 }) => {
   const { width, height } = useVideoConfig();
   const focus = d.cam.pos.distanceTo(d.cam.target);
   return (
@@ -39,7 +39,7 @@ const Cinema: React.FC<{ d: Dir; bloom?: number; dof?: boolean; dpr?: number }> 
       <color attach="background" args={[PAL.bg]} />
       <Scene d={d} />
       <EffectComposer multisampling={0} enableNormalPass={false}>
-        {dof ? <DepthOfField worldFocusDistance={focus} worldFocusRange={focus * 0.55} bokehScale={2.4} /> : <></>}
+        {d.dof > 0.01 ? <DepthOfField worldFocusDistance={focus} worldFocusRange={focus * (0.4 + 0.5 * (1 - d.dof))} bokehScale={3.2 * d.dof} /> : <></>}
         <Bloom mipmapBlur intensity={bloom + d.flash * 1.4} luminanceThreshold={0.55} luminanceSmoothing={0.3} radius={0.72} />
         <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.16} />
         <Vignette eskil={false} offset={0.28} darkness={0.78} />
@@ -49,21 +49,21 @@ const Cinema: React.FC<{ d: Dir; bloom?: number; dof?: boolean; dpr?: number }> 
   );
 };
 
-export const FakeoutFilm: React.FC<{ muted?: boolean; dof?: boolean; dpr?: number }> = ({ muted = false, dof = false, dpr = 1 }) => {
+export const FakeoutFilm: React.FC<{ muted?: boolean; dpr?: number }> = ({ muted = false, dpr = 1 }) => {
   const f = useCurrentFrame();
   const d = direct(f);
   return (
     <AbsoluteFill style={{ background: PAL.bg }}>
-      <Cinema d={d} dof={dof} dpr={dpr} />
+      <Cinema d={d} dpr={dpr} />
       <Hud d={d} />
       {!muted && <Audio src={staticFile("fakeout/mix.wav")} />}
     </AbsoluteFill>
   );
 };
 
-/** 9:16 cover: the three endings side by side under the title */
+/** 9:16 cover: the three endings fanning out of the one breakout bar, under the title */
 export const FakeoutCover: React.FC = () => {
-  const d = direct(E("endsTo") + 40);
+  const d = direct(E("fanTo") + 4);
   return (
     <AbsoluteFill style={{ background: PAL.bg }}>
       <Cinema d={d} bloom={1.1} />

@@ -1,5 +1,5 @@
 """
-Original score + sound design + mix for the v4 false-breakout short. Everything is synthesized
+Original score + sound design + mix for the v5 false-breakout short. Everything is synthesized
 here (no samples, no third-party audio). Cues come from src/fakeout/timeline.json, and the event
 frames come from src/fakeout/events.json, the same file director.ts reads.
 
@@ -38,7 +38,6 @@ def ev(name, off=0.0):
 
 
 PIERCE_HOOK = ev("hookPierce")
-TITLE = ev("title")
 PIERCE = ev("pierce")
 CRASH = ev("crash")
 
@@ -240,49 +239,89 @@ mus, sfx = Bus(), Bus()
 T_END = TL["frames"] / FPS
 beat = 60 / 96
 
+# story-chart closes for bars -33..-1 (src/fakeout/market.ts); the hook's ticks follow them in pitch
+HOOK_CLOSES = [4922.25, 4921.75, 4955.75, 4963, 4968, 4974.5, 4973.25, 4974, 4972.5, 4973.25, 4973, 4979.5, 4972, 4974.25, 4983.25, 4988.75, 4978,
+               4984.5, 4989, 4987.5, 4982, 4986, 4993.5, 4985, 4985.5, 4986.75, 4973.5, 4976, 4983.5, 4979.25, 4988.5, 4991, 4995]
+PENTA = [0, 3, 5, 7, 10]
+
+
+def glide(m0, m1, dur, a=0.05, r=None):
+    """sine that slides from note m0 to m1, with a soft octave above"""
+    t = t_(dur)
+    f = midi(m0) * (midi(m1) / midi(m0)) ** (np.minimum(1, t / dur) ** 0.7)
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    return (np.sin(ph) + 0.25 * np.sin(2 * ph)) * env(len(t), a, r if r is not None else dur * 0.6, 3)
+
+
+def mallet(m, dur=0.22):
+    """soft wooden tick for each bar of the hook: mid register, no hiss"""
+    n = int(dur * SR)
+    t = t_(dur)
+    return (np.sin(2 * np.pi * midi(m) * t) + 0.3 * np.sin(2 * np.pi * midi(m) * 3.98 * t) * np.exp(-t * 40)) * env(n, 0.001, dur * 0.95, 7)
+
+
+def riser(dur):
+    """low riser: a sub sweep plus band-passed air that opens up"""
+    t = t_(dur)
+    sub = np.sin(2 * np.pi * np.cumsum(38 + 34 * (t / dur) ** 2) / SR) * (t / dur) ** 1.5
+    air = noise(dur)
+    out = np.zeros_like(air)
+    blk = 2400
+    for i in range(0, len(air), blk):
+        c = 250 + 2200 * (i / len(air)) ** 2
+        out[i : i + blk] = bp(air[i : i + blk], c * 0.7, c * 1.3)
+    return sub * 0.8 + out * 0.25 * (t / dur) ** 2
+
+
+def pitch_of(p):
+    """map a price to the A minor pentatonic between A3 and E5"""
+    k = int(round((p - 4920) / 80 * 9))
+    return 57 + 12 * (k // 5) + PENTA[k % 5]
+
+
 # tension drone under everything
 drone = (np.sin(2 * np.pi * 55 * t_(T_END)) * 0.5 + lp(saw(55, T_END, 0.004), 300) * 0.5) * 0.22
-mus.add(drone, 0, gain=1.0)
+mus.add(drone * np.minimum(1, t_(T_END) / 2.5), 0, gain=1.0)
 
-# HOOK: the shared breakout bar pierces the wire, the chart splits into three, title hit
-sfx.add(laser_hum(3.0) * env(int(3.0 * SR), 0.05, 1.2), 0, gain=0.05)
-sfx.add(zing(), PIERCE_HOOK - 0.02, gain=0.55, verb=0.25)
-sfx.add(sparkle(), PIERCE_HOOK, gain=0.35, pan=0.2, verb=0.3)
-sfx.add(sub_boom(1.6, 90, 40), PIERCE_HOOK, gain=0.7)
-sfx.add(reverse_swell(0.9), ev("fork") - 0.8, gain=0.3)
-sfx.add(whoosh(0.9, 200, 3000), ev("fork"), gain=0.35, pan=-0.4)
-sfx.add(whoosh(0.9, 260, 3600), ev("fork", 0.08), gain=0.35, pan=0.4)
-for j in range(12):  # each ending bar lands with a soft tick, three rows at once
-    tj = ev("endsFrom") + (ev("endsTo") - ev("endsFrom")) * (j + 0.5) / 12
-    sfx.add(tick(2400 + j * 60, 0.04), tj, gain=0.14, pan=-0.4)
-    sfx.add(tick(2000 + j * 50, 0.04), tj + 0.02, gain=0.12)
-    sfx.add(tick(1600 - j * 40, 0.04), tj + 0.04, gain=0.12, pan=0.4)
-sfx.add(glitch(0.45), TITLE - 0.05, gain=0.3, pan=-0.2)
-sfx.add(braam(3.2, 45), TITLE, gain=0.5, verb=0.35)
-sfx.add(sub_boom(2.0, 70, 35), TITLE, gain=0.7)
+# HOOK: a point of light, the chart builds bar by bar, the breakout pierces, pull back, three endings fan out
+sfx.add(glide(81, 81, 1.4, a=0.4, r=0.9), 0.05, gain=0.05, verb=0.5)
+rf, rt = ev("revealFrom"), ev("revealTo")
+for j, c in enumerate(HOOK_CLOSES):
+    u = -0.5 + np.sqrt(0.25 + 2 * j / len(HOOK_CLOSES))  # inverse of the accelerating reveal in director.ts
+    sfx.add(mallet(pitch_of(c)), rf + (rt - rf) * u, gain=0.1 + 0.05 * j / len(HOOK_CLOSES), pan=-0.3 + 0.6 * j / len(HOOK_CLOSES))
+sfx.add(riser(PIERCE_HOOK - rf + 0.05), rf, gain=0.38)
+sfx.add(reverse_swell(0.6), PIERCE_HOOK - 0.58, gain=0.25)
+sfx.add(sub_boom(2.0, 85, 34), PIERCE_HOOK, gain=0.85)
+sfx.add(zing(0.7), PIERCE_HOOK - 0.02, gain=0.3, verb=0.25)
+sfx.add(sparkle(0.9), PIERCE_HOOK, gain=0.18, pan=0.2, verb=0.3)
+sfx.add(whoosh(1.0, 180, 1800), ev("pullFrom"), gain=0.32)
+for k_, (m0, m1, pan) in enumerate(((64, 69, -0.4), (64, 64, 0.0), (64, 57, 0.4))):  # A rises, B holds, C falls
+    sfx.add(glide(m0, m1, 2.4, a=0.3, r=1.2), ev("fanFrom") + 0.12 * k_, gain=0.09, pan=pan, verb=0.4)
 
-# COMPARE: a pulse groove; a whoosh each time a row lights up; knock-knock and the door chime
-groove_a, groove_b = S("compare"), S("mechanism") - 0.6
+# ENDINGS: pulse groove; each ending takes the screen with a whoosh, a low hit and its own chime
+groove_a, groove_b = ev("soloA") - 0.2, S("mechanism") - 0.6
 bass_line = [45, 45, 48, 43]
 k = 0
 tt = groove_a
 while tt < groove_b:
     if k % 4 == 0:
         mus.add(kick(), tt, gain=0.5)
-    mus.add(hat(), tt + beat / 2, gain=0.12, pan=0.3)
+    mus.add(hat(), tt + beat / 2, gain=0.1, pan=0.3)
     if k % 2 == 0:
         mus.add(lp(saw(midi(bass_line[(k // 4) % 4] - 12), beat * 1.8, 0.002), 380) * env(int(beat * 1.8 * SR), 0.01, beat), tt, gain=0.3)
     tt += beat
     k += 1
-for i, pan in (("c2", -0.3), ("c3", 0.0), ("c4", 0.3)):
-    sfx.add(whoosh(0.7), L(i) - 0.25, gain=0.25, pan=pan)
-    sfx.add(chime(64 if i == "c2" else 62 if i == "c3" else 57), L(i), gain=0.12, verb=0.4)
-sfx.add(sub_boom(1.2, 70, 36), L("c4", 100), gain=0.45)  # C closes back under the level
+for name, root, pan in (("soloA", 69, -0.3), ("swapB", 64, 0.0), ("swapC", 57, 0.3)):
+    at = ev(name)
+    sfx.add(whoosh(0.7, 300, 3000), at - 0.1, gain=0.24, pan=pan)
+    sfx.add(thud(58), at + 0.25, gain=0.45)
+    sfx.add(chime(root), at + 0.3, gain=0.1, verb=0.4)
+sfx.add(sub_boom(1.2, 70, 36), L("c4", 100), gain=0.4)  # C closes back under the level
 cap = [c for c in TL["captions"] if c["line"] == "c5"]
 knock_t = cap[1]["from"] / FPS - 0.45 if len(cap) > 1 else L("c5", 25)
 sfx.add(knock(), knock_t, gain=0.55, verb=0.2)
 sfx.add(knock(), knock_t + 0.2, gain=0.5, verb=0.2)
-sfx.add(chime(69), Le("c5") - 0.5, gain=0.35, verb=0.45)
+sfx.add(chime(69), Le("c5") - 0.5, gain=0.3, verb=0.45)
 sfx.add(reverse_swell(0.9), ev("toMain") - 0.85, gain=0.35)
 sfx.add(sub_boom(1.4, 80, 38), ev("toMain"), gain=0.5)
 
@@ -303,7 +342,7 @@ for j in range(int((cut_b - cut_a) / 0.8)):  # heartbeat while nothing happens
     mus.add(thud(52), cut_a + j * 0.8, gain=0.5)
     mus.add(thud(48), cut_a + j * 0.8 + 0.22, gain=0.35)
 for j in range(46):  # stops fire: a burst of ticks
-    sfx.add(tick(rng.uniform(2200, 4200)), PIERCE + rng.uniform(0, 1.3), gain=0.18, pan=rng.uniform(-0.6, 0.6))
+    sfx.add(tick(rng.uniform(2200, 4200)), PIERCE + rng.uniform(0, 1.3), gain=0.16, pan=rng.uniform(-0.6, 0.6))
 sfx.add(zing(0.6), PIERCE - 0.02, gain=0.3, verb=0.2)
 sfx.add(sub_boom(1.0, 100, 45), PIERCE, gain=0.5)
 tt = ev("grind")  # absorption: continuous fills hitting the wall while bar 1 grinds up
@@ -312,13 +351,12 @@ while tt < ev("newHigh", 0.6):
     if rng.random() < 0.25:
         sfx.add(thud(110) * 0.5, tt, gain=0.25)
     tt += rng.uniform(0.04, 0.11)
-for sid in ("m6",):
-    sfx.add(glitch(0.3), L(sid, 75), gain=0.15)  # the divergence line appears
+sfx.add(glitch(0.3), L("m6", 75), gain=0.15)  # the divergence line appears
 sfx.add(whoosh(0.9, 3000, 300), ev("reject"), gain=0.25)  # pushed back down: the long upper wick
 cas_a = CRASH - 0.3  # stop cascade down
 for j in range(60):
     tj = cas_a + (j / 60) ** 0.8 * 2.2
-    sfx.add(tick(3600 - j * 40, 0.05), tj, gain=0.2, pan=rng.uniform(-0.6, 0.6))
+    sfx.add(tick(3600 - j * 40, 0.05), tj, gain=0.18, pan=rng.uniform(-0.6, 0.6))
 fall = t_(2.4)
 sfx.add(np.sin(2 * np.pi * np.cumsum(400 * np.exp(-fall * 1.2) + 50) / SR) * env(len(fall), 0.05, 1.0) * 0.6, cas_a, gain=0.35)
 sfx.add(reverse_swell(0.8), CRASH - 0.8, gain=0.3)
@@ -337,33 +375,40 @@ while tt < S("respond") - 0.6:
     tt += beat / 2
     i += 1
 for j in range(10):
-    sfx.add(tick(1800 - j * 60, 0.04), ev("rest") + (ev("restEnd") - ev("rest")) * (j + 0.5) / 10, gain=0.15)
+    sfx.add(mallet(57 + PENTA[j % 5] + 12 * (j // 5)), ev("rest") + (ev("restEnd") - ev("rest")) * (j + 0.5) / 10, gain=0.12)
 for sid in ("s1", "s2", "s3", "s4"):
-    sfx.add(tick(2800, 0.05), L(sid), gain=0.3)
-    sfx.add(whoosh(0.5, 400, 3000), L(sid) - 0.15, gain=0.18)
+    sfx.add(tick(2800, 0.05), L(sid), gain=0.26)
+    sfx.add(whoosh(0.5, 400, 3000), L(sid) - 0.15, gain=0.16)
 sfx.add(thud(70), L("s5", 2), gain=0.8)
 sfx.add(glitch(0.25), L("s5", 1), gain=0.2)
 
-# RESPOND: back to the three rows; steady pulse, a check tick per step
+# RESPOND: back to the three rows; the question, then a steady pulse and a check per step
 sfx.add(reverse_swell(0.9), ev("toRows") - 0.85, gain=0.3)
 sfx.add(whoosh(0.8, 300, 2600), ev("toRows") - 0.1, gain=0.25)
-mus.add(pad([57, 60, 64, 71], S("close") - S("respond") + 0.6), S("respond") - 0.3, gain=0.45, verb=0.4)
-for k_, at in enumerate((L("r1"), L("r1", 50), L("r2"), L("r4"), L("r4", 54))):
-    sfx.add(tick(1800 + k_ * 300, 0.06), at, gain=0.35)
+sfx.add(chime(64), L("r0", 4), gain=0.14, verb=0.5)
+mus.add(pad([57, 60, 64, 71], S("close") - L("r1") + 0.6), L("r1") - 0.3, gain=0.45, verb=0.4)
+for k_, at in enumerate((L("r1"), L("r1", 44), L("r2"), L("r4"), L("r4", 54))):
+    sfx.add(mallet(69 + PENTA[k_]), at, gain=0.3)
 for sid in ("r2", "r3"):
     sfx.add(whoosh(0.6), L(sid) - 0.2, gain=0.18)
-tt = S("respond")
+tt = L("r1")
 while tt < S("close"):
     mus.add(kick(), tt, gain=0.3)
     tt += beat * 2
 
-# CLOSE: the question, swell, hit, tail
-for i, sid in enumerate(("A", "B", "C")):
-    sfx.add(tick(2200 + i * 300, 0.06), L("e2", 60 + i * 30), gain=0.3)
-sfx.add(reverse_swell(1.4), L("e4") - 1.3, gain=0.4)
-sfx.add(sub_boom(3.0, 70, 32), L("e4"), gain=0.8)
-mus.add(chime(57), L("e4"), gain=0.5, verb=0.5)
-mus.add(pad([45, 52, 57, 60, 64], T_END - L("e1") + 0.2), L("e1") - 0.2, gain=0.55, verb=0.5)
+# CLOSE: verdict ticks; then rewind, merge (low hit), three light trails fold onto the level, the question
+for i_ in range(3):
+    sfx.add(mallet(64 + PENTA[i_ + 1]), L("e2", 96 + i_ * 30), gain=0.26)
+sfx.add(whoosh(0.8, 3200, 260), ev("rewind0") - 0.05, gain=0.3)  # the endings rewind into the breakout bar
+sfx.add(reverse_swell(0.7), ev("glow") - 0.68, gain=0.3)
+sfx.add(sub_boom(2.6, 72, 30), ev("glow"), gain=0.85)
+sfx.add(braam(2.2, 45), ev("glow"), gain=0.22, verb=0.35)
+for k_, (m0, pan) in enumerate(((76, -0.45), (69, 0.0), (57, 0.45))):  # three trails out, then converge on one note
+    sfx.add(glide(m0, 64, ev("collapse1") - ev("trail0") + 0.4, a=0.15, r=0.5), ev("trail0") + 0.06 * k_, gain=0.08, pan=pan, verb=0.4)
+sfx.add(whoosh(0.5, 2400, 500), ev("collapse1") - 0.3, gain=0.2)
+mus.add(chime(57), ev("question"), gain=0.42, verb=0.5)
+sfx.add(sub_boom(3.0, 60, 30), ev("question"), gain=0.5)
+mus.add(pad([45, 52, 57, 60, 64], T_END - L("e1") + 0.2), L("e1") - 0.2, gain=0.5, verb=0.5)
 
 # ------------------------------------------------------------ mix
 vo = np.frombuffer(subprocess.run([str(FFMPEG), "-v", "error", "-i", str(ROOT / "public/fakeout/vo.wav"), "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout, dtype=np.float32).astype(np.float64)
@@ -396,5 +441,5 @@ m = json.loads(re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", meas, re.S).group(0))
 ln = f"loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true"
 subprocess.run([str(FFMPEG), "-v", "error", "-y", "-i", str(raw), "-af", f"{pre},{ln}", "-ar", str(SR), str(out)], check=True)
 chk = subprocess.run([str(FFMPEG), "-hide_banner", "-nostats", "-i", str(out), "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True).stderr
-print("events (s): hook pierce", round(PIERCE_HOOK, 2), "title", round(TITLE, 2), "pierce", round(PIERCE, 2), "crash", round(CRASH, 2))
+print("events (s): hook pierce", round(PIERCE_HOOK, 2), "fan", round(ev("fanFrom"), 2), "solos", [round(ev(n), 2) for n in ("soloA", "swapB", "swapC")], "pierce", round(PIERCE, 2), "crash", round(CRASH, 2), "merge", round(ev("glow"), 2), "question", round(ev("question"), 2))
 print("I =", re.findall(r"I:\s+(-?[\d.]+) LUFS", chk)[-1], "LUFS  TP =", re.findall(r"Peak:\s+(-?[\d.]+) dBFS", chk)[-1], "dBTP")

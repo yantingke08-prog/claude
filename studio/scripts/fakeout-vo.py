@@ -23,7 +23,7 @@ SR = 48000
 SCRIPT = json.loads((ROOT / "src/fakeout/script.json").read_text(encoding="utf-8"))
 CACHE = ROOT / "public/fakeout/vo"
 CACHE.mkdir(parents=True, exist_ok=True)
-MAX_CHUNK = 13  # display characters per caption chunk (vertical frame)
+MAX_CHUNK = 16  # display characters per caption chunk (vertical frame)
 
 
 async def tts(text: str, path: Path, marks: Path):

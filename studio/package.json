@@ -31,7 +31,14 @@
     "fo:cover:gpu": "remotion still FakeoutV6Cover ../outputs-v6/cover.png --gl=angle",
     "fo:render": "remotion render FakeoutV6 out/fakeout/false-breakout-v6.mp4 --concurrency=1 --audio-codec=aac --audio-bitrate=320k",
     "fo:render:gpu": "remotion render FakeoutV6 out/fakeout/false-breakout-v6.mp4 --gl=angle --concurrency=50% --audio-codec=aac --audio-bitrate=320k",
-    "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v6.mp4 140 160"
+    "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v6.mp4 140 160",
+    "zq:render": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01.mp4\" --gl=angle --concurrency=50% --audio-codec=aac --audio-bitrate=320k",
+    "zq:render:cpu": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01.mp4\" --concurrency=1 --audio-codec=aac --audio-bitrate=320k",
+    "zq:cover": "remotion still ZhanqianCover ../outputs-zhanqian/cover.png",
+    "zq:vo": "python scripts/zhanqian-vo.py",
+    "zq:audio": "python scripts/zhanqian-score.py",
+    "zq:srt": "python scripts/zhanqian-srt.py ../outputs-zhanqian/subtitles.srt",
+    "zq:qc": "python scripts/breakout-qc.py \"D:/claude视频/zhanqian-awakening-ep01.mp4\" 150 180"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

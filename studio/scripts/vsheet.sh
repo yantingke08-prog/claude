@@ -2,7 +2,7 @@
 # Contact sheet for 9:16 stills: 4 columns of 405x720 tiles.
 # Usage: bash scripts/vsheet.sh out.jpg a.jpg b.jpg ...
 set -e
-FF="$HOME/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe"
+FF="${FFMPEG:-$HOME/AppData/Local/Microsoft/WinGet/Links/ffmpeg.exe}"
 out=$1; shift
 n=$#; args=(); fl=""; lay=""
 for i in $(seq 0 $((n-1))); do

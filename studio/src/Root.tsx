@@ -49,8 +49,8 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
     </Folder>
     <Folder name="Zhanqian">
-      <Composition id="Zhanqian" component={ZhanqianFilm} durationInFrames={ZQ_FRAMES} fps={ZQ_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
-      <Still id="ZhanqianCover" component={ZhanqianCover} width={1080} height={1920} />
+      <Composition id="Zhanqian" component={ZhanqianFilm} durationInFrames={ZQ_FRAMES} fps={ZQ_FPS} width={1080} height={1920} defaultProps={{ muted: false, dpr: 1, qa: false }} />
+      <Still id="ZhanqianCover" component={ZhanqianCover} width={1080} height={1920} defaultProps={{ dpr: 1 }} />
     </Folder>
     <Folder name="Fakeout-v6">
       <Composition id="FakeoutV6" component={FakeoutFilm} durationInFrames={FO_FRAMES} fps={FO_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />

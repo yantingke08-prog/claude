@@ -29,7 +29,7 @@ num, den = map(int, v["r_frame_rate"].split("/"))
 checks = []
 ok = lambda name, cond, info: checks.append((name, bool(cond), info))  # noqa: E731
 ok(f"duration {lo:g}-{hi:g}s", lo <= dur <= hi, f"{dur:.2f}s")
-ok("1920x1080 or 1080x1920", (v["width"], v["height"]) in ((1920, 1080), (1080, 1920)), f'{v["width"]}x{v["height"]}')
+ok("1080p or 4K (either orientation)", (v["width"], v["height"]) in ((1920, 1080), (1080, 1920), (3840, 2160), (2160, 3840)), f'{v["width"]}x{v["height"]}')
 ok("30 fps", num / den == 30, f"{num}/{den}")
 ok("H.264 + AAC", v["codec_name"] == "h264" and a["codec_name"] == "aac", f'{v["codec_name"]} / {a["codec_name"]} {a.get("sample_rate")}Hz')
 ok("A/V length match", abs(float(v["duration"]) - float(a["duration"])) < 0.1, f'v {float(v["duration"]):.3f}s a {float(a["duration"]):.3f}s')

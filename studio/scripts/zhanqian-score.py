@@ -286,6 +286,9 @@ for i, c in enumerate(SHOTS):
         if c["part"] > 0:
             sfx.add(tick(1500, 0.03), at, gain=0.06)
         continue
+    if c.get("trans") == "morph":  # no cut: the wipe into the footprint gets a long, soft sweep
+        sfx.add(whoosh(0.7, 300, 3800), at - 0.1, gain=0.18)
+        continue
     if c["flash"]:
         sfx.add(whoosh(0.35, 400, 5200), at - 0.18, gain=0.2, pan=0.2 if i % 2 else -0.2)
         sfx.add(thud(90), at, gain=0.18)

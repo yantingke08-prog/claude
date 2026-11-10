@@ -6,7 +6,7 @@ import { useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { C } from "./copy";
 import { ARMED, CHAIN, CONVERT, FIRST_HIT, GONE, JUMP, JUMP2, MINES, PASSIVE_AT, TRADES, TRIGGER_K, beadK, ky, lastK, lots, px, sizeAt, volIn, volTo, type Side } from "./book";
-import { FPS, FRAMES, L, Lc, Le, S, TL, backOut, clamp01, expoOut, hold, smooth, span } from "./cue";
+import { FPS, FRAMES, L, Lc, Le, S, TL, backOut, clamp01, cubicInOut, expoOut, hold, smooth, span } from "./cue";
 import { PIECES, X, type Dir } from "./director";
 import { mono, sans, serif } from "./fonts";
 import { HERO, PAL } from "./Scene";
@@ -18,6 +18,19 @@ const BLUE = "#7fa8ff";
 const FX = (c: string, a = 0.92) => ({ background: `rgba(6,8,14,${a})`, border: `1.5px solid ${c}`, boxShadow: `0 0 0 1px #000, 0 0 18px ${c}55, 0 8px 26px rgba(0,0,0,0.55)` });
 const num = (v: number, d = 0) => v.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 const pop = (f: number, a: number, d = 9) => span(f, a, a + d, backOut);
+
+// Screen zones (1080×1920). Every label stays inside SAFE and out of the caption band; a top strip holds the
+// progress bars, the main area runs from MAIN to LOW, and a short bottom strip under the captions holds volume.
+const SAFE = { l: 40, r: 1040, t: 120, b: 1740 };
+const HDR = 124;
+const STRIP = 190;
+const MAIN = 300;
+const LOW = 1440;
+const CAP_TOP = 1480;
+const BOT = 1606;
+/** rough width of a run of text: CJK is square, Latin / digits about 0.6 em */
+const tw = (s: string, size: number) => [...s].reduce((w, ch) => w + (ch.codePointAt(0)! > 0x2e80 ? size : size * 0.6), 0);
+const clampN = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const fin = (f: number, a: number, d = 8) => span(f, a, a + d, expoOut);
 
 type P = { x: number; y: number };
@@ -50,7 +63,7 @@ const Statement: React.FC<{ f: number; lines: SLine[]; end: number; top: number;
     <>
       <div style={{ position: "absolute", inset: 0, opacity: k * scrim, background: "rgba(3,5,10,0.42)" }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: top - 150, height: h + 300, opacity: k * scrim, background: "linear-gradient(180deg, rgba(3,5,10,0) 0%, rgba(3,5,10,0.88) 28%, rgba(3,5,10,0.88) 72%, rgba(3,5,10,0) 100%)" }} />
-      <div style={{ position: "absolute", left: 0, right: 0, top, textAlign: "center", opacity: span(k, 0, 0.4) }}>
+      <div data-qa={`type:${lines[0].text}`} data-qa-text="1" data-qa-kind="type" style={{ position: "absolute", left: 0, right: 0, top, textAlign: "center", opacity: span(k, 0, 0.4) }}>
         {kicker && <div style={{ ...mono(), fontSize: 30, letterSpacing: 12, color: hot, marginBottom: 22, textShadow: `0 0 18px ${hot}88` }}>— {kicker} —</div>}
         {lines.map((l, i) => {
           const hs = l.hl ? l.text.indexOf(l.hl) : -1;
@@ -82,7 +95,12 @@ const Tag: React.FC<{ f: number; a: number; b: number; at: P; plate: P; side: "l
   if (f < a || f >= b || out < 0.01) return null;
   const draw = span(f, a + 1, a + 9, smooth);
   const kp = span(f, a + 6, a + 14, expoOut);
-  const s = side === "r" ? 1 : -1;
+  // the plate must fit: flip to the other side of the anchor if it runs off, then clamp into the safe area
+  const pw = Math.max(tw(title, size), ...notes.map(([n]) => tw(n, 34))) + 50;
+  const ph = size * 1.2 + notes.length * 34 * 1.3 + 26;
+  if (side === "r" && plate.x + pw > SAFE.r && at.x - (plate.x - at.x) - pw >= SAFE.l) (side = "l"), (plate = { ...plate, x: at.x - (plate.x - at.x) });
+  if (side === "l" && plate.x - pw < SAFE.l && at.x + (at.x - plate.x) + pw <= SAFE.r) (side = "r"), (plate = { ...plate, x: at.x + (at.x - plate.x) });
+  plate = { x: side === "r" ? clampN(plate.x, SAFE.l, SAFE.r - pw) : clampN(plate.x, SAFE.l + pw, SAFE.r), y: clampN(plate.y, STRIP + ph / 2, LOW - ph / 2) };
   return (
     <div style={{ position: "absolute", inset: 0, opacity: out }}>
       <svg width={width} height={height} style={{ position: "absolute", inset: 0 }}>
@@ -90,7 +108,7 @@ const Tag: React.FC<{ f: number; a: number; b: number; at: P; plate: P; side: "l
         <circle cx={at.x} cy={at.y} r={3.5} fill={color} opacity={draw} />
         <line x1={at.x} y1={at.y} x2={at.x + (plate.x - at.x) * draw} y2={at.y + (plate.y - at.y) * draw} stroke={color} strokeWidth={2.5} />
       </svg>
-      <div style={{ position: "absolute", top: plate.y, left: side === "r" ? plate.x : undefined, right: side === "l" ? width - plate.x : undefined, transform: `translate(${s * (1 - kp) * 22}px, -50%)`, opacity: kp, padding: "10px 22px 12px", borderRadius: 12, whiteSpace: "nowrap", textAlign: side === "r" ? "left" : "right", ...FX(color) }}>
+      <div data-qa={`tag:${title}`} data-qa-kind="card" style={{ position: "absolute", top: plate.y, left: side === "r" ? plate.x : undefined, right: side === "l" ? width - plate.x : undefined, transform: `translate(0, calc(-50% + ${(1 - kp) * 12}px))`, opacity: kp, padding: "10px 22px 12px", borderRadius: 12, whiteSpace: "nowrap", textAlign: side === "r" ? "left" : "right", ...FX(color) }}>
         <div style={{ ...(m ? mono() : serif()), fontSize: size, lineHeight: 1.2, color: INK }}>{title}</div>
         {notes.map(([n, t], i) => {
           const ki = fin(f, t);
@@ -109,8 +127,12 @@ const Tag: React.FC<{ f: number; a: number; b: number; at: P; plate: P; side: "l
 const Stamp: React.FC<{ f: number; a: number; x: number; y: number; text: string; color: string; rot?: number; size?: number }> = ({ f, a, x, y, text, color, rot = -7, size = 54 }) => {
   if (f < a) return null;
   const k = span(f, a, a + 7, expoOut);
+  const hw = ((tw(text, size) + 4 * [...text].length + 60) / 2) * 1.12 + Math.abs(rot) * 2,
+    hh = (size * 1.45 + 24) / 2 + Math.abs(rot) * 4;
+  x = clampN(x, SAFE.l + hw, SAFE.r - hw);
+  y = clampN(y, STRIP + hh, LOW - hh);
   return (
-    <div style={{ position: "absolute", left: x, top: y, transform: `translate(-50%, -50%) rotate(${rot}deg) scale(${1.7 - 0.7 * k})`, opacity: k, ...sans(700), fontSize: size, color, padding: "4px 22px 8px", border: `4px double ${color}`, borderRadius: 10, background: "rgba(6,8,14,0.86)", whiteSpace: "nowrap", letterSpacing: 4, textShadow: `0 0 16px ${color}aa`, boxShadow: `0 0 26px ${color}55` }}>
+    <div data-qa={`stamp:${text}`} data-qa-kind="card" style={{ position: "absolute", left: x, top: y, transform: `translate(-50%, -50%) rotate(${rot}deg) scale(${1.3 - 0.3 * k})`, opacity: k, ...sans(700), fontSize: size, color, padding: "4px 22px 8px", border: `4px double ${color}`, borderRadius: 10, background: "rgba(6,8,14,0.86)", whiteSpace: "nowrap", letterSpacing: 4, textShadow: `0 0 16px ${color}aa`, boxShadow: `0 0 26px ${color}55` }}>
       {text}
     </div>
   );
@@ -144,15 +166,15 @@ const Corners: React.FC<{ f: number; a: number; x0: number; y0: number; x1: numb
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: k, filter: `drop-shadow(0 0 6px ${color})` }}>
         <path d={[c(x0 - g, y0 - g, 1, 1), c(x1 + g, y0 - g, -1, 1), c(x0 - g, y1 + g, 1, -1), c(x1 + g, y1 + g, -1, -1)].join(" ")} fill="none" stroke={color} strokeWidth={4} />
       </svg>
-      {label && <div style={{ position: "absolute", left: x0 - g, top: y0 - g - 54, ...mono(), fontSize: 28, letterSpacing: 4, color, opacity: k, padding: "2px 12px", background: "rgba(6,8,14,0.86)", border: `1px solid ${color}88`, borderRadius: 6 }}>{label}</div>}
+      {label && <div data-qa={`corners:${label}`} style={{ position: "absolute", left: x0 - g, top: y0 - g - 54, ...mono(), fontSize: 28, letterSpacing: 4, color, opacity: k, padding: "2px 12px", background: "rgba(6,8,14,0.86)", border: `1px solid ${color}88`, borderRadius: 6 }}>{label}</div>}
     </>
   );
 };
 
 /** a solid plate with a small header */
-const Panel: React.FC<{ x: number; y: number; w: number; h?: number; head?: string; color?: string; k?: number; children: React.ReactNode; pad?: string }> = ({ x, y, w, h, head, color = BLUE, k = 1, children, pad = "10px 14px 12px" }) =>
+const Panel: React.FC<{ x: number; y: number; w: number; h?: number; head?: string; color?: string; k?: number; children: React.ReactNode; pad?: string; qa?: string; kind?: "data" | "card" }> = ({ x, y, w, h, head, color = BLUE, k = 1, children, pad = "10px 14px 12px", qa, kind = "data" }) =>
   k < 0.01 ? null : (
-    <div style={{ position: "absolute", left: x, top: y, width: w, height: h, opacity: Math.min(1, k * 1.3), transform: `translateY(${(1 - k) * 14}px)`, borderRadius: 12, padding: pad, boxSizing: "border-box", overflow: "hidden", ...FX(color, 0.88) }}>
+    <div data-qa={qa ?? `panel:${head ?? ""}`} data-qa-kind={kind} style={{ position: "absolute", left: x, top: y, width: w, height: h, opacity: Math.min(1, k * 1.3), transform: `translateY(${(1 - k) * 14}px)`, borderRadius: 12, padding: pad, boxSizing: "border-box", overflow: "hidden", ...FX(color, 0.88) }}>
       {head && <div style={{ ...sans(700), fontSize: 24, letterSpacing: 3, color, marginBottom: 6, display: "flex", justifyContent: "space-between" }}>{head}</div>}
       {children}
     </div>
@@ -179,7 +201,7 @@ const Ladder: React.FC<{ f: number; x: number; y: number; w: number; row?: numbe
     mid = inner - 2 * side;
   const MAX = 70;
   return (
-    <Panel x={x} y={y} w={w} head={head ? C.ladder : undefined} k={k} pad="10px 8px 10px">
+    <Panel x={x} y={y} w={w} head={head ? C.ladder : undefined} k={k} pad="10px 8px 10px" qa="ladder">
       {head && (
         <div style={{ display: "flex", ...sans(500), fontSize: fs * 0.72, color: DIM, marginBottom: 4 }}>
           {C.ladderCols.map((s) => (
@@ -220,7 +242,7 @@ const Tape: React.FC<{ f: number; x: number; y: number; w: number; n?: number; k
   if (k < 0.01) return null;
   const rows = TRADES.filter((t) => t.f <= f).slice(-n).reverse();
   return (
-    <Panel x={x} y={y} w={w} head={C.tape} k={k}>
+    <Panel x={x} y={y} w={w} head={C.tape} k={k} qa="tape">
       <div style={{ display: "flex", ...sans(500), fontSize: 20, color: DIM, marginBottom: 2 }}>
         {C.tapeCols.map((s, i) => (
           <div key={s} style={{ flex: [1.25, 1.45, 0.6][i], textAlign: i === 0 ? "left" : "right" }}>
@@ -256,7 +278,7 @@ const Vol: React.FC<{ f: number; x: number; y: number; w: number; h?: number; n?
   const tot = volTo(f);
   const bw = (w - 28) / n;
   return (
-    <Panel x={x} y={y} w={w} k={k}>
+    <Panel x={x} y={y} w={w} k={k} qa="vol">
       <div style={{ display: "flex", justifyContent: "space-between", ...sans(700), fontSize: 24, letterSpacing: 2, color: BLUE }}>
         <span>
           {C.vol} <span style={{ ...mono(), color: INK, fontSize: 30 }}>{num(tot)}</span> <span style={{ ...sans(500), fontSize: 22, color: SOFT }}>{C.lots}</span>
@@ -280,7 +302,7 @@ const Vol: React.FC<{ f: number; x: number; y: number; w: number; h?: number; n?
 const bestBid = (f: number) => [...Array(17)].map((_, i) => 10 - i).find((q) => sizeAt(f, "bid", q) > 0) ?? -1;
 const bestAsk = (f: number) => [...Array(17)].map((_, i) => i - 6).find((q) => sizeAt(f, "ask", q) > 0) ?? 1;
 /** best bid · spread · best ask */
-const Spread: React.FC<{ f: number; y?: number; k?: number }> = ({ f, y = 186, k = 1 }) => {
+const Spread: React.FC<{ f: number; y?: number; k?: number }> = ({ f, y = STRIP, k = 1 }) => {
   if (k < 0.01) return null;
   const b = bestBid(f),
     a = bestAsk(f);
@@ -291,7 +313,7 @@ const Spread: React.FC<{ f: number; y?: number; k?: number }> = ({ f, y = 186, k
     </div>
   );
   return (
-    <Panel x={150} y={y} w={780} k={k} pad="6px 10px 8px">
+    <Panel x={150} y={y} w={780} k={k} pad="6px 10px 8px" qa="spread">
       <div style={{ display: "flex", alignItems: "center" }}>
         {cell(C.bid1, px(b), PAL.up)}
         {cell(C.spread, ((a - b) * 0.25).toFixed(2), PAL.gold)}
@@ -307,7 +329,7 @@ const Types: React.FC<{ f: number; k: number }> = ({ f, k }) => {
   const at = [Lc("o2", "被动订单"), Lc("o3", "主动订单"), Lc("o6", "止损订单")];
   const cur = at.filter((a) => f >= a).length - 1;
   return (
-    <div style={{ position: "absolute", left: 40, right: 40, top: 178, display: "flex", gap: 12, opacity: k }}>
+    <div data-qa="types" style={{ position: "absolute", left: SAFE.l, right: 1080 - SAFE.r, top: STRIP, display: "flex", gap: 12, opacity: k }}>
       {C.three.map((s, i) => {
         const on = i === cur;
         const col = [PAL.up, PAL.gold, PAL.amber][i];
@@ -328,7 +350,7 @@ const CaseCard: React.FC<{ f: number; a: number; n: number; title: string; notes
   const k = fin(f, a, 10);
   if (k < 0.01) return null;
   return (
-    <div style={{ position: "absolute", left: 40, top: y, width: 560, opacity: k, transform: `translateX(${(1 - k) * -40}px)`, borderRadius: 14, padding: "14px 26px 18px", ...FX(color) }}>
+    <div data-qa={`case:${title}`} data-qa-kind="card" style={{ position: "absolute", left: 40, top: y, width: 560, opacity: k, transform: `translateY(${(1 - k) * 18}px)`, borderRadius: 14, padding: "14px 26px 18px", ...FX(color) }}>
       <div style={{ ...mono(), fontSize: 26, letterSpacing: 6, color }}>{tag ?? C.caseN[n]}</div>
       <div style={{ ...serif(), fontSize: 70, lineHeight: 1.2, color: INK }}>{title}</div>
       {notes.map(([s, t], i) => {
@@ -347,7 +369,7 @@ const CaseCard: React.FC<{ f: number; a: number; n: number; title: string; notes
 const Big: React.FC<{ x: number; y: number; label: string; value: string; color?: string; k?: number; sub?: string; align?: "left" | "center" }> = ({ x, y, label, value, color = INK, k = 1, sub, align = "left" }) =>
   k < 0.01 ? null : (
     <div style={{ position: "absolute", left: align === "center" ? 0 : x, right: align === "center" ? 0 : undefined, top: y, textAlign: align, opacity: k }}>
-      <div style={{ display: "inline-block", padding: "8px 24px 12px", borderRadius: 12, ...FX(color) }}>
+      <div data-qa={`big:${label}`} data-qa-kind="card" style={{ display: "inline-block", padding: "8px 24px 12px", borderRadius: 12, ...FX(color) }}>
         <div style={{ ...sans(700), fontSize: 24, letterSpacing: 3, color }}>{label}</div>
         <div style={{ ...mono(), fontSize: 72, lineHeight: 1.05, color: INK, textShadow: `0 0 18px ${color}88` }}>{value}</div>
         {sub && <div style={{ ...sans(500), fontSize: 28, color: SOFT }}>{sub}</div>}
@@ -355,8 +377,8 @@ const Big: React.FC<{ x: number; y: number; label: string; value: string; color?
     </div>
   );
 
-const Grid: React.FC<{ k?: number }> = ({ k = 1 }) => (
-  <div style={{ position: "absolute", inset: 0, opacity: k, background: `radial-gradient(ellipse at 50% 40%, #121a2c 0%, ${PAL.bg} 70%)` }}>
+const Grid: React.FC<{ k?: number; z?: number }> = ({ k = 1, z = 1 }) => (
+  <div style={{ position: "absolute", inset: 0, opacity: k, transform: `scale(${z})`, background: `radial-gradient(ellipse at 50% 40%, #121a2c 0%, ${PAL.bg} 70%)` }}>
     <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: 0.35 }}>
       {Array.from({ length: 28 }, (_, i) => (
         <line key={`h${i}`} x1={0} x2={1080} y1={i * 72} y2={i * 72} stroke="#2a3a5c" strokeWidth={1} />
@@ -370,15 +392,15 @@ const Grid: React.FC<{ k?: number }> = ({ k = 1 }) => (
 
 // ================================================================ captions
 const KEY = ["买卖价差", "流动性", "限价单", "被动订单", "主动订单", "止损订单", "止损买单", "触发价", "做市商", "机构", "套保者", "短线交易者", "战报", "足迹图", "概率"];
-const NO_BURN = new Set(["h1", "r1"]);
+const NO_BURN = new Set(["h1", "r1", "r3"]);
 const Captions: React.FC<{ f: number }> = ({ f }) => {
   const c = TL.captions.find((k) => f >= k.from && f < k.to);
   if (!c || NO_BURN.has(c.line)) return null;
   const k = span(f, c.from, c.from + 3) * (1 - span(f, c.to - 3, c.to));
   const re = new RegExp(`(${KEY.join("|")})`);
   return (
-    <div style={{ position: "absolute", left: 48, right: 48, top: 1480, textAlign: "center", opacity: k }}>
-      <span style={{ display: "inline-block", maxWidth: 984, padding: "8px 28px 10px", borderRadius: 14, background: "rgba(6,8,14,0.82)", ...sans(500), fontSize: 54, lineHeight: 1.3, color: INK, letterSpacing: 1 }}>
+    <div style={{ position: "absolute", left: 48, right: 48, top: CAP_TOP, textAlign: "center", opacity: k }}>
+      <span data-qa="caption" data-qa-kind="cap" style={{ display: "inline-block", maxWidth: 984, padding: "8px 28px 10px", borderRadius: 14, background: "rgba(6,8,14,0.82)", ...sans(500), fontSize: 54, lineHeight: 1.3, color: INK, letterSpacing: 1 }}>
         {c.text.split(re).map((s, i) => (KEY.includes(s) ? <span key={i} style={{ color: PAL.gold }}>{s}</span> : s))}
       </span>
     </div>
@@ -439,9 +461,9 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   const lotsOf = (side: Side) => lvl(side).reduce((s, q) => s + sizeAt(f, side, q), 0);
   return (
     <>
-      {ladder && <Ladder f={f} x={752} y={is("s.after") ? 330 : 300} w={300} row={42} k={fin(f, s0, 6)} hidden={is("s.hidden", "s.trigger")} mark={is("o.eat") ? [{ side: "ask", k: 1, color: PAL.gold }] : is("s.trigger") ? [{ side: "ask", k: TRIGGER_K, color: PAL.amber }] : []} />}
-      {tape && <Tape f={f} x={30} y={is("a.board", "s.boom2") ? 470 : is("o.eat") ? 820 : 300} w={270} k={fin(f, s0, 6)} n={is("s.convert", "s.boom2") ? 10 : 8} />}
-      {vol && <Vol f={f} x={40} y={1620} w={1000} h={130} k={fin(f, s0, 6)} />}
+      {ladder && <Ladder f={f} x={SAFE.r - 300} y={MAIN + 10} w={300} row={42} k={fin(f, s0, 6)} hidden={is("s.hidden", "s.trigger")} mark={is("o.eat") ? [{ side: "ask", k: 1, color: PAL.gold }] : is("s.trigger") ? [{ side: "ask", k: TRIGGER_K, color: PAL.amber }] : []} />}
+      {tape && <Tape f={f} x={SAFE.l} y={is("a.board", "s.boom2") ? 480 : is("o.eat") ? 820 : MAIN + 10} w={270} k={fin(f, s0, 6)} n={is("s.convert", "s.boom2") ? 10 : 8} />}
+      {vol && <Vol f={f} x={SAFE.l} y={BOT} w={SAFE.r - SAFE.l} h={58} k={fin(f, s0, 6)} />}
       {spread && <Spread f={f} k={fin(f, s0, 6)} />}
       <Types f={f} k={types ? 1 : 0} />
 
@@ -468,7 +490,7 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
               <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, filter: `drop-shadow(0 0 8px ${PAL.gold})` }}>
                 <polyline points={`${u.x - 150},${u.y} ${u.x - 175},${u.y} ${dn.x - 175},${dn.y} ${dn.x - 150},${dn.y}`} fill="none" stroke={PAL.gold} strokeWidth={4} />
               </svg>
-              <div style={{ position: "absolute", left: Math.max(40, u.x - 600), top: (u.y + dn.y) / 2 - 260, padding: "8px 22px 12px", borderRadius: 12, whiteSpace: "nowrap", ...FX(PAL.gold) }}>
+              <div data-qa="tag:spread" data-qa-kind="card" style={{ position: "absolute", left: Math.max(SAFE.l, u.x - 600), top: (u.y + dn.y) / 2 - 260, padding: "8px 22px 12px", borderRadius: 12, whiteSpace: "nowrap", ...FX(PAL.gold) }}>
                 <div style={{ ...serif(), fontSize: 54, color: PAL.gold }}>{C.spread}</div>
                 <div style={{ ...mono(), fontSize: 40, color: INK }}>0.50 · {C.ticks}</div>
               </div>
@@ -495,7 +517,7 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
         <>
           <Big x={48} y={300} label={C.last} value={px(lastK(f))} color={PAL.gold} sub={f >= JUMP ? C.step[1] : `${C.eatAsk} ${sizeAt(f, "ask", 1)} ${C.lots}`} />
           <Stamp f={f} a={JUMP} x={540} y={P(0, bk).y - 120} text={C.step[1]} color={PAL.gold} />
-          <Tag f={f} a={GONE} b={d.shot.end} at={P(1.6, 1, 0.5)} plate={{ x: 90, y: 1200 }} side="r" color={PAL.down} title={C.step[0]} size={42} />
+          <Tag f={f} a={GONE} b={JUMP} at={P(1.6, 1, 0.5)} plate={{ x: 90, y: 1200 }} side="r" color={PAL.down} title={C.step[0]} size={42} />
         </>
       )}
       {is("o.hop2") &&
@@ -588,7 +610,7 @@ const DepthChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
           </text>
         ))}
       </svg>
-      <div style={{ position: "absolute", left: X0, top: Y0 + 64, ...sans(500), fontSize: 26, color: DIM }}>
+      <div style={{ position: "absolute", left: X0, top: Y0 + 74, ...sans(500), fontSize: 26, color: DIM }}>
         ← {C.bid} · {C.depthAxis[1]} · {C.ask} →
       </div>
       <Tag f={f} a={a + 8} b={FRAMES} at={{ x: xk(0), y: Y1 - 40 }} plate={{ x: xk(0) + 60, y: 430 }} side="r" color={PAL.gold} title={C.spread} notes={[[C.noTrade, Lc("a3", "没人") + 4]]} size={50} />
@@ -602,7 +624,7 @@ const Equal: React.FC<{ f: number; a: number }> = ({ f, a }) => {
   const card = (lab: string, col: string, i: number) => {
     const k = pop(f, a + i * 5);
     return (
-      <div style={{ flex: 1, textAlign: "center", padding: "26px 0 30px", borderRadius: 18, opacity: Math.min(1, k * 1.3), transform: `scale(${0.85 + 0.15 * k})`, ...FX(col) }}>
+      <div data-qa={`equal:${lab}`} style={{ flex: 1, textAlign: "center", padding: "26px 0 30px", borderRadius: 18, opacity: Math.min(1, k * 1.3), transform: `scale(${0.85 + 0.15 * k})`, ...FX(col) }}>
         <div style={{ ...sans(700), fontSize: 46, color: col }}>{lab}</div>
         <div style={{ ...mono(), fontSize: 150, lineHeight: 1.1, color: INK, textShadow: `0 0 26px ${col}88` }}>{q}</div>
         <div style={{ ...sans(500), fontSize: 34, color: SOFT }}>{C.lots}</div>
@@ -611,9 +633,9 @@ const Equal: React.FC<{ f: number; a: number }> = ({ f, a }) => {
   };
   return (
     <>
-      <div style={{ position: "absolute", left: 40, right: 40, top: 420, display: "flex", alignItems: "center", gap: 20 }}>
+      <div style={{ position: "absolute", left: 70, right: 70, top: 420, display: "flex", alignItems: "center", gap: 28 }}>
         {card(C.buyQty, PAL.up, 0)}
-        <div style={{ ...mono(), fontSize: 130, color: PAL.gold, textShadow: `0 0 26px ${PAL.gold}`, opacity: pop(f, a + 8) }}>=</div>
+        <div data-qa="equal:=" style={{ ...mono(), fontSize: 130, color: PAL.gold, textShadow: `0 0 26px ${PAL.gold}`, opacity: pop(f, a + 8) }}>=</div>
         {card(C.sellQty, PAL.down, 1)}
       </div>
       <Panel x={190} y={960} w={700} head={C.first} color={PAL.gold} k={fin(f, a + 14)}>
@@ -658,9 +680,9 @@ const Three: React.FC<{ f: number; a: number }> = ({ f, a }) => (
 
 const BigLadder: React.FC<{ f: number; a: number; mode: "passive" | "eat" | "sweep" }> = ({ f, a, mode }) => {
   const k = fin(f, a, 8);
-  const row = 74;
+  const row = 70;
   const x = 220,
-    y = 330;
+    y = mode === "sweep" ? 388 : 320;
   // the sweep is replayed fast: the ladder runs on its own clock through the stop chain
   const g = mode === "sweep" ? Math.round(CHAIN - 20 + span(f, a + 4, a + 34, (t) => t) * 60) : f;
   const rowY = (q: number) => y + 48 + 30 + (Math.round(beadK(g)) + 6 - q) * row + row / 2;
@@ -669,19 +691,19 @@ const BigLadder: React.FC<{ f: number; a: number; mode: "passive" | "eat" | "swe
       <Ladder f={g} x={x} y={y} w={640} row={row} k={k} mark={mode === "passive" ? [{ side: "bid", k: -1, color: PAL.up }] : mode === "eat" ? [{ side: "ask", k: 1, color: PAL.gold }] : []} />
       {mode === "passive" && (
         <>
-          <Tag f={f} a={a + 6} b={FRAMES} at={{ x: x + 120, y: rowY(-1) }} plate={{ x: 60, y: 1290 }} side="r" color={PAL.up} title={C.liquidity} size={40} notes={[[C.passive[2], Lc("o2", "提供")]]} />
+          <Tag f={f} a={a + 6} b={FRAMES} at={{ x: x + 120, y: rowY(-1) }} plate={{ x: 60, y: 1300 }} side="r" color={PAL.up} title={C.liquidity} size={40} notes={[[C.passive[2], Lc("o2", "提供")]]} />
         </>
       )}
       {mode === "eat" && (
         <>
           <Arrow f={f} a={a + 4} from={{ x: 980, y: 1300 }} to={{ x: x + 560, y: rowY(1) + 20 }} color={PAL.gold} />
-          <Tag f={f} a={a + 8} b={FRAMES} at={{ x: x + 520, y: rowY(1) }} plate={{ x: 60, y: 1290 }} side="r" color={PAL.gold} title={`${C.eatAsk} ${sizeAt(f, "ask", 1)} ${C.lots}`} size={44} notes={[[C.active[2], Lc("o3", "消耗")]]} />
+          <Tag f={f} a={a + 8} b={FRAMES} at={{ x: x + 520, y: rowY(1) }} plate={{ x: 60, y: 1300 }} side="r" color={PAL.gold} title={`${C.eatAsk} ${sizeAt(f, "ask", 1)} ${C.lots}`} size={44} notes={[[C.active[2], Lc("o3", "消耗")]]} />
         </>
       )}
       {mode === "sweep" && (
         <>
-          <Stamp f={f} a={a + 30} x={540} y={1300} text={C.swept} color={PAL.amber} />
-          <Big x={0} align="center" y={180} label={C.chainCount} value={`${num(volIn(CONVERT - 2, CHAIN + 50))} ${C.lots}`} color={PAL.amber} sub={C.sweptNote} k={fin(f, a + 6)} />
+          <Stamp f={f} a={a + 30} x={540} y={1360} text={C.swept} color={PAL.amber} />
+          <Big x={0} align="center" y={STRIP} label={C.chainCount} value={`${num(volIn(CONVERT - 2, CHAIN + 50))} ${C.lots}`} color={PAL.amber} sub={C.sweptNote} k={fin(f, a + 6)} />
         </>
       )}
     </>
@@ -697,7 +719,7 @@ const Chain: React.FC<{ f: number; a: number }> = ({ f, a }) => {
       {C.chain.map((s, i) => {
         const k = pop(f, a + 4 + i * 8);
         return (
-          <div key={s} style={{ position: "absolute", left: xs[i] - 140, top: 860, width: 280, textAlign: "center", padding: "26px 0", borderRadius: 16, opacity: Math.min(1, k * 1.3), transform: `scale(${0.8 + 0.2 * k})`, ...sans(700), fontSize: 44, color: INK, ...FX(cols[i]) }}>
+          <div key={s} data-qa={`chain:${s}`} style={{ position: "absolute", left: xs[i] - 140, top: 860, width: 280, textAlign: "center", padding: "26px 0", borderRadius: 16, opacity: Math.min(1, k * 1.3), transform: `scale(${0.8 + 0.2 * k})`, ...sans(700), fontSize: 44, color: INK, ...FX(cols[i]) }}>
             {s}
           </div>
         );
@@ -726,16 +748,18 @@ const STOPCHART = (() => {
   });
 })();
 const StopChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
+  // the whole chart, the stops above the high included, fits between the strip and the captions
+  const PX = 118;
   const x0 = 80,
     w = 900,
-    yp = (p: number) => 1280 - (p + 1.2) * 150; // p in ticks above 5000.00
+    yp = (p: number) => 1300 - (p + 1.2) * PX; // p in ticks above 5000.00
   const n = STOPCHART.length;
   const cw = (w - 160) / n;
   const rev = span(f, a, a + 24, (t) => t) * n;
   const hiY = yp(3);
   return (
     <>
-      <div style={{ position: "absolute", left: x0, top: 300, ...sans(700), fontSize: 30, letterSpacing: 4, color: BLUE }}>5 MIN · 5000.00 +</div>
+      <div style={{ position: "absolute", left: x0, top: STRIP + 10, ...sans(700), fontSize: 30, letterSpacing: 4, color: BLUE }}>5 MIN · 5000.00 +</div>
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
         {[0, 1, 2, 3, 4, 5, 6].map((p) => (
           <g key={p}>
@@ -753,14 +777,14 @@ const StopChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
           return (
             <g key={i} opacity={clamp01(rev - i)}>
               <line x1={cx} x2={cx} y1={yp(c.hi)} y2={yp(c.lo)} stroke={col} strokeWidth={3} />
-              <rect x={cx - cw * 0.32} y={yp(Math.max(c.o, c.c))} width={cw * 0.64} height={Math.max(4, Math.abs(c.c - c.o) * 150)} fill={col} rx={3} />
+              <rect x={cx - cw * 0.32} y={yp(Math.max(c.o, c.c))} width={cw * 0.64} height={Math.max(4, Math.abs(c.c - c.o) * PX)} fill={col} rx={3} />
             </g>
           );
         })}
         <line x1={x0} x2={x0 + w - 120} y1={hiY} y2={hiY} stroke={INK} strokeWidth={3} strokeDasharray="14 10" opacity={fin(f, Lc("s2", "前高"))} />
       </svg>
-      <Tag f={f} a={Lc("s2", "前高") - 2} b={FRAMES} at={{ x: x0 + 6.5 * cw, y: hiY }} plate={{ x: x0 + 6.5 * cw - 40, y: hiY + 200 }} side="l" color={INK} title={`${C.priorHigh} ${px(3)}`} size={40} mono />
-      {[12, 16, 17].map((i, j) => {
+      <Tag f={f} a={Lc("s2", "前高") - 2} b={FRAMES} at={{ x: x0 + 6.5 * cw, y: hiY }} plate={{ x: x0 + 6.5 * cw + 40, y: 1385 }} side="r" color={INK} title={`${C.priorHigh} ${px(3)}`} size={40} mono />
+      {[12, 15, 17].map((i, j) => {
         const k = pop(f, Lc("s2", "做空") + j * 4);
         const cx = x0 + i * cw + cw / 2;
         return k > 0.01 ? (
@@ -776,7 +800,7 @@ const StopChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
           <div key={`${q}-${i}`} style={{ position: "absolute", left: x0 + 520 + i * 40, top: yp(q) - 14, width: 26, height: 26, transform: `rotate(45deg) scale(${k * 0.8})`, background: `${PAL.amber}aa`, border: `2px solid ${PAL.amber}`, boxShadow: `0 0 12px ${PAL.amber}` }} />
         ));
       })}
-      <Tag f={f} a={Lc("s2", "止损买单") + 6} b={FRAMES} at={{ x: x0 + 500, y: yp(5.5) }} plate={{ x: 80, y: yp(6.6) }} side="r" color={PAL.amber} title={C.stopCluster[0]} notes={[[C.stopCluster[1], Lc("s2", "上方")]]} size={44} />
+      <Tag f={f} a={Lc("s2", "止损买单") + 6} b={FRAMES} at={{ x: x0 + 500, y: yp(5.5) }} plate={{ x: x0, y: yp(5.6) }} side="r" color={PAL.amber} title={C.stopCluster[0]} notes={[[C.stopCluster[1], Lc("s2", "上方")]]} size={44} />
     </>
   );
 };
@@ -813,7 +837,7 @@ const Track: React.FC<{ f: number; k: number }> = ({ f, k }) => {
   if (k < 0.01) return null;
   const cur = ORDER.findIndex(([, id], i) => f >= L(id) - 2 && (i === 3 || f < L(ORDER[i + 1][1]) - 2));
   return (
-    <div style={{ position: "absolute", left: 30, right: 30, top: 178, opacity: k }}>
+    <div data-qa="track" style={{ position: "absolute", left: SAFE.l, right: 1080 - SAFE.r, top: STRIP, opacity: k }}>
       <div style={{ display: "flex", gap: 10 }}>
         {ORDER.map(([w, id], i) => {
           const named = f >= L(id) - 2;
@@ -826,7 +850,6 @@ const Track: React.FC<{ f: number; k: number }> = ({ f, k }) => {
           );
         })}
       </div>
-      <div style={{ ...sans(500), fontSize: 20, color: DIM, marginTop: 6, textAlign: "right" }}>{C.paceHead}</div>
     </div>
   );
 };
@@ -859,11 +882,11 @@ const TableHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   const head = (w: Who, id: string) => {
     const [name, a, b] = C.players[w];
     const words = [Lc(id, id === "p2" ? "两边" : id === "p3" ? "拆成" : id === "p4" ? "对冲" : "追逐"), Lc(id, id === "p2" ? "最怕" : id === "p3" ? "慢慢" : id === "p4" ? "不太" : "止损")];
-    return <CaseCard f={f} a={L(id)} n={0} tag={`PLAYER 0${ORDER.findIndex(([k]) => k === w) + 1}`} title={name} color={PAL.gold} y={300} notes={[[a, words[0]], [b, words[1]]]} />;
+    return <CaseCard f={f} a={L(id)} n={0} tag={`PLAYER 0${ORDER.findIndex(([k]) => k === w) + 1}`} title={name} color={PAL.gold} y={MAIN + 10} notes={[[a, words[0]], [b, words[1]]]} />;
   };
   return (
     <>
-      <Track f={f} k={lay !== "p.who" && lay !== "p.manip" && f < S("anatomy") ? 1 : 0} />
+      <Track f={f} k={lay !== "p.who" && lay !== "p.manip" && lay !== "p.clash" && f < S("anatomy") ? 1 : 0} />
       <Statement f={f} top={300} end={Lc("p1", "而是") - 2} scrim={0.7} lines={[{ text: C.who[0], at: Lc("p1", "不是"), size: 110, hl: "庄家" }]} />
       {lay === "p.who" && <Stamp f={f} a={Lc("p1", "庄家") + 10} x={540} y={640} text={C.notOne} color={PAL.up} rot={-6} />}
       {lay === "p.wide" && (
@@ -951,13 +974,14 @@ const TableHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
             <div style={{ ...serif(), fontSize: 90, color: INK, opacity: fin(f, L("p6")) }}>{C.manip[0]}</div>
             <div style={{ ...sans(500), fontSize: 44, color: SOFT, marginTop: 20, opacity: fin(f, Lc("p6", "但大多数") - 30) }}>{C.manip[2]}</div>
           </div>
-          <Stamp f={f} a={Lc("p6", "违规")} x={800} y={540} text={C.illegal} color={PAL.up} rot={8} size={64} />
+          <Stamp f={f} a={Lc("p6", "违规")} x={830} y={470} text={C.illegal} color={PAL.up} rot={8} size={64} />
         </>
       )}
       {lay === "p.clash" && (
         <>
-          <Statement f={f} top={300} end={S("anatomy") - 6} scrim={0.55} rule={false} lines={[{ text: C.crash[0], at: Lc("p6", "这些需求"), size: 120, hl: "碰撞" }, { text: C.crash[1], at: Lc("p6", "这些需求") + 16, size: 54 }]} />
-          <Panel x={150} y={1060} w={780} color={PAL.gold} k={fin(f, Lc("p6", "但大多数") + 6)}>
+          {/* the table keeps the middle of the frame; the comparison sits in its own panel above the captions */}
+          <Statement f={f} top={STRIP + 10} end={S("anatomy") - 6} scrim={0} rule={false} lines={[{ text: C.crash[0], at: Lc("p6", "这些需求"), size: 112, hl: "碰撞" }, { text: C.crash[1], at: Lc("p6", "这些需求") + 16, size: 50 }]} />
+          <Panel x={SAFE.l} y={LOW - 262} w={SAFE.r - SAFE.l} color={PAL.gold} k={fin(f, Lc("p6", "但大多数") + 6)} qa="panel:compare" kind="card">
             <div style={{ display: "flex", ...sans(500), fontSize: 24, color: DIM }}>
               {C.cmpHead.map((h) => (
                 <div key={h} style={{ flex: 1 }}>
@@ -997,9 +1021,9 @@ const PATHS = (() => {
   const vb = [...Array(n)].map((_, i) => (i > n * 0.55 && i < n * 0.7 ? 34 + (i % 3) * 4 : 3 + (i % 4)));
   return { a, b, va, vb, n };
 })();
-const PathChart: React.FC<{ f: number; x: number; y: number; w: number; g: number; side: "a" | "b"; hot: number }> = ({ f, x, y, w, g, side, hot }) => {
-  const H = 210,
-    VH = 70;
+const PathChart: React.FC<{ f: number; x: number; y: number; w: number; g: number; side: "a" | "b"; hot: number; verdict: number }> = ({ f, x, y, w, g, side, hot, verdict }) => {
+  const H = 150,
+    VH = 52;
   const p = PATHS[side],
     v = side === "a" ? PATHS.va : PATHS.vb;
   const n = Math.max(2, Math.round(PATHS.n * g));
@@ -1016,6 +1040,10 @@ const PathChart: React.FC<{ f: number; x: number; y: number; w: number; g: numbe
         ))}
       </svg>
       <div style={{ ...sans(500), fontSize: 20, color: DIM, marginTop: -4 }}>{C.pathVol}</div>
+      {/* the verdict lands in the panel, in the column's colour */}
+      <div style={{ ...sans(700), fontSize: 36, lineHeight: "46px", letterSpacing: 4, color: col, textShadow: `0 0 16px ${col}aa`, opacity: fin(f, verdict), transform: `scale(${1.25 - 0.25 * span(f, verdict, verdict + 7, expoOut)})`, transformOrigin: "left center" }}>
+        ✓ {side === "a" ? C.caseA[2] : C.caseB[2]}
+      </div>
     </Panel>
   );
 };
@@ -1040,7 +1068,7 @@ const AnatomyHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
     const col = i === 0 ? PAL.up : PAL.amber;
     const k = fin(f, a, 10);
     return k < 0.01 ? null : (
-      <div key={i} style={{ position: "absolute", left: i === 0 ? 30 : sep + 20, width: 490, top: 290, textAlign: "center", opacity: k, padding: "8px 0 12px", borderRadius: 14, ...FX(col) }}>
+      <div key={i} data-qa={`case:${c[0]}`} data-qa-kind="card" style={{ position: "absolute", left: i === 0 ? SAFE.l : sep + 10, width: 490, top: MAIN, textAlign: "center", opacity: k, padding: "8px 0 12px", borderRadius: 14, ...FX(col) }}>
         <div style={{ ...mono(), fontSize: 26, color: col, letterSpacing: 4 }}>{c[0]}</div>
         <div style={{ ...serif(), fontSize: 44, color: INK, lineHeight: 1.25 }}>{c[1]}</div>
       </div>
@@ -1050,32 +1078,57 @@ const AnatomyHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   return (
     <>
       {lay === "w.ohlc" &&
-        OHLC.map(([y, val, side], i) => {
-          const at = P(y, side === "r" ? 1.5 : -1.5);
-          return <Tag key={i} f={f} a={words[i]} b={d.shot.end} at={at} plate={{ x: at.x + (side === "r" ? 110 : -110), y: at.y }} side={side} title={C.ohlc[i]} notes={[[val, words[i] + 6]]} size={42} />;
-        })}
+        (() => {
+          // one card in the right column; each price gets a ring on the candle and a leader to its row
+          const px0 = SAFE.r - 270,
+            py0 = 640,
+            rh = 62;
+          return (
+            <>
+              <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
+                {OHLC.map(([y, , side], i) => {
+                  const at = P(y, side === "r" ? 1.5 : -1.5);
+                  const k = span(f, words[i], words[i] + 8, smooth);
+                  const ry = py0 + 52 + i * rh + rh / 2;
+                  return k > 0.01 ? (
+                    <g key={i} opacity={k} stroke={PAL.gold} fill="none">
+                      <circle cx={at.x} cy={at.y} r={11} strokeWidth={3} />
+                      <polyline points={`${at.x + (side === "r" ? 12 : -12)},${at.y} ${side === "r" ? at.x + 40 : at.x - 40},${at.y} ${px0 - 14},${ry}`} strokeWidth={2} opacity={0.7} />
+                    </g>
+                  ) : null;
+                })}
+              </svg>
+              <Panel x={px0} y={py0} w={270} head="OHLC" color={PAL.gold} k={fin(f, words[0] - 2)} qa="panel:ohlc" kind="card">
+                {OHLC.map(([, val], i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", height: rh, alignItems: "center", borderTop: "1px solid rgba(255,255,255,0.08)", opacity: fin(f, words[i]) }}>
+                    <span style={{ ...sans(700), fontSize: 30, color: SOFT }}>{C.ohlc[i]}</span>
+                    <span style={{ ...mono(), fontSize: 32, color: INK }}>{val}</span>
+                  </div>
+                ))}
+              </Panel>
+            </>
+          );
+        })()}
       {lay === "w.squeeze" && (
         <>
-          <Statement f={f} top={300} end={d.shot.end} scrim={0.3} rule={false} lines={[{ text: C.squeeze, at: Lc("w2", "过程"), size: 84, hl: "压缩" }]} />
-          <Big x={0} align="center" y={1180} label="1 BAR" value={`${num(Math.round(1286 * (1 - span(f, Lc("w2", "压缩"), Lc("w2", "压缩") + 20)) + 4 * span(f, Lc("w2", "压缩"), Lc("w2", "压缩") + 20)))}`} color={PAL.gold} sub={f >= Lc("w2", "压缩") + 20 ? C.squeezeN[1] : C.squeezeN[0]} />
+          <Statement f={f} top={STRIP + 10} end={d.shot.end} scrim={0} rule={false} lines={[{ text: C.squeeze, at: Lc("w2", "过程"), size: 84, hl: "压缩" }]} />
+          <Big x={SAFE.r - 270} y={820} label="1 BAR" value={`${num(Math.round(1286 * (1 - span(f, Lc("w2", "压缩"), Lc("w2", "压缩") + 20)) + 4 * span(f, Lc("w2", "压缩"), Lc("w2", "压缩") + 20)))}`} color={PAL.gold} sub={f >= Lc("w2", "压缩") + 20 ? C.squeezeN[1] : C.squeezeN[0]} />
         </>
       )}
       {split && (
         <>
-          <div style={{ position: "absolute", left: sep - 2, top: 270, bottom: 470, width: 4, background: `linear-gradient(180deg, ${BLUE}00, ${BLUE}, ${BLUE}00)`, boxShadow: `0 0 16px ${BLUE}` }} />
+          <div style={{ position: "absolute", left: sep - 2, top: MAIN - 10, bottom: 1920 - (LOW - 370), width: 4, background: `linear-gradient(180deg, ${BLUE}00, ${BLUE}, ${BLUE}00)`, boxShadow: `0 0 16px ${BLUE}` }} />
           <div style={{ position: "absolute", left: 0, right: 0, top: 380 + ((f * 9) % 760), height: 2, background: `linear-gradient(90deg, ${BLUE}00, ${BLUE}cc, ${BLUE}00)`, boxShadow: `0 0 16px ${BLUE}` }} />
           {lab(0)}
           {lab(1)}
-          <PathChart f={f} x={30} y={1110} w={500} g={g} side="a" hot={lay === "w.caseA" ? 1 : 0} />
-          <PathChart f={f} x={550} y={1110} w={500} g={g} side="b" hot={lay === "w.caseB" ? 1 : 0} />
-          <Stamp f={f} a={Le("w3") - 16} x={280} y={1040} text={C.caseA[2]} color={PAL.up} rot={-5} size={40} />
-          <Stamp f={f} a={Lc("w4", "打完") + 4} x={800} y={1040} text={C.caseB[2]} color={PAL.amber} rot={5} size={40} />
+          <PathChart f={f} x={SAFE.l} y={LOW - 350} w={490} g={g} side="a" hot={lay === "w.caseA" ? 1 : 0} verdict={Le("w3") - 16} />
+          <PathChart f={f} x={SAFE.r - 490} y={LOW - 350} w={490} g={g} side="b" hot={lay === "w.caseB" ? 1 : 0} verdict={Lc("w4", "打完") + 4} />
         </>
       )}
       {lay === "w.same" && (
         <>
-          <Statement f={f} top={250} end={d.shot.end} scrim={0.35} rule={false} lines={[{ text: C.same, at: Lc("w5", "结果"), size: 92 }, { text: C.diff, at: Lc("w5", "原因"), size: 116, hl: C.diff }]} />
-          <Panel x={90} y={1010} w={900} color={PAL.gold} k={fin(f, Lc("w5", "原因") + 4)}>
+          <Statement f={f} top={STRIP + 10} end={d.shot.end} scrim={0} rule={false} lines={[{ text: C.same, at: Lc("w5", "结果"), size: 76 }, { text: C.diff, at: Lc("w5", "原因"), size: 96, hl: C.diff }]} />
+          <Panel x={SAFE.l} y={LOW - 262} w={SAFE.r - SAFE.l} color={PAL.gold} k={fin(f, Lc("w5", "原因") + 4)} qa="panel:cmp" kind="card">
             {C.cmp.map((r, i) => (
               <div key={i} style={{ display: "flex", ...sans(i ? 700 : 500), fontSize: i ? 32 : 26, lineHeight: i ? "50px" : "34px", color: i ? INK : DIM, borderTop: i ? "1px solid rgba(255,255,255,0.08)" : undefined, opacity: i < 4 || f >= Lc("w5", "后面") ? 1 : 0.15 }}>
                 <div style={{ flex: 0.8, color: DIM }}>{r[0]}</div>
@@ -1091,24 +1144,38 @@ const AnatomyHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
 };
 
 // ================================================================ recap
-const Footprint: React.FC<{ f: number; a: number }> = ({ f, a }) => {
-  const rows = 9;
+/** footprint: traded volume at each price, buyers (red, left) × sellers (green, right). The rows are the
+ *  same price levels as the order pool it grows out of; the counts fill in once and then hold. */
+const FP_ROWS = 9;
+const FP = [...Array(FP_ROWS)].map((_, i) => {
+  const r = (s: number) => Math.abs(Math.sin(i * 7.3 + s) * 0.5 + 0.5);
+  return { k: lastK(FRAMES - 1) + 4 - i, b: Math.round(12 + r(1) * 58), s: Math.round(10 + r(5) * 50) };
+});
+const Footprint: React.FC<{ f: number; a: number; y: number }> = ({ f, a, y }) => {
+  const rh = 58;
+  const poc = FP.reduce((m, r, i) => (r.b + r.s > FP[m].b + FP[m].s ? i : m), 0);
   return (
-    <div style={{ position: "absolute", left: 250, top: 1000, width: 580, opacity: fin(f, a + 30) }}>
-      <div style={{ ...mono(), fontSize: 24, letterSpacing: 4, color: BLUE, marginBottom: 6 }}>{C.footprint}</div>
-      {[...Array(rows)].map((_, i) => {
-        const r = (s: number) => Math.abs(Math.round(Math.sin(i * 7.3 + s + Math.floor(f / 6) * 0.3) * 60));
-        const b = r(1),
-          s = r(5);
+    <Panel x={190} y={y} w={700} head={C.footprint} color={BLUE} qa="panel:footprint" pad="12px 18px 14px">
+      {FP.map((r, i) => {
+        const g = span(f, a + 4 + i * 2, a + 22 + i * 2, expoOut);
+        const b = Math.round(r.b * g),
+          s = Math.round(r.s * g);
         return (
-          <div key={i} style={{ display: "flex", ...mono(), fontSize: 28, lineHeight: "40px" }}>
-            <div style={{ flex: 1, textAlign: "right", paddingRight: 14, color: INK, background: `${PAL.up}${Math.round(20 + b * 2).toString(16).padStart(2, "0")}` }}>{b}</div>
-            <div style={{ width: 20, textAlign: "center", color: DIM }}>×</div>
-            <div style={{ flex: 1, paddingLeft: 14, color: INK, background: `${PAL.down}${Math.round(20 + s * 2).toString(16).padStart(2, "0")}` }}>{s}</div>
+          <div key={i} style={{ display: "flex", alignItems: "center", height: rh, ...mono(), fontSize: 30, borderTop: "1px solid rgba(255,255,255,0.06)", outline: i === poc && g > 0.9 ? `2px solid ${PAL.gold}` : undefined, outlineOffset: -2, borderRadius: 4 }}>
+            <div style={{ width: 150, color: SOFT, fontSize: 26 }}>{px(r.k)}</div>
+            <div style={{ flex: 1, position: "relative", height: rh - 14 }}>
+              <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: `${(b / 70) * 100}%`, background: `${PAL.up}88`, borderRadius: 3 }} />
+              <div style={{ position: "absolute", right: 12, lineHeight: `${rh - 14}px`, color: INK }}>{b}</div>
+            </div>
+            <div style={{ width: 34, textAlign: "center", color: DIM }}>×</div>
+            <div style={{ flex: 1, position: "relative", height: rh - 14 }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(s / 70) * 100}%`, background: `${PAL.down}88`, borderRadius: 3 }} />
+              <div style={{ position: "absolute", left: 12, lineHeight: `${rh - 14}px`, color: INK }}>{s}</div>
+            </div>
           </div>
         );
       })}
-    </div>
+    </Panel>
   );
 };
 
@@ -1124,7 +1191,7 @@ const RecapHud: React.FC<{ d: Dir }> = ({ d }) => {
     return (
       <>
         <Grid />
-        <div style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", transform: `scale(${0.9 + 0.1 * k})`, opacity: Math.min(1, k * 1.4) }}>
+        <div data-qa={`recap:${t1}`} data-qa-text="1" style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", transform: `scale(${0.9 + 0.1 * k})`, opacity: Math.min(1, k * 1.4) }}>
           <div style={{ ...mono(), fontSize: 200, color: col, textShadow: `0 0 50px ${col}` }}>{n}</div>
           <div style={{ display: "inline-block", marginTop: 20, padding: "22px 60px 30px", borderRadius: 20, ...FX(col) }}>
             <div style={{ ...serif(), fontSize: 84, color: INK }}>{t1}</div>
@@ -1146,27 +1213,37 @@ const RecapHud: React.FC<{ d: Dir }> = ({ d }) => {
       {lay === "r.k3" && card(2)}
       <Statement f={f} top={620} end={Lc("r1", "要问") - 2} lines={[{ text: C.q1[0], at: L("r1"), size: 92 }, { text: C.q1[1], at: Lc("r1", "它涨"), size: 136, hl: "涨没涨" }]} />
       <Statement f={f} top={620} end={L("r2") - 2} kicker="WHO · WHY" lines={[{ text: C.q2[0], at: Lc("r1", "是谁"), size: 136, hl: "是谁" }, { text: C.q2[1], at: Lc("r1", "为什么"), size: 136, hl: "为什么" }]} />
-      {lay === "r.caveat" && (
-        <>
-          <Stamp f={f} a={Lc("r2", "挂单")} x={540} y={700} text={C.caveat[0]} color={BLUE} rot={-4} size={66} />
-          <Stamp f={f} a={Lc("r2", "订单流")} x={540} y={960} text={C.caveat[1]} color={PAL.gold} rot={3} size={66} />
-        </>
-      )}
-      {lay === "r.next" && (
-        <>
-          <Grid />
-          <Statement f={f} top={500} end={FRAMES + 10} kicker={C.title} scrim={0} lines={[{ text: C.next[0], at: L("r3"), size: 84 }, { text: C.next[1], at: Lc("r3", "走进"), size: 136, hl: "足迹图" }]} />
-          <Footprint f={f} a={a} />
-          <div style={{ position: "absolute", left: 0, right: 0, top: 1660, textAlign: "center", opacity: span(f, Le("r3") + 6, Le("r3") + 20) }}>
-            <span style={{ ...sans(500), fontSize: 32, letterSpacing: 3, color: INK, padding: "6px 22px", background: "rgba(6,8,14,0.78)", borderRadius: 10 }}>{C.disclaimer}</span>
-          </div>
-        </>
-      )}
+      {(lay === "r.caveat" || lay === "r.next") &&
+        (() => {
+          // the caveats hold over the pool; at r.next one wipe (top to bottom) turns the pool into the footprint.
+          // The pool keeps rendering under a dark plate, so the picture never drops to black or flat grey.
+          const w0 = lay === "r.next" ? a : FRAMES;
+          const wipe = span(f, w0, w0 + 16, cubicInOut);
+          const edge = 120 + wipe * 1640;
+          return (
+            <>
+              <div data-qa-clip={`${edge},1920`} style={{ position: "absolute", inset: 0, clipPath: `inset(${wipe > 0 ? edge : 0}px 0 0 0)` }}>
+                <Stamp f={f} a={Lc("r2", "挂单")} x={540} y={MAIN + 40} text={C.caveat[0]} color={BLUE} rot={-4} size={62} />
+                <Stamp f={f} a={Lc("r2", "订单流")} x={540} y={LOW - 90} text={C.caveat[1]} color={PAL.gold} rot={3} size={62} />
+              </div>
+              {wipe > 0 && (
+                <div data-qa-clip={`0,${edge}`} style={{ position: "absolute", inset: 0, clipPath: `inset(0 0 ${1920 - edge}px 0)` }}>
+                  <div style={{ position: "absolute", inset: 0, background: "rgba(5,7,12,0.66)" }} />
+                  <Statement f={f} top={STRIP + 10} end={FRAMES + 10} kicker={C.title} scrim={0} lines={[{ text: C.next[0], at: L("r3"), size: 76 }, { text: C.next[1], at: Lc("r3", "走进"), size: 120, hl: "足迹图" }]} />
+                  <Footprint f={f} a={a} y={700} />
+                </div>
+              )}
+              {wipe > 0 && wipe < 1 && <div style={{ position: "absolute", left: 0, right: 0, top: edge - 2, height: 4, background: BLUE, boxShadow: `0 0 26px ${BLUE}, 0 0 60px ${BLUE}` }} />}
+              <div style={{ position: "absolute", left: 0, right: 0, top: BOT + 30, textAlign: "center", opacity: span(f, Le("r3") + 6, Le("r3") + 20) }}>
+                <span style={{ ...sans(500), fontSize: 32, letterSpacing: 3, color: INK, padding: "6px 22px", background: "rgba(6,8,14,0.78)", borderRadius: 10 }}>{C.disclaimer}</span>
+              </div>
+            </>
+          );
+        })()}
     </>
   );
 };
 
-const ZOOM: Record<string, [string, number]> = { "s.chart": ["62% 30%", 1.12], "o.chain": ["50% 40%", 1.07], "r.next": ["50% 62%", 1.12] };
 
 export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
   const f = d.f;
@@ -1174,20 +1251,16 @@ export const Hud: React.FC<{ d: Dir }> = ({ d }) => {
   const flat = d.world === "flat";
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
-      {flat && !d.lay.startsWith("r.k") && d.lay !== "r.next" && d.lay !== "p.manip" && <Grid />}
+      {/* the second half of a long flat shot cuts in on the grid; the data and labels hold still so they stay in the safe area */}
+      {flat && !d.lay.startsWith("r.k") && d.lay !== "p.manip" && <Grid z={d.shot.part ? 1.22 + 0.04 * d.u : 1 + 0.03 * d.u} />}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,6,12,0.7) 0%, rgba(4,6,12,0) 14%, rgba(4,6,12,0) 70%, rgba(4,6,12,0.8) 100%)" }} />
-      <div style={{ position: "absolute", left: 48, right: 48, top: 112, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: clamp01(f / 12) }}>
-        <span style={{ ...sans(500), fontSize: 28, color: SOFT, letterSpacing: 3 }}>{C.series}</span>
-        <span style={{ ...sans(500), fontSize: 28, color: SOFT, letterSpacing: 2, padding: "2px 12px", background: "rgba(8,11,18,0.6)", border: "1px solid rgba(245,247,250,0.25)", borderRadius: 6 }}>{C.tag}</span>
+      <div style={{ position: "absolute", left: 48, right: 48, top: HDR, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: clamp01(f / 12) }}>
+        <span data-qa="hdr:series" data-qa-kind="chrome" style={{ ...sans(500), fontSize: 28, color: SOFT, letterSpacing: 3 }}>{C.series}</span>
+        <span data-qa="hdr:tag" data-qa-kind="chrome" style={{ ...sans(500), fontSize: 28, color: SOFT, letterSpacing: 2, padding: "2px 12px", background: "rgba(8,11,18,0.6)", border: "1px solid rgba(245,247,250,0.25)", borderRadius: 6 }}>{C.tag}</span>
       </div>
       {d.world === "hook" && <HookHud d={d} pr={pr} />}
       {(d.world === "book" || d.lay.startsWith("a.") || d.lay.startsWith("o.") || d.lay.startsWith("s.")) && d.world !== "flat" && <BookHud d={d} pr={pr} />}
-      {flat && (
-        // the second half of a long flat shot is a punch-in on its focus
-        <div style={{ position: "absolute", inset: 0, transformOrigin: (ZOOM[d.lay] ?? ["50% 45%"])[0], transform: d.shot.part ? `scale(${(ZOOM[d.lay] ?? ["", 1.18])[1] + 0.03 * d.u})` : `scale(${1 + 0.02 * d.u})` }}>
-          <FlatBookHud d={d} />
-        </div>
-      )}
+      {flat && <FlatBookHud d={d} />}
       <TableHud d={d} pr={pr} />
       {d.world === "anatomy" && <AnatomyHud d={d} pr={pr} />}
       <RecapHud d={d} />

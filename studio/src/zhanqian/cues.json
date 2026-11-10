@@ -5,504 +5,560 @@
    "lay": "h.shadow",
    "world": "hook",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 26,
    "lay": "h.wick",
    "world": "hook",
    "flash": "#ff3b4e",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 72,
    "lay": "h.dive",
    "world": "hook",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 112,
    "lay": "h.swarm",
    "world": "hook",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 170,
    "lay": "h.title",
    "world": "hook",
    "flash": "#f2bd62",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 270,
    "lay": "a.gavel",
    "world": "book",
    "flash": "#ffffff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 355,
    "lay": "a.wide",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 388,
    "lay": "a.bids",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 426,
    "lay": "a.asks",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 464,
    "lay": "a.board",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 532,
    "lay": "a.gap",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 597,
    "lay": "a.depth",
    "world": "flat",
    "flash": "#7fa8ff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 688,
    "lay": "a.myth",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 786,
    "lay": "a.trade",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 830,
    "lay": "a.equal",
    "world": "flat",
    "flash": "#f2bd62",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 916,
    "lay": "a.urgent",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 985,
    "lay": "a.urgent2",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1043,
    "lay": "o.three",
    "world": "flat",
    "flash": "#ffffff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1140,
    "lay": "o.case1",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1193,
    "lay": "o.case1",
    "world": "book",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 1246,
    "lay": "o.passive",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1310,
    "lay": "o.passiveLadder",
    "world": "flat",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1363,
    "lay": "o.case2",
    "world": "book",
    "flash": "#f2bd62",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1451,
    "lay": "o.eat",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1515,
    "lay": "o.eatLadder",
    "world": "flat",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1566,
    "lay": "o.hop",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1625,
    "lay": "o.hop",
    "world": "book",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 1684,
    "lay": "o.hop2",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1761,
    "lay": "o.chain",
    "world": "flat",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1812,
    "lay": "o.chain",
    "world": "flat",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 1862,
    "lay": "o.case3",
    "world": "book",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1935,
    "lay": "s.hidden",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 1990,
    "lay": "s.mine",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2042,
    "lay": "s.chart",
    "world": "flat",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2105,
    "lay": "s.chart",
    "world": "flat",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 2167,
    "lay": "s.trigger",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2224,
    "lay": "s.convert",
    "world": "book",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2297,
    "lay": "s.boom1",
    "world": "book",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2325,
    "lay": "s.boom2",
    "world": "book",
    "flash": "#ffffff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2347,
    "lay": "s.sweep",
    "world": "flat",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2386,
    "lay": "s.after",
    "world": "book",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2443,
    "lay": "p.who",
    "world": "table",
    "flash": "#ffffff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2523,
    "lay": "p.wide",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2598,
    "lay": "p.mm",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2668,
    "lay": "p.mm2",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2725,
    "lay": "p.inst",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2780,
    "lay": "p.inst2",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2856,
    "lay": "p.hedge",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2911,
    "lay": "p.hedge2",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 2983,
    "lay": "p.short",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3042,
    "lay": "p.short2",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3099,
    "lay": "p.manip",
    "world": "flat",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3179,
    "lay": "p.clash",
    "world": "table",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3242,
    "lay": "p.clash",
    "world": "table",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 3305,
    "lay": "w.candle",
    "world": "anatomy",
    "flash": "#ffffff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3356,
    "lay": "w.ohlc",
    "world": "anatomy",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3413,
    "lay": "w.squeeze",
    "world": "anatomy",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3475,
    "lay": "w.caseA",
    "world": "anatomy",
    "flash": "#7fa8ff",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3540,
    "lay": "w.caseA",
    "world": "anatomy",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 3604,
    "lay": "w.caseB",
    "world": "anatomy",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3680,
    "lay": "w.caseB",
    "world": "anatomy",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 3755,
    "lay": "w.same",
    "world": "anatomy",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3813,
    "lay": "w.same",
    "world": "anatomy",
    "flash": null,
-   "part": 1
+   "part": 1,
+   "trans": null
   },
   {
    "at": 3871,
    "lay": "r.k1",
    "world": "flat",
    "flash": "#ff3b4e",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3884,
    "lay": "r.k2",
    "world": "flat",
    "flash": "#f2bd62",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3897,
    "lay": "r.k3",
    "world": "flat",
    "flash": "#ff8a1f",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3913,
    "lay": "r.ask",
    "world": "anatomy",
    "flash": null,
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 3959,
    "lay": "r.who",
    "world": "hook",
    "flash": "#f2bd62",
-   "part": 0
+   "part": 0,
+   "trans": null
   },
   {
    "at": 4054,
    "lay": "r.caveat",
    "world": "book",
    "flash": null,
-   "part": 0
-  },
-  {
-   "at": 4117,
-   "lay": "r.caveat",
-   "world": "book",
-   "flash": null,
-   "part": 1
+   "part": 0,
+   "trans": null
   },
   {
    "at": 4180,
    "lay": "r.next",
-   "world": "flat",
-   "flash": "#ffffff",
-   "part": 0
-  },
-  {
-   "at": 4255,
-   "lay": "r.next",
-   "world": "flat",
+   "world": "book",
    "flash": null,
-   "part": 1
+   "part": 0,
+   "trans": "morph"
   }
  ],
  "trades": [

@@ -6,7 +6,7 @@ import { FIRST_HIT, HOPS, LEVELS, MINES, PASSIVE, REFILLS, TRADES } from "../src
 import { SHOTS } from "../src/zhanqian/director";
 
 const cues = {
-  shots: SHOTS.map((s) => ({ at: s.at, lay: s.lay, world: s.w, flash: s.flash ?? null, part: s.part })),
+  shots: SHOTS.map((s) => ({ at: s.at, lay: s.lay, world: s.w, flash: s.flash ?? null, part: s.part, trans: s.trans ?? null })),
   trades: TRADES,
   hops: Object.entries(HOPS).map(([k, at]) => ({ k: Number(k), at })),
   mines: MINES,

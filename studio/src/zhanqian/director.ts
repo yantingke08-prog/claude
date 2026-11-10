@@ -16,7 +16,9 @@ type V3 = [number, number, number];
 type Cam = [V3, V3];
 export type World = keyof typeof X;
 export type Lay = string;
-type Shot = { at: number; w: World; a: Cam; b?: Cam; lay: Lay; flash?: string; fov?: number };
+/** trans "morph": no cut into this shot; the camera carries on from the last one and the HUD wipes over it.
+ *  hold: never split this shot (the camera keeps moving instead) */
+type Shot = { at: number; w: World; a: Cam; b?: Cam; lay: Lay; flash?: string; fov?: number; trans?: "morph"; hold?: boolean; ci?: number };
 
 // pieces on the sand table (table-local x, z)
 export const PIECES = { mm: [-4.3, -3.2], inst: [4.3, -3.2], hedge: [-4.3, 3.6], short: [4.3, 3.6] } as const;
@@ -32,6 +34,10 @@ const near = (key: Piece, d = 13.5, h = 9, side = 2.6, ty = 3.3): Cam => {
   ];
 };
 export const CASE_X = { a: -3.3, b: 3.3 };
+const CAVEAT_END: Cam = [
+  [1.2, 1.9, 23],
+  [0, 1.6, 0],
+];
 const FLAT: Cam = [
   [0, 0, 10],
   [0, 0, 0],
@@ -91,22 +97,25 @@ const SH: Shot[] = [
   { at: L("p5") - 2, w: "table", a: near("short"), b: near("short", 11, 7.5), lay: "p.short" },
   { at: Lc("p5", "止损") - 2, w: "table", a: [[7.6, 2.2, 7.4], [4.3, 2.6, 3.6]], b: [[6.8, 3, 6.8], [4.3, 2.8, 3.6]], lay: "p.short2" },
   { at: L("p6") - 2, w: "flat", a: FLAT, lay: "p.manip", flash: "#ff8a1f" },
-  { at: Lc("p6", "但大多数") - 2, w: "table", a: [[0, 27, 19], [0, 0.3, 0.2]], b: [[3, 22, 15], [0, 0.6, 0.2]], lay: "p.clash" },
+  { at: Lc("p6", "但大多数") - 2, w: "table", a: [[0, 27, 21.5], [0, 0.3, 2.9]], b: [[3, 22, 17.5], [0, 0.6, 2.9]], lay: "p.clash" },
   // ---------------- the candle, cut open
   { at: S("anatomy") - 6, w: "anatomy", a: [[7, 4, 24], [0, 4.4, 0]], b: [[4, 4.4, 26], [0, 4.6, 0]], lay: "w.candle", flash: "#ffffff" },
   { at: Lc("w2", "开高低收") - 2, w: "anatomy", a: [[2.6, 5, 25], [0, 4.8, 0]], b: [[0.6, 5, 27], [0, 4.8, 0]], lay: "w.ohlc" },
-  { at: Lc("w2", "过程") - 2, w: "anatomy", a: [[-7, 6.4, 22], [-1.8, 4.8, 1.8]], b: [[-5.2, 5.8, 18.5], [-1.4, 4.8, 1.8]], lay: "w.squeeze" },
-  { at: L("w3") - 2, w: "anatomy", a: [[-1.5, 4.8, 36], [0, 4.4, 0]], b: [[-1.5, 4.8, 33], [0, 4.4, 0]], lay: "w.caseA", flash: "#7fa8ff" },
-  { at: L("w4") - 2, w: "anatomy", a: [[1.5, 4.8, 33], [0, 4.4, 0]], b: [[1.5, 4.8, 36], [0, 4.4, 0]], lay: "w.caseB" },
-  { at: L("w5") - 2, w: "anatomy", a: [[0, 6, 50], [0, 5.4, 0]], b: [[2, 6.4, 46], [0, 5.4, 0]], lay: "w.same" },
+  { at: Lc("w2", "过程") - 2, w: "anatomy", a: [[-9.4, 6.5, 33], [0.6, 4.2, 1.8]], b: [[-6.4, 6.2, 30], [0.6, 4.2, 1.8]], lay: "w.squeeze" },
+  // split view: the candles sit between the case labels and the path charts, so the cut-in only swings (ci 1)
+  { at: L("w3") - 2, w: "anatomy", a: [[-1.5, 4.8, 54], [0, 1.6, 0]], b: [[-1.5, 4.8, 51], [0, 1.6, 0]], lay: "w.caseA", flash: "#7fa8ff", ci: 1 },
+  { at: L("w4") - 2, w: "anatomy", a: [[1.5, 4.8, 51], [0, 1.6, 0]], b: [[1.5, 4.8, 54], [0, 1.6, 0]], lay: "w.caseB", ci: 1 },
+  { at: L("w5") - 2, w: "anatomy", a: [[-1, 8, 78], [0.5, 4.5, 0]], b: [[1.5, 8.4, 74], [0.5, 4.5, 0]], lay: "w.same" },
   // ---------------- recap
   { at: Le("w5") + 4, w: "flat", a: FLAT, lay: "r.k1", flash: "#ff3b4e" },
   { at: Le("w5") + 17, w: "flat", a: FLAT, lay: "r.k2", flash: "#f2bd62" },
   { at: Le("w5") + 30, w: "flat", a: FLAT, lay: "r.k3", flash: "#ff8a1f" },
   { at: L("r1") - 2, w: "anatomy", a: [[3, 6.6, 58], [0, 5.4, 0]], b: [[0, 6.2, 52], [0, 5.4, 0]], lay: "r.ask" },
   { at: Lc("r1", "要问") - 2, w: "hook", a: [[0.1, 4.8, 0.6], [0, 5.6, -4]], b: [[0.1, 5.4, -0.4], [0.2, 6.2, -4]], lay: "r.who", flash: "#f2bd62" },
-  { at: L("r2") - 2, w: "book", a: [[2, 1.2, 30], [0, 1.4, 0]], b: [[-2, 1.6, 27], [0, 1.4, 0]], lay: "r.caveat" },
-  { at: L("r3") - 2, w: "flat", a: FLAT, lay: "r.next", flash: "#ffffff" },
+  // the ending is one move: the order pool comes in once, holds through the caveat, then the camera keeps
+  // pushing in while the pool is wiped into the footprint chart, which stays to the last frame
+  { at: L("r2") - 2, w: "book", a: [[5.5, 2.6, 31], [0, 1.6, 0]], b: CAVEAT_END, lay: "r.caveat", hold: true },
+  { at: L("r3") - 2, w: "book", a: CAVEAT_END, b: [[0, 1.6, 16.5], [0, 1.6, 0]], lay: "r.next", trans: "morph", hold: true },
 ];
 function CONVERT_AT() {
   return Lc("s3", "止损就") - 2;
@@ -114,8 +123,8 @@ function CONVERT_AT() {
 
 const SPLIT = 100;
 /** cut-in for the second half of a long shot: closer, swung round the target */
-const cutIn = ([p, t]: Cam, sw: number): Cam => {
-  const d = new THREE.Vector3(...p).sub(new THREE.Vector3(...t)).multiplyScalar(0.74);
+const cutIn = ([p, t]: Cam, sw: number, ci = 0.74): Cam => {
+  const d = new THREE.Vector3(...p).sub(new THREE.Vector3(...t)).multiplyScalar(ci);
   d.applyAxisAngle(new THREE.Vector3(0, 1, 0), sw);
   return [[t[0] + d.x, t[1] + d.y, t[2] + d.z], t];
 };
@@ -124,7 +133,7 @@ export const SHOTS: Cut[] = (() => {
   const out: Cut[] = [];
   SH.forEach((s, i) => {
     const end = i + 1 < SH.length ? SH[i + 1].at : FRAMES;
-    const n = Math.ceil((end - s.at) / SPLIT);
+    const n = s.hold ? 1 : Math.ceil((end - s.at) / SPLIT);
     const b = s.b ?? s.a;
     for (let p = 0; p < n; p++) {
       const a0 = Math.round(s.at + ((end - s.at) * p) / n);
@@ -136,8 +145,8 @@ export const SHOTS: Cut[] = (() => {
         return [m(pa, pb), m(ta, tb)];
       };
       const sw = (p % 2 ? 1 : -1) * 0.3;
-      const ca = p === 0 ? lerp(p / n) : cutIn(lerp(p / n), sw);
-      const cb = p === 0 ? lerp((p + 1) / n) : cutIn(lerp((p + 1) / n), sw);
+      const ca = p === 0 ? lerp(p / n) : cutIn(lerp(p / n), sw, s.ci);
+      const cb = p === 0 ? lerp((p + 1) / n) : cutIn(lerp((p + 1) / n), sw, s.ci);
       out.push({ ...s, at: a0, end: a1, a: ca, b: cb, part: p, flash: p === 0 ? s.flash : undefined });
     }
   });

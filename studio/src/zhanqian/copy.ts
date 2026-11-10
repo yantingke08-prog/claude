@@ -85,7 +85,6 @@ export const C = {
     short: ["短线交易者", "追逐波动", "止损设得最近"],
   },
   pace: { mm: "秒级", inst: "数天", hedge: "数月", short: "分钟" },
-  paceHead: "典型节奏（示意）",
   quote: ["买", "卖", "赚价差"],
   inventory: ["库存", "库存堆积"],
   parent: ["母单", "子单"],

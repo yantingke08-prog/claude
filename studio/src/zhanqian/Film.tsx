@@ -10,6 +10,7 @@ import { L } from "./cue";
 import { direct, type Dir } from "./director";
 import { mono, sans, serif } from "./fonts";
 import { Hud } from "./Hud";
+import { QaProbe } from "./qa";
 import { PAL, Scene } from "./Scene";
 
 /** Re-render once the composer has mounted (otherwise the first frame of each tab is black). */
@@ -48,25 +49,27 @@ const Cinema: React.FC<{ d: Dir; bloom?: number; dpr?: number }> = ({ d, bloom =
   );
 };
 
-export const ZhanqianFilm: React.FC<{ muted?: boolean; dpr?: number }> = ({ muted = false, dpr = 1 }) => {
+/** dpr 2 with `--scale=2` renders natively at 2160×3840: the HTML layer is re-laid out at 2×, the 3D buffer is drawn at 2× */
+export const ZhanqianFilm: React.FC<{ muted?: boolean; dpr?: number; qa?: boolean }> = ({ muted = false, dpr = 1, qa = false }) => {
   const f = useCurrentFrame();
   const d = direct(f);
   return (
     <AbsoluteFill style={{ background: PAL.bg }}>
-      <Cinema d={d} dpr={dpr} />
+      {!qa && <Cinema d={d} dpr={dpr} />}
       <Hud d={d} />
-      {!muted && <Audio src={staticFile("zhanqian/mix.wav")} />}
+      {qa && <QaProbe />}
+      {!muted && !qa && <Audio src={staticFile("zhanqian/mix.wav")} />}
     </AbsoluteFill>
   );
 };
 
 /** 9:16 cover: the candle lit from inside, under the title */
-export const ZhanqianCover: React.FC = () => {
+export const ZhanqianCover: React.FC<{ dpr?: number }> = ({ dpr = 1 }) => {
   // the hook's candle, framed wider so the bars before it read as a chart
   const d = { ...direct(L("h2") + 4), pos: new THREE.Vector3(9.5, 3.4, 27), target: new THREE.Vector3(-3.2, 4.4, 0), dof: 0 };
   return (
     <AbsoluteFill style={{ background: PAL.bg }}>
-      <Cinema d={d} bloom={1.05} />
+      <Cinema d={d} bloom={1.05} dpr={dpr} />
       <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(4,6,12,0.92) 0%, rgba(4,6,12,0.45) 30%, rgba(4,6,12,0) 46%, rgba(4,6,12,0.1) 68%, rgba(4,6,12,0.92) 100%)" }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: 170, textAlign: "center" }}>
         <div style={{ ...mono(), fontSize: 32, letterSpacing: 10, color: PAL.gold }}>

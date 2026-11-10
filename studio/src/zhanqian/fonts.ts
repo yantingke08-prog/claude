@@ -25,7 +25,7 @@ const load = async (family: string, axis: string, chunk: string[]) => {
 const chunks: string[][] = [];
 for (let i = 0; i < glyphs.length; i += CHUNK) chunks.push(glyphs.slice(i, i + CHUNK));
 const sample = glyphs.join("");
-Promise.all(chunks.flatMap((c) => [load(SERIF, ":wght@600", c), load(SANS, ":wght@500;700", c)]))
+export const fontsReady = Promise.all(chunks.flatMap((c) => [load(SERIF, ":wght@600", c), load(SANS, ":wght@500;700", c)]))
   .then(() => Promise.all([document.fonts.load(`600 40px "${SERIF}"`, sample), ...["500", "700"].map((w) => document.fonts.load(`${w} 40px "${SANS}"`, sample))]))
   .finally(() => continueRender(handle));
 

@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CameraRig } from "../components/Stage";
 import { mulberry32 } from "../lib/rng";
-import { BW, FIRST_HIT, HOPS, LEVELS, MINES, MINES_IN, PASSIVE_AT, REFILLS, beadK, hitAt, isStop, ky } from "./book";
+import { BW, FIRST_HIT, HOPS, LEVELS, MINES, MINES_IN, PASSIVE, PASSIVE_AT, REFILLS, beadK, hitAt, isStop, ky } from "./book";
 import { FPS, L, Lc, Le, S, clamp01, cubicInOut, expoOut, hold, pulse, smooth, span } from "./cue";
 import { CASE_X, PIECES, X, type Dir } from "./director";
 
@@ -223,7 +223,13 @@ const brickState = (f: number) => {
       if (s > 0) out.push({ x: (j - (r.n - 1) / 2) * BW, y: ky(r.k) - (1 - s) * 2, z: 0, s, col: RED, glow: (1 - s) * 1.2 });
     }
   }
-  // the one trade the narration counts
+  // new limit orders queueing in front of the bid wall while the narration explains them
+  for (const r of PASSIVE) {
+    for (let j = 0; j < r.n; j++) {
+      const s = dropIn(f, r.at + j * 4);
+      if (s > 0) out.push({ x: (j - (r.n - 1) / 2) * BW * 1.3, y: ky(r.k) - (1 - s) * 2.4, z: 1.15, s, col: RED, glow: 0.4 + (1 - s) * 1.6 });
+    }
+  }
   return { bricks: out, comets };
 };
 
@@ -503,7 +509,7 @@ const Short: React.FC<{ t: number }> = ({ t }) => (
 const STREAM_N = 90;
 /** every piece's orders run into the middle and meet */
 const Clash: React.FC<{ f: number; t: number }> = ({ f, t }) => {
-  const k = hold(f, L("p6") - 8, S("awaken") + 8, 16);
+  const k = hold(f, L("p6") - 8, S("anatomy") + 8, 16);
   const mesh = useMemo(() => {
     const m = new THREE.InstancedMesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ toneMapped: false }), STREAM_N * 4);
     m.frustumCulled = false;
@@ -632,8 +638,8 @@ const Anatomy: React.FC<{ d: Dir }> = ({ d }) => {
     bx = CASE_X.b - 1.7 * moved;
   const aFrom = Lc("w3", "可能是"),
     aTo = Le("w3") - 4;
-  const bFrom = Lc("w4", "空头止损") + 6,
-    bTo = Lc("w4", "止损打完");
+  const bFrom = Lc("w4", "止损被") + 6,
+    bTo = Lc("w4", "打完");
   const run = span(f, aFrom, aTo, (x) => x);
   // the path collapsing into a single bar
   const sq = 1 - span(f, Lc("w2", "过程"), Lc("w2", "过程") + 34, cubicInOut);
@@ -672,5 +678,6 @@ export const Scene: React.FC<{ d: Dir }> = ({ d }) => (
     {d.world === "book" && <Book d={d} />}
     {d.world === "table" && <Table d={d} />}
     {d.world === "anatomy" && <Anatomy d={d} />}
+    {d.world === "hook" && d.lay === "h.shadow" && <pointLight position={[0, 9, -7]} intensity={260} distance={40} color="#ffd2b0" />}
   </>
 );

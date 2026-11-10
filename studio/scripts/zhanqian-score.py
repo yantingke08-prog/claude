@@ -236,33 +236,21 @@ def Lc(i, sub, off=0):
     return (round(ln["from"] + (ln["to"] - ln["from"]) * pre / allw) + off) / FPS
 
 
-# ------------------------------------------------------------ the order book's schedule (mirror of src/zhanqian/book.ts)
+# ------------------------------------------------------------ the film's event schedule (exported from the TS by zhanqian-cues.ts)
+CUES = json.loads((ROOT / "src/zhanqian/cues.json").read_text(encoding="utf-8"))
 fr = 1 / FPS
-a6, o3 = Lc("a6", "哪一边"), Lc("o3", "直接吃掉")
-gone, jump, nxt = Lc("o4", "被吃光"), Lc("o4", "跳到"), Lc("o4", "这就是")
-armed, chain = Lc("o6", "触发价"), Lc("o6", "一颗")
-STEP = 16 * fr
-FIRST_HIT = Lc("a5", "买入量") + 8 * fr
-EATS = [  # level, bricks, from, to, stop?
-    (1, 1, FIRST_HIT, FIRST_HIT, False),
-    (1, 3, a6, a6 + 40 * fr, False),
-    (1, 4, o3, Le("o3") - 6 * fr, False),
-    (1, 1, gone, gone, False),
-    (2, 7, nxt - 6 * fr, nxt + 58 * fr, False),
-    (3, 10, L("o6") + 2 * fr, armed + 4 * fr, False),
-    (4, 8, armed + 10 * fr, armed + 24 * fr, True),
-    (5, 6, chain, chain + 12 * fr, True),
-    (6, 5, chain + STEP, chain + STEP + 10 * fr, True),
-    (7, 4, chain + 2 * STEP, chain + 2 * STEP + 8 * fr, True),
-]
-HOPS = [jump, nxt + 62 * fr, armed + 8 * fr, armed + 28 * fr, chain + 15 * fr, chain + STEP + 13 * fr, chain + 2 * STEP + 11 * fr]
-MINES = [(armed + 8 * fr, 4), (chain - 2 * fr, 4), (chain + STEP - 2 * fr, 3), (chain + 2 * STEP - 2 * fr, 3)]
+SHOTS = CUES["shots"]
+TRADES = CUES["trades"]
+HOPS = [h["at"] / FPS for h in CUES["hops"]]
+MINES = [(m["at"] / FPS, m["n"]) for m in CUES["mines"]]
+FIRST_HIT = CUES["firstHit"] / FPS
 
 # ------------------------------------------------------------ score
 mus, sfx = Bus(), Bus()
 T_END = TL["frames"] / FPS
-A0, O0, P0, W0 = S("auction"), S("orders"), S("players"), S("awaken")
-beat = 60 / 84
+A0, O0, ST0, P0, W0, R0 = S("auction"), S("orders"), S("stops"), S("players"), S("anatomy"), S("recap")
+BPM = 96
+beat = 60 / BPM
 
 
 def mallet(m, dur=0.22):
@@ -282,47 +270,64 @@ def glide(m0, m1, dur, a=0.05, r=None):
 drone = (np.sin(2 * np.pi * 55 * t_(T_END)) * 0.5 + lp(saw(55, T_END, 0.004), 280) * 0.5) * 0.2
 mus.add(drone * np.minimum(1, t_(T_END) / 1.5), 0)
 
-# ---- hook: the candle slams down, the camera dives inside, the title lands
-sfx.add(reverse_swell(0.45), L("h1") - 0.45, gain=0.35)
+# ---- hook: shadow slam, wick, dive, swarm, title (one hit per shot)
+sfx.add(reverse_swell(0.3), max(0, L("h1") - 0.3), gain=0.35)
 sfx.add(sub_boom(2.4, 70, 30), L("h1"), gain=0.95)
 sfx.add(braam(2.6, 45), L("h1"), gain=0.32, verb=0.35)
-sfx.add(whoosh(1.8, 200, 2400), L("h2", 6), gain=0.32)
-sfx.add(sparkle(2.4), L("h2", 30), gain=0.12, verb=0.5)
+sfx.add(whoosh(1.0, 200, 2400), L("h2", -6), gain=0.32)
+sfx.add(sparkle(2.0), Lc("h2", "藏在"), gain=0.14, verb=0.5)
 mus.add(chime(57), L("h3"), gain=0.42, verb=0.5)
 sfx.add(sub_boom(2.0, 55, 28), L("h3"), gain=0.45)
-sfx.add(reverse_swell(0.9), A0 - 0.85, gain=0.28)
 
-# ---- a slow pulse runs through the book and the table (dark, unhurried)
-t = A0 + 1.0
+# ---- every cut gets a short transient; colour-flash cuts get a whoosh as well
+for i, c in enumerate(SHOTS):
+    at = c["at"] / FPS
+    if at < A0 - 0.3 or c["part"] > 0 and not c["flash"]:
+        if c["part"] > 0:
+            sfx.add(tick(1500, 0.03), at, gain=0.06)
+        continue
+    if c["flash"]:
+        sfx.add(whoosh(0.35, 400, 5200), at - 0.18, gain=0.2, pan=0.2 if i % 2 else -0.2)
+        sfx.add(thud(90), at, gain=0.18)
+    else:
+        sfx.add(tick(1900, 0.035), at, gain=0.08)
+
+# ---- a pulse runs through the book, the stops and the table; it doubles up in the stop montage
+t = A0 + 0.4
 bar = 0
 CHORDS = [[45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59], [40, 47, 52, 56]]
-while t < W0 - 1.0:
-    mus.add(kick(), t, gain=0.35)
-    mus.add(kick(), t + 2 * beat, gain=0.22)
-    for h in range(4):
-        mus.add(hat(), t + h * beat + beat / 2, gain=0.035, pan=0.3)
+while t < W0 - 0.5:
+    hot = ST0 <= t < P0
+    mus.add(kick(), t, gain=0.4 if hot else 0.32)
+    mus.add(kick(), t + 2 * beat, gain=0.24)
+    if hot:
+        mus.add(kick(), t + 1.5 * beat, gain=0.2)
+        mus.add(kick(), t + 3 * beat, gain=0.26)
+    for h in range(8 if hot else 4):
+        mus.add(hat(), t + h * beat / (2 if hot else 1) + beat / 2, gain=0.04, pan=0.3)
     if bar % 2 == 0:
         mus.add(pad(CHORDS[(bar // 2) % 4], 8 * beat + 0.4), t, gain=0.22, verb=0.4)
     t += 4 * beat
     bar += 1
 
 # ---- the walls go up: one soft tick per level as it lands
-for k in range(1, 7):
-    sfx.add(mallet(57 - k), Lc("a2", "想买") + k * 5 * fr, gain=0.09, pan=-0.2)
-for k in range(1, 11):
-    sfx.add(mallet(60 + [0, 3, 5, 7, 10][k % 5] + 12 * (k // 5)), Lc("a2", "想卖") + k * 4 * fr, gain=0.08, pan=0.2)
+for l in CUES["levels"]:
+    k = abs(l["k"])
+    m = 57 - k if l["side"] == "bid" else 60 + [0, 3, 5, 7, 10][k % 5] + 12 * (k // 5)
+    sfx.add(mallet(m), l["at"] / FPS, gain=0.09 if l["side"] == "bid" else 0.08, pan=-0.2 if l["side"] == "bid" else 0.2)
+for r in CUES["refills"]:
+    for j in range(r["n"]):
+        sfx.add(mallet(52 + j % 3), r["at"] / FPS + j * 2 * fr, gain=0.06, pan=-0.15)
 
-# ---- every brick that gets eaten: a click; a cleared level: a rising pluck
-for k, n, a, b, stop in EATS:
-    for j in range(n):
-        at = a if n == 1 else a + (b - a) * j / (n - 1)
-        sfx.add(tick(2600 if not stop else 1800), at, gain=0.16 if not stop else 0.2, pan=float(np.clip((j - n / 2) / n, -0.5, 0.5)))
+# ---- every trade: a click (stops lower and harder); every hop: a rising pluck
+for i, tr in enumerate(TRADES):
+    sfx.add(tick(2600 if not tr["stop"] else 1800), tr["f"] / FPS, gain=0.16 if not tr["stop"] else 0.2, pan=float(np.clip(((i % 7) - 3) / 7, -0.5, 0.5)))
 sfx.add(knock(), FIRST_HIT, gain=0.5)
 mus.add(chime(64), FIRST_HIT + 0.05, gain=0.18, verb=0.5)
 for i, at in enumerate(HOPS):
     mus.add(pluck(57 + [0, 3, 5, 7, 10, 12, 15][i]), at, gain=0.3, verb=0.3)
-# the stops: a fuse, then each one goes off
-sfx.add(reverse_swell(0.7), armed - 0.6, gain=0.3)
+# the stops: a fuse under the trigger, then each one goes off
+sfx.add(reverse_swell(0.7), Lc("s3", "触发价") - 0.6, gain=0.3)
 for at, n in MINES:
     for i in range(n):
         sfx.add(thud(70 + 6 * i), at + i * 2 * fr, gain=0.4, pan=(i - n / 2) * 0.2)
@@ -330,27 +335,29 @@ for at, n in MINES:
 sfx.add(sub_boom(2.2, 64, 30), MINES[-1][0] + 0.2, gain=0.7)
 sfx.add(braam(2.0, 43), MINES[-1][0] + 0.2, gain=0.22, verb=0.35)
 
-# ---- the table: each piece lights up with a whoosh and a low note
-sfx.add(reverse_swell(0.8), P0 - 0.8, gain=0.25)
+# ---- participants: each one arrives with a low note and a bell
 for i, line in enumerate(["p2", "p3", "p4", "p5"]):
-    sfx.add(whoosh(0.7, 300, 2800), L(line, -16), gain=0.25)
     sfx.add(thud(60 + 8 * i), L(line, -2), gain=0.4)
     mus.add(chime(57 + [0, 3, 7, 12][i]), L(line, 2), gain=0.16, verb=0.5)
-sfx.add(reverse_swell(1.2), Lc("p6", "这些需求") - 1.2, gain=0.35)
-sfx.add(sub_boom(2.5, 62, 30), Lc("p6", "这些需求"), gain=0.7)
+sfx.add(reverse_swell(0.8), Lc("p6", "但大多数") - 0.8, gain=0.35)
+sfx.add(sub_boom(2.5, 62, 30), Lc("p6", "但大多数"), gain=0.7)
 
-# ---- the candle again: the path squeezed into four numbers, the two cases, the questions
-sfx.add(reverse_swell(0.8), W0 - 0.8, gain=0.25)
+# ---- the candle again: the path squeezed into four numbers, the two cases side by side
 sfx.add(whoosh(1.0, 3200, 300), Lc("w2", "过程"), gain=0.3)
+for i in range(9):
+    sfx.add(tick(2400), Lc("w3", "可能是") + i * 0.42, gain=0.14)
 for i in range(7):
-    sfx.add(tick(2400), Lc("w3", "可能是") + i * 0.7, gain=0.14)
-for i in range(7):
-    sfx.add(thud(66 + 4 * i), Lc("w4", "空头止损") + 0.2 + i * 0.32, gain=0.32)
+    sfx.add(thud(66 + 4 * i), Lc("w4", "止损被") + 0.2 + i * 0.26, gain=0.32)
 sfx.add(sub_boom(2.4, 60, 30), Lc("w5", "结果"), gain=0.5)
-mus.add(pad([45, 52, 57, 60, 64], T_END - L("w6") + 0.2), L("w6") - 0.2, gain=0.42, verb=0.5)
-mus.add(chime(57), Lc("w7", "是谁"), gain=0.36, verb=0.5)
-sfx.add(sub_boom(2.6, 58, 28), Lc("w7", "是谁"), gain=0.5)
-mus.add(chime(64), L("w9"), gain=0.34, verb=0.6)
+
+# ---- recap: three cards, the question, the caveat, next time
+for i, c in enumerate([c for c in SHOTS if c["lay"].startswith("r.k")]):
+    sfx.add(thud(80 + 10 * i), c["at"] / FPS, gain=0.45)
+    mus.add(pluck(64 + [0, 3, 7][i]), c["at"] / FPS, gain=0.3, verb=0.3)
+mus.add(pad([45, 52, 57, 60, 64], T_END - L("r1") + 0.2), L("r1") - 0.2, gain=0.42, verb=0.5)
+mus.add(chime(57), Lc("r1", "是谁"), gain=0.36, verb=0.5)
+sfx.add(sub_boom(2.6, 58, 28), Lc("r1", "是谁"), gain=0.5)
+mus.add(chime(64), L("r3"), gain=0.34, verb=0.6)
 # ------------------------------------------------------------ mix
 vo = np.frombuffer(subprocess.run([str(FFMPEG), "-v", "error", "-i", str(ROOT / "public/zhanqian/vo.wav"), "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout, dtype=np.float32).astype(np.float64)
 vo = np.pad(vo, (0, max(0, N - len(vo))))[:N]

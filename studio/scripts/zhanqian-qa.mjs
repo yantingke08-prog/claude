@@ -48,8 +48,8 @@ const inside = (a, b) => a.x0 >= b.x0 - 1 && a.x1 <= b.x1 + 1 && a.y0 >= b.y0 - 
 const issues = new Map();
 const note = (f, tag, msg) => {
   const s = shotAt(f);
-  const key = `${s.lay}#${s.part}|${tag}`;
-  const e = issues.get(key) ?? { lay: `${s.lay}${s.part ? ` (part ${s.part + 1})` : ""}`, msg, f0: f, f1: f };
+  const key = `${s.lay}|${tag}`;
+  const e = issues.get(key) ?? { lay: s.lay, msg, f0: f, f1: f };
   e.f0 = Math.min(e.f0, f);
   e.f1 = Math.max(e.f1, f);
   issues.set(key, e);
@@ -65,6 +65,7 @@ for (const [f, items] of [...frames.entries()].sort((a, b) => a[0] - b[0])) {
       const a = items[i],
         b = items[j];
       if (inside(a, b) || inside(b, a)) continue;
+      if (a.into?.some((p) => b.id.startsWith(p)) || b.into?.some((p) => a.id.startsWith(p))) continue;
       const g = gap(a, b);
       if (g < GAP) note(f, `pair ${a.id} ${b.id}`, `${g < 0 ? "overlap" : `gap ${Math.round(g)}px`}: ${a.id} ${r(a)} × ${b.id} ${r(b)}`);
     }

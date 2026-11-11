@@ -3,10 +3,11 @@
 // Usage: npx tsx scripts/zhanqian-cues.ts
 import fs from "node:fs";
 import { FIRST_HIT, HOPS, LEVELS, MINES, PASSIVE, REFILLS, TRADES } from "../src/zhanqian/book";
-import { SHOTS } from "../src/zhanqian/director";
+import { RECAP_CARDS, SHOTS } from "../src/zhanqian/director";
 
 const cues = {
-  shots: SHOTS.map((s) => ({ at: s.at, lay: s.lay, world: s.w, flash: s.flash ?? null, part: s.part, trans: s.trans ?? null })),
+  shots: SHOTS.map((s) => ({ at: s.at, lay: s.lay, world: s.w, flash: s.flash ?? null, trans: s.trans ?? null })),
+  recapCards: RECAP_CARDS,
   trades: TRADES,
   hops: Object.entries(HOPS).map(([k, at]) => ({ k: Number(k), at })),
   mines: MINES,

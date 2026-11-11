@@ -7,7 +7,7 @@ import { useEffect } from "react";
 import { continueRender, delayRender, useCurrentFrame } from "remotion";
 import { fontsReady } from "./fonts";
 
-export type QaItem = { id: string; kind: string; x0: number; y0: number; x1: number; y1: number };
+export type QaItem = { id: string; kind: string; into: string[]; x0: number; y0: number; x1: number; y1: number };
 
 const visible = (el: Element | null) => {
   let o = 1;
@@ -43,6 +43,8 @@ const measure = (): QaItem[] => {
     return {
       id: g.getAttribute("data-qa") || `${g.tagName.toLowerCase()}:${(g.textContent ?? "").trim().slice(0, 14)}`,
       kind: g.getAttribute("data-qa-kind") ?? "text",
+      // a label whose job is to move into another one (tickets merging, an order flying into the ladder)
+      into: (g.getAttribute("data-qa-into") ?? "").split(",").filter(Boolean),
       x0: Math.min(...b.map((r) => r.left)),
       y0: Math.min(...b.map((r) => r.top)),
       x1: Math.max(...b.map((r) => r.right)),

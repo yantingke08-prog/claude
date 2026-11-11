@@ -279,12 +279,10 @@ sfx.add(sparkle(2.0), Lc("h2", "藏在"), gain=0.14, verb=0.5)
 mus.add(chime(57), L("h3"), gain=0.42, verb=0.5)
 sfx.add(sub_boom(2.0, 55, 28), L("h3"), gain=0.45)
 
-# ---- every cut gets a short transient; colour-flash cuts get a whoosh as well
+# ---- only chapter openings (the colour-flash cuts) get a whoosh + thud; ordinary cuts stay silent
 for i, c in enumerate(SHOTS):
     at = c["at"] / FPS
-    if at < A0 - 0.3 or c["part"] > 0 and not c["flash"]:
-        if c["part"] > 0:
-            sfx.add(tick(1500, 0.03), at, gain=0.06)
+    if at < A0 - 0.3:
         continue
     if c.get("trans") == "morph":  # no cut: the wipe into the footprint gets a long, soft sweep
         sfx.add(whoosh(0.7, 300, 3800), at - 0.1, gain=0.18)
@@ -292,8 +290,6 @@ for i, c in enumerate(SHOTS):
     if c["flash"]:
         sfx.add(whoosh(0.35, 400, 5200), at - 0.18, gain=0.2, pan=0.2 if i % 2 else -0.2)
         sfx.add(thud(90), at, gain=0.18)
-    else:
-        sfx.add(tick(1900, 0.035), at, gain=0.08)
 
 # ---- a pulse runs through the book, the stops and the table; it doubles up in the stop montage
 t = A0 + 0.4
@@ -354,9 +350,9 @@ for i in range(7):
 sfx.add(sub_boom(2.4, 60, 30), Lc("w5", "结果"), gain=0.5)
 
 # ---- recap: three cards, the question, the caveat, next time
-for i, c in enumerate([c for c in SHOTS if c["lay"].startswith("r.k")]):
-    sfx.add(thud(80 + 10 * i), c["at"] / FPS, gain=0.45)
-    mus.add(pluck(64 + [0, 3, 7][i]), c["at"] / FPS, gain=0.3, verb=0.3)
+for i, at in enumerate(CUES["recapCards"]):
+    sfx.add(thud(80 + 10 * i), at / FPS, gain=0.45)
+    mus.add(pluck(64 + [0, 3, 7][i]), at / FPS, gain=0.3, verb=0.3)
 mus.add(pad([45, 52, 57, 60, 64], T_END - L("r1") + 0.2), L("r1") - 0.2, gain=0.42, verb=0.5)
 mus.add(chime(57), Lc("r1", "是谁"), gain=0.36, verb=0.5)
 sfx.add(sub_boom(2.6, 58, 28), Lc("r1", "是谁"), gain=0.5)

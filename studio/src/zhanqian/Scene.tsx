@@ -230,6 +230,20 @@ const brickState = (f: number) => {
       if (s > 0) out.push({ x: (j - (r.n - 1) / 2) * BW * 1.3, y: ky(r.k) - (1 - s) * 2.4, z: 1.15, s, col: RED, glow: 0.4 + (1 - s) * 1.6 });
     }
   }
+  // "挂单可以撤": the asks just above the price are pulled back out of the book and go dark
+  const pull = span(f, Lc("r2", "挂单"), Lc("r2", "挂单") + 18, cubicInOut);
+  if (pull > 0) {
+    const y0 = ky(beadK(f));
+    for (const b of out) {
+      const dy = b.y - y0;
+      if (b.col === GRN && dy > 0.4 && dy < 2.6) {
+        b.z -= 2.8 * pull;
+        b.s *= 1 - 0.2 * pull;
+        b.col = b.col.clone().multiplyScalar(1 - 0.78 * pull);
+        b.glow = 0;
+      }
+    }
+  }
   return { bricks: out, comets };
 };
 

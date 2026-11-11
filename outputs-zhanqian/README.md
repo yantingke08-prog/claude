@@ -1,4 +1,4 @@
-# 战前觉醒 · 第 1 期（v4）：本地渲染说明
+# 战前觉醒 · 第 1 期（v5）：本地渲染说明
 
 这是 1080×1920 竖屏（交付用原生 2K 1440×2560）、144.3 秒（2 分 24 秒）的中文知识科普短片。主题是市场拍卖、参与者角色、三种订单（被动 / 主动 / 止损），以及从“看 K 线结果”到“看订单原因”的转变。
 
@@ -13,6 +13,28 @@
   - `cover.png`：竖屏封面；
   - `keyframes/`：关键帧预览图（`contact-*.jpg` 是拼图），以及 `keyframes/README.md` 的逐张说明。
 - 仓库里**不包含**成片 MP4。
+
+## v5 改了什么（32 个连续镜头不变，旁白和知识点不变）
+
+- **镜头内节拍**：每个镜头先给主视觉，再加数据层，最后落结论；新标注出现、数字变化、框选移动、阶梯跳档、成交带新增、路径延伸、对比线、仪表更新，约每 1.5–2.5 秒一次。没有新增硬切，也没有缩放跳变。
+  - 自动检查会逐镜头统计“节拍”。v5 结果：32 个镜头都不存在超过 2.5 秒的空档。
+- **常驻数据层**（盘口类镜头）：左侧成交带和“主动买 − 主动卖”差值条，右侧价格阶梯和最新价 / 跳档数，顶部章节进度条。它们按“成交带 → 阶梯 → 差值 / 最新价”的顺序依次进入，不会一开场就堆满。
+- **新增约 25 处标注**，按功能分成不同组件：
+  - 数字卡（无边框、深色渐变底）；
+  - 关系引线牌（左侧细色条）；
+  - 结果胶囊（实色底、深色字）；
+  - 风险徽章（琥珀描边 + 警示符号）；
+  - 关键位虚线（左端标签）；
+  - 对比条（左右两色）；
+  - 路径 / 成交量缩略图。
+- **OHLC（1:52 左右）**：右侧固定四行“开盘 / 最高 / 最低 / 收盘”；每个价格先水平接到一根垂直汇总轨，再水平进入对应行，四条线不交叉；旁白读到哪一项只亮哪一行，读完四项后恢复同等亮度。所有文字始终水平。
+- **视觉系统**：深石墨背景、12 栏网格、半透明深色玻璃面板 + 细金属描边；统一 2px 线宽和圆角；去掉粗描边和霓虹外发光，3D 泛光降低约 30%；所有出现动画改成平滑缓入缓出，不再弹跳。
+- **手机竖屏**（按 390×693 预览检查）：
+  - 关键文字都在左右 60px、顶部 140px 以内，底部 580px（1340px 以下）不放关键数据；右侧 120px 平台按钮区不放文字。
+  - 字幕 58px，位于 1374px 附近。
+  - 最小字号 34px，标签 40–48px，数据 48–80px，结论 90–140px。
+  - 说明文字每行不超过 12 个汉字。
+  - 自动检查（`npm run zq:layout`）同时检查以上规则：2165 帧，0 个问题。
 
 ## v4 改了什么（旁白、文案、知识点不变）
 
@@ -46,7 +68,7 @@
 ## 安装
 
 ```bash
-git clone -b zhanqian-juexing-v4 https://github.com/yantingke08-prog/claude.git
+git clone -b zhanqian-juexing-v5 https://github.com/yantingke08-prog/claude.git
 cd claude/studio
 npm install
 ```
@@ -59,7 +81,7 @@ npm install
 npm run zq:render
 ```
 
-- 输出：`D:\claude视频\zhanqian-awakening-ep01-v4.mp4`（文件夹不存在会自动创建）。
+- 输出：`D:\claude视频\zhanqian-awakening-ep01-v5.mp4`（文件夹不存在会自动创建）。
 - 编码：H.264 High，yuv420p（BT.709），CRF 16，AAC 320 kbps，30 fps。
 - 这条命令用 ANGLE 调用显卡渲染（`--gl=angle --concurrency=50%`）。
 
@@ -80,7 +102,7 @@ npm run zq:render:cpu
 CPU 渲染太慢的话，可以把 3D 层降到 0.75 倍像素（文字和字幕仍然是原生分辨率）：
 
 ```bash
-npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v4.mp4" --props="{\"dpr\":0.75}" --audio-codec=aac --audio-bitrate=320k
+npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v5.mp4" --props="{\"dpr\":0.75}" --audio-codec=aac --audio-bitrate=320k
 ```
 
 ## 2K 渲染（1440×2560，交付用）
@@ -89,12 +111,12 @@ npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v4.mp4" --
 npm run zq:render:2k
 ```
 
-- 输出：`D:\claude视频\zhanqian-awakening-ep01-v4-2k.mp4`。
+- 输出：`D:\claude视频\zhanqian-awakening-ep01-v5-2k.mp4`。
 - 参数：`--scale=1.3333333333`，3D `dpr: 1.333`（来自 `studio/props/zhanqian-2k.json`），文字和图表按 2K 重新排版，不是放大 1080p；30 fps，H.264 High，yuv420p（BT.709），CRF 16，AAC 320 kbps。
 - 完整命令（可以直接粘贴）：
 
 ```bash
-npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v4-2k.mp4" --props=props/zhanqian-2k.json --scale=1.3333333333 --gl=angle --concurrency=50% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k
+npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v5-2k.mp4" --props=props/zhanqian-2k.json --scale=1.3333333333 --gl=angle --concurrency=50% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k
 ```
 
 预计 2K 渲染时长（4330 帧）：
@@ -156,7 +178,8 @@ npm run dev
 
   检查时长（140–150 秒）、分辨率、编码、音画长度、响度（−14 LUFS）、削波、黑帧和冻结。
 - **人工检查**：按 `storyboard.md` 的时间表逐段核对。重点看三处：
-  1. 没有“小—大—小”的跳切：同一对象内部只看到框选放大，没有切出去再切回来；
+  1. 手机上（把画面缩到约 390px 宽）每个镜头的数字和标签是否一眼能读；
+  2. 没有“小—大—小”的跳切：同一对象内部只看到框选放大，没有切出去再切回来；
   2. 框选放大的速度：0.8 秒缓入、停留、同速缓出，框外只是轻微压暗；
   3. 2:15–2:24 结尾：订单池连续推近，然后擦除成足迹图，中间不闪回。
 

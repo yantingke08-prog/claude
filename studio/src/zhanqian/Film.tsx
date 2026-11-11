@@ -31,7 +31,7 @@ const Settle: React.FC = () => {
   return null;
 };
 
-const Cinema: React.FC<{ d: Dir; bloom?: number; dpr?: number }> = ({ d, bloom = 0.85, dpr = 1 }) => {
+const Cinema: React.FC<{ d: Dir; bloom?: number; dpr?: number }> = ({ d, bloom = 0.6, dpr = 1 }) => {
   const { width, height } = useVideoConfig();
   const focus = d.pos.distanceTo(d.target);
   return (
@@ -40,7 +40,7 @@ const Cinema: React.FC<{ d: Dir; bloom?: number; dpr?: number }> = ({ d, bloom =
       <Scene d={d} />
       <EffectComposer multisampling={0} enableNormalPass={false}>
         {d.dof > 0.01 ? <DepthOfField worldFocusDistance={focus} worldFocusRange={focus * 0.9} bokehScale={2.2} /> : <></>}
-        <Bloom mipmapBlur intensity={bloom + d.flash * 1.3} luminanceThreshold={0.55} luminanceSmoothing={0.3} radius={0.72} />
+        <Bloom mipmapBlur intensity={bloom + d.flash * 0.9} luminanceThreshold={0.55} luminanceSmoothing={0.3} radius={0.72} />
         <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.14} />
         <Vignette eskil={false} offset={0.28} darkness={0.74} />
       </EffectComposer>

@@ -1,7 +1,10 @@
 // Layout QA for 战前觉醒: renders the HUD (no WebGL) every Nth frame, collects the screen box of every visible
-// label (see src/zhanqian/qa.tsx) and checks the layout rules:
-//   safe area  x 40–1040, y 120–1740            caption band  y 1460–1590 is for captions only
-//   20 px between any two labels                 at most 2 explanation cards (kind "card") at once
+// label (see src/zhanqian/qa.tsx) and checks the phone-screen rules (v5):
+//   safe area  x 60–960 (the right 120 px is platform buttons), y 140–1340; captions own 1360–1500
+//   type       nothing under 34 px (captions 56+); descriptive lines at most 12 hanzi
+//   spacing    20 px between any two labels; at most 2 explanation cards (kind "card") at once
+//   beats      inside each shot something new must land (a label appears, a figure changes) at least
+//              every 2.5 s; reported with the longest quiet stretch
 // Usage: node scripts/zhanqian-qa.mjs [everyNth=4] [from] [to]    → prints issues grouped by shot, exits 1 if any
 import { bundle } from "@remotion/bundler";
 import { renderFrames, selectComposition } from "@remotion/renderer";
@@ -10,8 +13,11 @@ import os from "node:os";
 import path from "node:path";
 
 const [nth = "4", from, to] = process.argv.slice(2);
-const SAFE = { x0: 40, x1: 1040, y0: 120, y1: 1740 };
-const CAP = [1460, 1590];
+const SAFE = { x0: 60, x1: 960, y0: 140, y1: 1340 };
+const CAP = [1360, 1500];
+const MIN_FONT = 34;
+const MAX_HAN = 12;
+const QUIET = 75;
 const GAP = 20;
 const MAX_CARDS = 2;
 
@@ -57,8 +63,10 @@ const note = (f, tag, msg) => {
 const r = (b) => `[${Math.round(b.x0)},${Math.round(b.y0)}–${Math.round(b.x1)},${Math.round(b.y1)}]`;
 for (const [f, items] of [...frames.entries()].sort((a, b) => a[0] - b[0])) {
   for (const it of items) {
-    if (it.x0 < SAFE.x0 || it.x1 > SAFE.x1 || it.y0 < SAFE.y0 || it.y1 > SAFE.y1) note(f, `safe ${it.id}`, `outside safe area: ${it.id} ${r(it)}`);
+    if (it.kind !== "cap" && (it.x0 < SAFE.x0 - 1 || it.x1 > SAFE.x1 + 1 || it.y0 < SAFE.y0 - 1 || it.y1 > SAFE.y1 + 1)) note(f, `safe ${it.id}`, `outside safe area: ${it.id} ${r(it)}`);
     if (it.kind !== "cap" && it.y1 > CAP[0] && it.y0 < CAP[1]) note(f, `cap ${it.id}`, `in caption band: ${it.id} ${r(it)}`);
+    if (it.minFont < (it.kind === "cap" ? 56 : MIN_FONT)) note(f, `font ${it.id}`, `type too small (${Math.round(it.minFont)} px): ${it.id}`);
+    if (it.kind !== "cap" && it.kind !== "type" && it.maxHan > MAX_HAN) note(f, `han ${it.id}`, `line longer than ${MAX_HAN} hanzi (${it.maxHan}): ${it.id}`);
   }
   for (let i = 0; i < items.length; i++)
     for (let j = i + 1; j < items.length; j++) {
@@ -74,6 +82,29 @@ for (const [f, items] of [...frames.entries()].sort((a, b) => a[0] - b[0])) {
 }
 const list = [...issues.values()].sort((a, b) => a.f0 - b.f0);
 const tc = (f) => `${Math.floor(f / 30 / 60)}:${((f / 30) % 60).toFixed(2).padStart(5, "0")}`;
+// beats: a new label id, or a changed text in an existing one, counts as an event; events closer than 12 frames
+// are one beat. Report every shot whose longest stretch without a beat is over QUIET frames.
+const beats = new Map();
+let prev = new Map();
+for (const [f, items] of [...frames.entries()].sort((a, b) => a[0] - b[0])) {
+  const cur = new Map(items.filter((i) => i.kind !== "cap" && i.kind !== "chrome").map((i) => [i.id, i.sig]));
+  const ev = [...cur].some(([id, sig]) => prev.get(id) !== sig);
+  const s = shotAt(f);
+  if (!beats.has(s.at)) beats.set(s.at, { ev: [s.at] });
+  const b = beats.get(s.at);
+  if (ev && f - b.ev[b.ev.length - 1] >= 12) b.ev.push(f);
+  prev = cur;
+}
+const quiet = [];
+shots.forEach((s, i) => {
+  const b = beats.get(s.at);
+  if (!b) return;
+  const ts = [...b.ev, i + 1 < shots.length ? shots[i + 1].at : composition.durationInFrames];
+  const gaps = ts.slice(1).map((t, j) => t - ts[j]);
+  const gap = Math.max(...gaps);
+  if (gap > QUIET) quiet.push(`${s.lay.padEnd(12)} ${b.ev.length - 1} beats, longest quiet ${(gap / 30).toFixed(1)} s from ${tc(ts[gaps.indexOf(gap)])}`);
+});
 for (const e of list) console.log(`${tc(e.f0)}–${tc(e.f1)}  ${e.lay.padEnd(18)} ${e.msg}`);
-console.log(`\n${frames.size} frames checked, ${list.length} issues`);
+if (quiet.length) console.log(`\nquiet shots (no new beat for more than ${QUIET / 30} s):\n  ${quiet.join("\n  ")}`);
+console.log(`\n${frames.size} frames checked, ${list.length} issues, ${quiet.length} quiet shots`);
 process.exit(list.length ? 1 : 0);

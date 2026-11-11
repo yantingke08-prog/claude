@@ -6,7 +6,7 @@ import { FIRST_HIT, HOPS, LEVELS, MINES, PASSIVE, REFILLS, TRADES } from "../src
 import { RECAP_CARDS, SHOTS } from "../src/zhanqian/director";
 
 const cues = {
-  shots: SHOTS.map((s) => ({ at: s.at, lay: s.lay, world: s.w, flash: s.flash ?? null, trans: s.trans ?? null })),
+  shots: SHOTS.map((s) => ({ at: s.at, end: s.end, mv: s.mv, lay: s.lay, world: s.w, flash: s.flash ?? null, trans: s.trans ?? null, comp: s.comp ?? null })),
   recapCards: RECAP_CARDS,
   trades: TRADES,
   hops: Object.entries(HOPS).map(([k, at]) => ({ k: Number(k), at })),

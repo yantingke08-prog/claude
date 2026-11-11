@@ -331,10 +331,11 @@ const Bead: React.FC<{ f: number; t: number; x?: number }> = ({ f, t }) => {
 
 /** the gavel that hangs over the auction and never comes down */
 const Gavel: React.FC<{ f: number; t: number }> = ({ f, t }) => {
-  const k = hold(f, S("auction") - 8, L("a2") + 30, 16);
+  // in just before the auction shot cuts in (it is the first thing in frame)
+  const k = hold(f, Le("h3") + 10, L("a2") + 30, 16);
   if (k < 0.01) return null;
   const wood = { color: "#6e3b1e", roughness: 0.42, metalness: 0.08, clearcoat: 0.6 } as const;
-  const lift = 11 - span(f, S("auction") - 8, S("auction") + 34, expoOut) * 3.2 + span(f, L("a2") - 6, L("a2") + 30, smooth) * 14;
+  const lift = 11 - span(f, Le("h3") + 10, S("auction") + 34, expoOut) * 3.2 + span(f, L("a2") - 6, L("a2") + 30, smooth) * 14;
   return (
     <group position={[0.6, lift, 1.5]} rotation={[0.1, 0.5 + Math.sin(t * 0.7) * 0.1, -0.42 + Math.sin(t * 1.3) * 0.05]}>
       <mesh rotation={[0, 0, Math.PI / 2]}>

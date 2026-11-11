@@ -2,9 +2,12 @@
 Voice-over for the v2 false-breakout short (studio/src/zhanqian).
 
 One edge-tts request per line (cached by text+voice+rate+pitch), silence-trimmed, laid end to end
-with the script's gaps. Writes:
+with the script's gaps. A line may carry `"pause": {"at": "<word>", "sec": s}`: the audio is split in the silence
+just before that word and s seconds are inserted (the words are unchanged; v6 uses it so a cut never lands
+inside a sentence). Writes:
   public/zhanqian/vo.wav          the dry voice track (48 kHz mono)
-  src/zhanqian/timeline.json      line / section frame ranges + caption chunks timed from word boundaries
+  src/zhanqian/timeline.json      line / section frame ranges, each line's word marks [char index, frame] and
+                                  pauses [from, to], caption chunks timed from word boundaries
 """
 import asyncio
 import hashlib
@@ -83,25 +86,42 @@ async def main():
             audio, cut = trim(decode(mp3))
             words = json.loads(marks.read_text(encoding="utf-8"))
             dur = len(audio) / SR
-            lines.append({"id": ln["id"], "section": sec["id"], "text": ln["text"], "from": round(t * fps), "to": round((t + dur) * fps)})
             # caption chunks: walk word boundaries, assigning each chunk the time of its first word
             # locate every boundary word in the line text once: (char offset, time)
             located, acc = [], 0
             for w in words:
                 idx = ln["text"].find(w["w"], acc)
                 if idx >= 0:
-                    located.append((idx, w["t"] - cut))
+                    located.append((idx, w["t"] - cut, w["d"]))
                     acc = idx + len(w["w"])
+            pauses = []
+            if ln.get("pause"):
+                # split in the silence before the word, insert the pause, shift every later word
+                at = ln["text"].index(ln["pause"]["at"])
+                j = next(i for i, (idx, _, _) in enumerate(located) if idx >= at)
+                t_w = located[j][1]
+                t_p = located[j - 1][1] + located[j - 1][2] if j else t_w
+                split = max(0.0, (t_p + t_w) / 2 if t_w > t_p else t_w - 0.02)
+                ps = ln["pause"]["sec"]
+                n = int(split * SR)
+                audio = np.concatenate([audio[:n], np.zeros(int(ps * SR), np.float32), audio[n:]])
+                located = [(idx, tt + (ps if idx >= at else 0), d) for idx, tt, d in located]
+                pauses.append([round((t + split) * fps), round((t + split + ps) * fps)])
+                dur = len(audio) / SR
+            lines.append({"id": ln["id"], "section": sec["id"], "text": ln["text"], "from": round(t * fps), "to": round((t + dur) * fps), "marks": [[idx, round((t + tt) * fps)] for idx, tt, _ in located], "pauses": pauses})
             chunk_list = chunks_for(ln["text"])
             starts, pos = [], 0
             for c in chunk_list:
-                later = [tt for idx, tt in located if idx >= pos]
+                later = [tt for idx, tt, _ in located if idx >= pos]
                 starts.append(max(0.0, later[0]) if later else dur)
                 pos += len(c)
             starts[0] = 0.0
             for i, c in enumerate(chunk_list):
                 a = t + starts[i]
                 b = t + (starts[i + 1] if i + 1 < len(chunk_list) else dur + 0.15)
+                for p0, p1 in pauses:
+                    if a * fps < p0 < b * fps:
+                        b = p0 / fps + 0.15
                 captions.append({"line": ln["id"], "text": c.rstrip("，。；："), "from": round(a * fps), "to": round(b * fps)})
             voice.append(audio)
             t += dur

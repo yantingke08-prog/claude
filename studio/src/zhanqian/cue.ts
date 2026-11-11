@@ -43,13 +43,32 @@ export { TL };
 
 /** rough spoken weight of a character: pauses at punctuation, Latin letters read fast */
 const wt = (ch: string) => ("，。：；？！、".includes(ch) ? 1.6 : /[A-Za-z]/.test(ch) ? 0.45 : 1);
-/** frame at which `sub` starts being spoken inside line `id` (estimated from character weights) */
+/** frame at which `sub` starts being spoken inside line `id`: read from the TTS word marks (v6), interpolated by
+ *  character weight inside a word, so a label keyed to a word lands on that word */
 export const Lc = (id: string, sub: string) => {
   const l = lines[id];
   const i = l.text.indexOf(sub);
   if (i < 0) throw new Error(`"${sub}" not in ${id}`);
   const chars = [...l.text];
-  const pre = [...l.text.slice(0, i)].reduce((a, c) => a + wt(c), 0);
-  const all = chars.reduce((a, c) => a + wt(c), 0);
-  return Math.round(l.from + (l.to - l.from) * (pre / all));
+  const w = (a: number, b: number) => chars.slice(a, b).reduce((s, c) => s + wt(c), 0);
+  const ms: [number, number][] = [[0, l.from], ...(l.marks as [number, number][]), [chars.length, l.to]];
+  let j = 0;
+  while (j + 1 < ms.length && ms[j + 1][0] <= i) j++;
+  const [i0, f0] = ms[j];
+  const [i1, f1] = ms[Math.min(j + 1, ms.length - 1)];
+  if (i1 <= i0) return f0;
+  return Math.round(f0 + (f1 - f0) * (w(i0, i) / Math.max(1e-6, w(i0, i1))));
 };
+/** speech, as [from, to] intervals with the inserted pauses cut out (the QA checks cuts against these) */
+export const SPEECH: [number, number][] = TL.lines.flatMap((l) => {
+  const out: [number, number][] = [];
+  let a = l.from;
+  for (const [p0, p1] of l.pauses as [number, number][]) {
+    out.push([a, p0]);
+    a = p1;
+  }
+  out.push([a, l.to]);
+  return out;
+});
+/** end of the speech before a pause inserted at `sub` (a sentence that is split by a cut) */
+export const Lp = (id: string) => (lines[id].pauses as [number, number][])[0][0];

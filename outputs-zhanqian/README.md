@@ -1,6 +1,6 @@
-# 战前觉醒 · 第 1 期（v5）：本地渲染说明
+# 战前觉醒 · 第 1 期（v6）：本地渲染说明
 
-这是 1080×1920 竖屏（交付用原生 2K 1440×2560）、144.3 秒（2 分 24 秒）的中文知识科普短片。主题是市场拍卖、参与者角色、三种订单（被动 / 主动 / 止损），以及从“看 K 线结果”到“看订单原因”的转变。
+这是 1080×1920 竖屏（交付用原生 2K 1440×2560）、172.4 秒（2 分 52 秒）的中文知识科普短片。主题是市场拍卖、参与者角色、三种订单（被动 / 主动 / 止损），以及从“看 K 线结果”到“看订单原因”的转变。
 
 - 技术方案：Remotion 4 + React Three Fiber（WebGL 实时 3D）+ 后期（泛光、景深、颗粒、暗角）。每一帧都是帧号的纯函数，所以每次渲染结果完全一致。
 - 代码：`studio/src/zhanqian/`
@@ -11,8 +11,34 @@
   - `audio.md`：字幕、配音、音乐、音效的配置方案；
   - `subtitles.srt`：外挂字幕；
   - `cover.png`：竖屏封面；
-  - `keyframes/`：关键帧预览图（`contact-*.jpg` 是拼图），以及 `keyframes/README.md` 的逐张说明。
+  - `keyframes/`：关键帧预览图（`contact-*.jpg` 是拼图），以及 `keyframes/README.md` 的逐张说明；
+  - `timing-report.md`：每个标注的停留帧数和每个切点的余量（`npm run zq:layout` 自动生成）。
 - 仓库里**不包含**成片 MP4。
+
+## v6 改了什么（事实和旁白字词不变，不加硬切，2K 和手机安全区不变）
+
+- **每句话一个视觉重点**：同一时刻最多 1 个主标注（说明卡、结论大字或结果胶囊）+ 1 层辅助数据。v5 常驻的成交带 / 价格阶梯 / 差值 / 最新价 / 价差条不再同时出现，每个镜头只留一种数据层；标注按句交接，不叠加。
+- **分类讲解的顺序**：三种订单、四类参与者都先给总览（只有编号和图形，元素很少），再在顶栏点亮当前类别，然后用镜头推近或原画面框选给出证据，最后在说明卡最后一行落结论。
+- **时机**：
+  - 标注在旁白念到关键词前 0–8 帧开始出现（实际是前 6 帧）。关键词时间改用配音的逐词时间戳，不再按字数估算。
+  - 普通标注完全展开后至少停留 24 帧，说明卡至少 36 帧，不会刚出现就切走。
+  - 每个切点都落在句子结束后 18 帧（p6 处 24 帧）。原来切在句子中间的 4 处，在原句里插入 1.0–1.4 秒停顿，字词不变。
+  - 时间不够的地方都是延长镜头：句间停顿加长，回顾三行结论前留 4.6 秒。全片因此从 144.3 秒变为 172.4 秒。
+- **一个镜头一个动作**：镜头运动约 18 帧内停稳（开场升镜和结尾推镜除外），之后才出标注。
+- **订单墙构图**：12 个订单墙镜头分别用 9 种构图，相邻两个从不重复。
+  - 正面全景、低机位侧面、俯拍买墙、分屏版式（盘口在上半屏、价格路径在下半屏）、背面反打、近景特写、拉远全景、左侧远景文字版式、仰拍拍卖锤。
+  - 每个构图的数据层也不同：价格阶梯、成交带、价格路径、幽灵订单、计数器。
+- **音效**：whoosh / thud 只在 7 个章节起点和两个大转折（穿入 K 线、止损连环引爆）。数据标注出现时只有一声轻 tick；普通切点、说明卡和每位参与者出场都不再配响声。
+- **保留**：v5 的水平 OHLC 和不交叉连线、手机字号、安全区和防遮挡。
+- **自动检查**：`npm run zq:layout` 新增以下检查。逐帧检查 5,173 帧、102 个标注、30 个切点，0 个问题；最短停留 24 帧，切点距句末最短 18 帧。
+  - 同屏主标注 / 数据层的数量；
+  - 每个标注相对关键词的出现时间；
+  - 是否在镜头稳定后才出现；
+  - 停留帧数；
+  - 切点和句子结束之间的帧数；
+  - 订单墙构图是否连续重复。
+
+  每个标注从“完全可见”到“离开或切镜”的停留帧数写在 `timing-report.md`。
 
 ## v5 改了什么（32 个连续镜头不变，旁白和知识点不变）
 
@@ -68,7 +94,7 @@
 ## 安装
 
 ```bash
-git clone -b zhanqian-juexing-v5 https://github.com/yantingke08-prog/claude.git
+git clone -b zhanqian-juexing-v6 https://github.com/yantingke08-prog/claude.git
 cd claude/studio
 npm install
 ```
@@ -81,7 +107,7 @@ npm install
 npm run zq:render
 ```
 
-- 输出：`D:\claude视频\zhanqian-awakening-ep01-v5.mp4`（文件夹不存在会自动创建）。
+- 输出：`D:\claude视频\zhanqian-awakening-ep01-v6.mp4`（文件夹不存在会自动创建）。
 - 编码：H.264 High，yuv420p（BT.709），CRF 16，AAC 320 kbps，30 fps。
 - 这条命令用 ANGLE 调用显卡渲染（`--gl=angle --concurrency=50%`）。
 
@@ -102,7 +128,7 @@ npm run zq:render:cpu
 CPU 渲染太慢的话，可以把 3D 层降到 0.75 倍像素（文字和字幕仍然是原生分辨率）：
 
 ```bash
-npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v5.mp4" --props="{\"dpr\":0.75}" --audio-codec=aac --audio-bitrate=320k
+npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v6.mp4" --props="{\"dpr\":0.75}" --audio-codec=aac --audio-bitrate=320k
 ```
 
 ## 2K 渲染（1440×2560，交付用）
@@ -111,21 +137,21 @@ npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v5.mp4" --
 npm run zq:render:2k
 ```
 
-- 输出：`D:\claude视频\zhanqian-awakening-ep01-v5-2k.mp4`。
+- 输出：`D:\claude视频\zhanqian-awakening-ep01-v6-2k.mp4`。
 - 参数：`--scale=1.3333333333`，3D `dpr: 1.333`（来自 `studio/props/zhanqian-2k.json`），文字和图表按 2K 重新排版，不是放大 1080p；30 fps，H.264 High，yuv420p（BT.709），CRF 16，AAC 320 kbps。
 - 完整命令（可以直接粘贴）：
 
 ```bash
-npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v5-2k.mp4" --props=props/zhanqian-2k.json --scale=1.3333333333 --gl=angle --concurrency=50% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k
+npx remotion render Zhanqian "D:/claude视频/zhanqian-awakening-ep01-v6-2k.mp4" --props=props/zhanqian-2k.json --scale=1.3333333333 --gl=angle --concurrency=50% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k
 ```
 
-预计 2K 渲染时长（4330 帧）：
+预计 2K 渲染时长（5173 帧）：
 
 | 机器 | 预计时长 |
 |---|---|
-| 独立显卡（RTX 3060 以上） | 约 50–90 分钟 |
-| 只有核显 | 约 2.5–4.5 小时 |
-| 纯 CPU | 约 9–18 小时 |
+| 独立显卡（RTX 3060 以上） | 约 60–110 分钟 |
+| 只有核显 | 约 3–5.5 小时 |
+| 纯 CPU | 约 11–22 小时 |
 
 渲染完可以检查：`npm run zq:qc:2k`。`zq:render:4k` 还在 package.json 里，但 v4 没有验证 4K 全片，交付请用 2K。
 
@@ -176,12 +202,12 @@ npm run dev
   npm run zq:qc
   ```
 
-  检查时长（140–150 秒）、分辨率、编码、音画长度、响度（−14 LUFS）、削波、黑帧和冻结。
+  检查时长（170–175 秒）、分辨率、编码、音画长度、响度（−14 LUFS）、削波、黑帧和冻结。
 - **人工检查**：按 `storyboard.md` 的时间表逐段核对。重点看三处：
-  1. 手机上（把画面缩到约 390px 宽）每个镜头的数字和标签是否一眼能读；
-  2. 没有“小—大—小”的跳切：同一对象内部只看到框选放大，没有切出去再切回来；
-  2. 框选放大的速度：0.8 秒缓入、停留、同速缓出，框外只是轻微压暗；
-  3. 2:15–2:24 结尾：订单池连续推近，然后擦除成足迹图，中间不闪回。
+  1. 每句话是否只有一个视觉重点，标注是否和关键词同时出现、读完才离开；
+  2. 节奏：v6 多了约 28 秒停顿，在手机上看是否拖沓（如果需要，可以在 `studio/src/zhanqian/script.json` 里缩短 `gap`，然后运行 `npm run zq:vo`、`npm run zq:audio` 和 `npm run zq:layout`）；
+  3. 音效：只有章节起点有 whoosh，普通切点无声；
+  4. 2:45–2:52 结尾：订单池连续推近，然后擦除成足迹图，中间不闪回。
 
 ## 版权与授权
 

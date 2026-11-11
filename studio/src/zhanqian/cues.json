@@ -2,525 +2,621 @@
  "shots": [
   {
    "at": 0,
+   "end": 101,
+   "mv": 22,
    "lay": "h.rise",
    "world": "hook",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 72,
+   "at": 101,
+   "end": 216,
+   "mv": 146,
    "lay": "h.dive",
    "world": "hook",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 170,
+   "at": 216,
+   "end": 331,
+   "mv": 216,
    "lay": "h.title",
    "world": "hook",
    "flash": "#f2bd62",
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 270,
+   "at": 331,
+   "end": 472,
+   "mv": 372,
    "lay": "a.open",
    "world": "book",
    "flash": "#ffffff",
-   "trans": null
+   "trans": null,
+   "comp": "仰拍 · 拍卖锤"
   },
   {
-   "at": 388,
+   "at": 472,
+   "end": 723,
+   "mv": 487,
    "lay": "a.walls",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "正面全景 · 价格阶梯"
   },
   {
-   "at": 597,
+   "at": 723,
+   "end": 825,
+   "mv": 723,
    "lay": "a.depth",
    "world": "flat",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 688,
+   "at": 825,
+   "end": 941,
+   "mv": 843,
    "lay": "a.myth",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "左侧远景 · 文字版式"
   },
   {
-   "at": 786,
+   "at": 941,
+   "end": 1088,
+   "mv": 959,
    "lay": "a.trade",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "近景特写 · 成交凭证"
   },
   {
-   "at": 916,
+   "at": 1088,
+   "end": 1229,
+   "mv": 1106,
    "lay": "a.urgent",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "低机位侧面 · 成交带"
   },
   {
-   "at": 1043,
+   "at": 1229,
+   "end": 1351,
+   "mv": 1229,
    "lay": "o.three",
    "world": "flat",
    "flash": "#ffffff",
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 1140,
+   "at": 1351,
+   "end": 1592,
+   "mv": 1369,
    "lay": "o.passive",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "俯拍买墙 · 价格阶梯"
   },
   {
-   "at": 1363,
+   "at": 1592,
+   "end": 1816,
+   "mv": 1610,
    "lay": "o.active",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "近景特写 · 卖一"
   },
   {
-   "at": 1566,
+   "at": 1816,
+   "end": 2040,
+   "mv": 1834,
    "lay": "o.hop",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "分屏版式 · 价格路径"
   },
   {
-   "at": 1761,
+   "at": 2040,
+   "end": 2159,
+   "mv": 2040,
    "lay": "o.chain",
    "world": "flat",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 1862,
+   "at": 2159,
+   "end": 2367,
+   "mv": 2204,
    "lay": "s.hidden",
    "world": "book",
    "flash": "#ff8a1f",
-   "trans": null
+   "trans": null,
+   "comp": "背面反打 · 隐藏止损"
   },
   {
-   "at": 2042,
+   "at": 2367,
+   "end": 2522,
+   "mv": 2367,
    "lay": "s.chart",
    "world": "flat",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 2167,
+   "at": 2522,
+   "end": 2672,
+   "mv": 2540,
    "lay": "s.trigger",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "近景特写 · 触发价"
   },
   {
-   "at": 2297,
+   "at": 2672,
+   "end": 2835,
+   "mv": 2690,
    "lay": "s.boom",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "拉远全景 · 连环触发"
   },
   {
-   "at": 2443,
+   "at": 2835,
+   "end": 3012,
+   "mv": 2853,
    "lay": "p.who",
    "world": "table",
    "flash": "#ffffff",
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 2598,
+   "at": 3012,
+   "end": 3174,
+   "mv": 3030,
    "lay": "p.mm",
    "world": "table",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 2725,
+   "at": 3174,
+   "end": 3338,
+   "mv": 3192,
    "lay": "p.inst",
    "world": "table",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 2856,
+   "at": 3338,
+   "end": 3499,
+   "mv": 3356,
    "lay": "p.hedge",
    "world": "table",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 2983,
+   "at": 3499,
+   "end": 3646,
+   "mv": 3517,
    "lay": "p.short",
    "world": "table",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3099,
+   "at": 3646,
+   "end": 3775,
+   "mv": 3646,
    "lay": "p.manip",
    "world": "flat",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3179,
+   "at": 3775,
+   "end": 3926,
+   "mv": 3793,
    "lay": "p.clash",
    "world": "table",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3305,
+   "at": 3926,
+   "end": 4119,
+   "mv": 3944,
    "lay": "w.candle",
    "world": "anatomy",
    "flash": "#ffffff",
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3475,
+   "at": 4119,
+   "end": 4418,
+   "mv": 4137,
    "lay": "w.split",
    "world": "anatomy",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3755,
+   "at": 4418,
+   "end": 4574,
+   "mv": 4436,
    "lay": "w.same",
    "world": "anatomy",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3871,
+   "at": 4574,
+   "end": 4723,
+   "mv": 4574,
    "lay": "r.cards",
    "world": "flat",
    "flash": "#ff3b4e",
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 3959,
+   "at": 4723,
+   "end": 4852,
+   "mv": 4741,
    "lay": "r.who",
    "world": "hook",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": null
   },
   {
-   "at": 4054,
+   "at": 4852,
+   "end": 4992,
+   "mv": 4870,
    "lay": "r.caveat",
    "world": "book",
    "flash": null,
-   "trans": null
+   "trans": null,
+   "comp": "正面全景 · 收尾"
   },
   {
-   "at": 4180,
+   "at": 4992,
+   "end": 5173,
+   "mv": 5010,
    "lay": "r.next",
    "world": "book",
    "flash": null,
-   "trans": "morph"
+   "trans": "morph",
+   "comp": "正面全景 · 收尾"
   }
  ],
  "recapCards": [
-  3871,
-  3885,
-  3899
+  4592,
+  4608,
+  4624
  ],
  "trades": [
   {
-   "f": 804,
+   "f": 966,
    "k": 1,
    "q": 4,
    "stop": false
   },
   {
-   "f": 955,
+   "f": 1138,
    "k": 1,
    "q": 5,
    "stop": false
   },
   {
-   "f": 973,
+   "f": 1156,
    "k": 1,
    "q": 3,
    "stop": false
   },
   {
-   "f": 991,
+   "f": 1174,
    "k": 1,
    "q": 3,
    "stop": false
   },
   {
-   "f": 1453,
+   "f": 1702,
    "k": 1,
    "q": 8,
    "stop": false
   },
   {
-   "f": 1497,
+   "f": 1750,
    "k": 1,
    "q": 7,
    "stop": false
   },
   {
-   "f": 1542,
+   "f": 1799,
    "k": 1,
    "q": 6,
    "stop": false
   },
   {
-   "f": 1586,
+   "f": 1847,
    "k": 1,
    "q": 4,
    "stop": false
   },
   {
-   "f": 1596,
+   "f": 1857,
    "k": 1,
    "q": 7,
    "stop": false
   },
   {
-   "f": 1684,
+   "f": 1946,
    "k": 2,
    "q": 4,
    "stop": false
   },
   {
-   "f": 1690,
+   "f": 1952,
    "k": 2,
    "q": 10,
    "stop": false
   },
   {
-   "f": 1696,
+   "f": 1957,
    "k": 2,
    "q": 10,
    "stop": false
   },
   {
-   "f": 1703,
+   "f": 1963,
    "k": 2,
    "q": 7,
    "stop": false
   },
   {
-   "f": 1709,
+   "f": 1968,
    "k": 2,
    "q": 3,
    "stop": false
   },
   {
-   "f": 1715,
+   "f": 1974,
    "k": 2,
    "q": 10,
    "stop": false
   },
   {
-   "f": 1721,
+   "f": 1979,
    "k": 2,
    "q": 10,
    "stop": false
   },
   {
-   "f": 2171,
+   "f": 2536,
    "k": 3,
    "q": 7,
    "stop": false
   },
   {
-   "f": 2174,
+   "f": 2539,
    "k": 3,
    "q": 8,
    "stop": false
   },
   {
-   "f": 2178,
+   "f": 2543,
    "k": 3,
    "q": 4,
    "stop": false
   },
   {
-   "f": 2181,
+   "f": 2546,
    "k": 3,
    "q": 7,
    "stop": false
   },
   {
-   "f": 2184,
+   "f": 2549,
    "k": 3,
    "q": 4,
    "stop": false
   },
   {
-   "f": 2188,
+   "f": 2553,
    "k": 3,
    "q": 6,
    "stop": false
   },
   {
-   "f": 2191,
+   "f": 2556,
    "k": 3,
    "q": 5,
    "stop": false
   },
   {
-   "f": 2194,
+   "f": 2559,
    "k": 3,
    "q": 6,
    "stop": false
   },
   {
-   "f": 2198,
+   "f": 2563,
    "k": 3,
    "q": 3,
    "stop": false
   },
   {
-   "f": 2201,
+   "f": 2566,
    "k": 3,
    "q": 4,
    "stop": false
   },
   {
-   "f": 2244,
+   "f": 2612,
    "k": 4,
    "q": 3,
    "stop": true
   },
   {
-   "f": 2246,
+   "f": 2614,
    "k": 4,
    "q": 5,
    "stop": true
   },
   {
-   "f": 2248,
+   "f": 2616,
    "k": 4,
    "q": 10,
    "stop": true
   },
   {
-   "f": 2250,
+   "f": 2618,
    "k": 4,
    "q": 4,
    "stop": true
   },
   {
-   "f": 2252,
+   "f": 2620,
    "k": 4,
    "q": 4,
    "stop": true
   },
   {
-   "f": 2254,
+   "f": 2622,
    "k": 4,
    "q": 9,
    "stop": true
   },
   {
-   "f": 2256,
+   "f": 2624,
    "k": 4,
    "q": 8,
    "stop": true
   },
   {
-   "f": 2258,
+   "f": 2626,
    "k": 4,
    "q": 10,
    "stop": true
   },
   {
-   "f": 2299,
+   "f": 2684,
    "k": 5,
    "q": 3,
    "stop": true
   },
   {
-   "f": 2301,
+   "f": 2686,
    "k": 5,
    "q": 9,
    "stop": true
   },
   {
-   "f": 2303,
+   "f": 2688,
    "k": 5,
    "q": 6,
    "stop": true
   },
   {
-   "f": 2305,
+   "f": 2690,
    "k": 5,
    "q": 7,
    "stop": true
   },
   {
-   "f": 2307,
+   "f": 2692,
    "k": 5,
    "q": 5,
    "stop": true
   },
   {
-   "f": 2309,
+   "f": 2694,
    "k": 5,
    "q": 9,
    "stop": true
   },
   {
-   "f": 2314,
+   "f": 2699,
    "k": 6,
    "q": 6,
    "stop": true
   },
   {
-   "f": 2316,
+   "f": 2701,
    "k": 6,
    "q": 7,
    "stop": true
   },
   {
-   "f": 2319,
+   "f": 2704,
    "k": 6,
    "q": 6,
    "stop": true
   },
   {
-   "f": 2321,
+   "f": 2706,
    "k": 6,
    "q": 7,
    "stop": true
   },
   {
-   "f": 2323,
+   "f": 2708,
    "k": 6,
    "q": 6,
    "stop": true
   },
   {
-   "f": 2329,
+   "f": 2714,
    "k": 7,
    "q": 9,
    "stop": true
   },
   {
-   "f": 2331,
+   "f": 2716,
    "k": 7,
    "q": 8,
    "stop": true
   },
   {
-   "f": 2334,
+   "f": 2719,
    "k": 7,
    "q": 10,
    "stop": true
   },
   {
-   "f": 2336,
+   "f": 2721,
    "k": 7,
    "q": 3,
    "stop": true
@@ -529,52 +625,52 @@
  "hops": [
   {
    "k": 1,
-   "at": 1638
+   "at": 1903
   },
   {
    "k": 2,
-   "at": 1727
+   "at": 1985
   },
   {
    "k": 3,
-   "at": 2205
+   "at": 2570
   },
   {
    "k": 4,
-   "at": 2262
+   "at": 2630
   },
   {
    "k": 5,
-   "at": 2312
+   "at": 2697
   },
   {
    "k": 6,
-   "at": 2326
+   "at": 2711
   },
   {
    "k": 7,
-   "at": 2339
+   "at": 2724
   }
  ],
  "mines": [
   {
    "k": 4,
-   "at": 2240,
+   "at": 2608,
    "n": 4
   },
   {
    "k": 5,
-   "at": 2297,
+   "at": 2682,
    "n": 4
   },
   {
    "k": 6,
-   "at": 2312,
+   "at": 2697,
    "n": 3
   },
   {
    "k": 7,
-   "at": 2327,
+   "at": 2712,
    "n": 3
   }
  ],
@@ -582,105 +678,105 @@
   {
    "side": "bid",
    "k": -1,
-   "at": 402
+   "at": 503
   },
   {
    "side": "bid",
    "k": -2,
-   "at": 408
+   "at": 509
   },
   {
    "side": "bid",
    "k": -3,
-   "at": 414
+   "at": 515
   },
   {
    "side": "bid",
    "k": -4,
-   "at": 420
+   "at": 521
   },
   {
    "side": "bid",
    "k": -5,
-   "at": 426
+   "at": 527
   },
   {
    "side": "bid",
    "k": -6,
-   "at": 432
+   "at": 533
   },
   {
    "side": "ask",
    "k": 1,
-   "at": 436
+   "at": 536
   },
   {
    "side": "ask",
    "k": 2,
-   "at": 440
+   "at": 540
   },
   {
    "side": "ask",
    "k": 3,
-   "at": 444
+   "at": 544
   },
   {
    "side": "ask",
    "k": 4,
-   "at": 448
+   "at": 548
   },
   {
    "side": "ask",
    "k": 5,
-   "at": 452
+   "at": 552
   },
   {
    "side": "ask",
    "k": 6,
-   "at": 456
+   "at": 556
   },
   {
    "side": "ask",
    "k": 7,
-   "at": 460
+   "at": 560
   },
   {
    "side": "ask",
    "k": 8,
-   "at": 464
+   "at": 564
   },
   {
    "side": "ask",
    "k": 9,
-   "at": 468
+   "at": 568
   },
   {
    "side": "ask",
    "k": 10,
-   "at": 472
+   "at": 572
   }
  ],
  "refills": [
   {
    "k": 0,
    "n": 7,
-   "at": 1646
+   "at": 1911
   },
   {
    "k": 1,
    "n": 5,
-   "at": 1735
+   "at": 1993
   },
   {
    "k": -1,
    "n": 3,
-   "at": 1248
+   "at": 1480
   },
   {
    "k": -2,
    "n": 2,
-   "at": 1258
+   "at": 1490
   }
  ],
- "firstHit": 804
+ "firstHit": 966
 }

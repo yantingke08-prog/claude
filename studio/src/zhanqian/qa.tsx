@@ -3,11 +3,15 @@
 // band, the spacing between labels and the number of cards on screen.
 // Grouping: text belongs to its nearest [data-qa] ancestor. data-qa-text="1" measures the glyphs only
 // (big type on a full-width row); otherwise the ancestor's own box (a plate) is used.
+// v6 adds, per item: `op` (how visible it is: the plate's opacity, or for type the least visible character, so a
+// line counts as fully on once its last character has landed), `group` (data-qa-group: pieces of one label) and
+// `cue` (data-qa-cue: the frame its keyword is spoken). Items down to 5% opacity are logged so the timing check
+// sees them arrive; the layout checks only look at items over 25%.
 import { useEffect } from "react";
 import { continueRender, delayRender, useCurrentFrame } from "remotion";
 import { fontsReady } from "./fonts";
 
-export type QaItem = { id: string; kind: string; into: string[]; minFont: number; maxHan: number; sig: string; x0: number; y0: number; x1: number; y1: number };
+export type QaItem = { id: string; kind: string; group: string; cue: number | null; op: number; into: string[]; minFont: number; maxHan: number; sig: string; x0: number; y0: number; x1: number; y1: number };
 
 const visible = (el: Element | null) => {
   let o = 1;
@@ -23,11 +27,13 @@ const measure = (): QaItem[] => {
   const groups = new Map<Element, DOMRect[]>();
   const fonts = new Map<Element, number[]>();
   const hans = new Map<Element, number[]>();
+  const ops = new Map<Element, number[]>();
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     if (!n.textContent?.trim()) continue;
     const host = n.parentElement!;
-    if (host.closest("[data-qa-skip]") || visible(host) < 0.25) continue;
+    const v = visible(host);
+    if (host.closest("[data-qa-skip]") || v < 0.05) continue;
     const r = document.createRange();
     r.selectNodeContents(n);
     const box = r.getBoundingClientRect();
@@ -37,6 +43,7 @@ const measure = (): QaItem[] => {
     if (clip && (box.bottom <= clip[0] || box.top >= clip[1])) continue;
     const g = host.closest("[data-qa]") ?? host;
     groups.set(g, [...(groups.get(g) ?? []), box]);
+    ops.set(g, [...(ops.get(g) ?? []), v]);
     // type size and line length, for the phone checks
     const fs = parseFloat(getComputedStyle(host).fontSize);
     fonts.set(g, [...(fonts.get(g) ?? []), fs]);
@@ -46,9 +53,15 @@ const measure = (): QaItem[] => {
     const plate = g.hasAttribute("data-qa") && g.getAttribute("data-qa-text") !== "1";
     const clip = g.closest("[data-qa-clip]")?.getAttribute("data-qa-clip")?.split(",").map(Number);
     const b = (plate ? [g.getBoundingClientRect()] : boxes).map((r) => (clip ? new DOMRect(r.x, Math.max(r.top, clip[0]), r.width, Math.max(0, Math.min(r.bottom, clip[1]) - Math.max(r.top, clip[0]))) : r));
+    const id = g.getAttribute("data-qa") || `${g.tagName.toLowerCase()}:${(g.textContent ?? "").trim().slice(0, 14)}`;
+    const kind = g.getAttribute("data-qa-kind") ?? "text";
+    const cue = g.getAttribute("data-qa-cue");
     return {
-      id: g.getAttribute("data-qa") || `${g.tagName.toLowerCase()}:${(g.textContent ?? "").trim().slice(0, 14)}`,
-      kind: g.getAttribute("data-qa-kind") ?? "text",
+      id,
+      kind,
+      group: g.closest("[data-qa-group]")?.getAttribute("data-qa-group") ?? id,
+      cue: cue ? Number(cue) : null,
+      op: kind === "type" ? Math.min(...ops.get(g)!) : Math.min(1, visible(g)),
       // a label whose job is to move into another one (tickets merging, an order flying into the ladder)
       into: (g.getAttribute("data-qa-into") ?? "").split(",").filter(Boolean),
       minFont: Math.min(...(fonts.get(g) ?? [99])),

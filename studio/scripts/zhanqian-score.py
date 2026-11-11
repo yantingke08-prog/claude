@@ -3,6 +3,10 @@ Original score + sound design + mix for the 战前觉醒 episode. Everything is 
 here (no samples, no third-party audio). Cues come from src/zhanqian/timeline.json, and the event
 frames come from src/zhanqian/events.json, the same file director.ts reads.
 
+v6 sound rules: whoosh / thud only on chapter openings and the two big turns (the dive into the candle, the
+stop chain going off); a data label landing gets one light tick (src/zhanqian/labels.json, written by the
+layout QA); ordinary cuts and annotation cards make no sound.
+
 Writes public/zhanqian/mix.wav (48 kHz stereo, two-pass loudnorm to -14 LUFS, TP <= -1.5 dB).
 """
 import json
@@ -223,7 +227,7 @@ def pad(chord, dur):
 
 
 
-# ------------------------------------------------------------ word timing (same estimate as cue.ts Lc)
+# ------------------------------------------------------------ word timing (same as cue.ts Lc: TTS word marks)
 def _wt(ch):
     return 1.6 if ch in "，。：；？！、" else 0.45 if ch.isascii() and ch.isalpha() else 1.0
 
@@ -231,9 +235,14 @@ def _wt(ch):
 def Lc(i, sub, off=0):
     ln = LN[i]
     k = ln["text"].index(sub)
-    pre = sum(_wt(c) for c in ln["text"][:k])
-    allw = sum(_wt(c) for c in ln["text"])
-    return (round(ln["from"] + (ln["to"] - ln["from"]) * pre / allw) + off) / FPS
+    ms = [[0, ln["from"]], *ln["marks"], [len(ln["text"]), ln["to"]]]
+    j = 0
+    while j + 1 < len(ms) and ms[j + 1][0] <= k:
+        j += 1
+    (i0, f0), (i1, f1) = ms[j], ms[min(j + 1, len(ms) - 1)]
+    w = lambda a, b: sum(_wt(c) for c in ln["text"][a:b])  # noqa: E731
+    fr_ = f0 if i1 <= i0 else round(f0 + (f1 - f0) * w(i0, k) / max(1e-6, w(i0, i1)))
+    return (fr_ + off) / FPS
 
 
 # ------------------------------------------------------------ the film's event schedule (exported from the TS by zhanqian-cues.ts)
@@ -327,36 +336,32 @@ for i, at in enumerate(HOPS):
     mus.add(pluck(57 + [0, 3, 5, 7, 10, 12, 15][i]), at, gain=0.3, verb=0.3)
 # the stops: a fuse under the trigger, then each one goes off
 sfx.add(reverse_swell(0.7), Lc("s3", "触发价") - 0.6, gain=0.3)
-for at, n in MINES:
-    for i in range(n):
-        sfx.add(thud(70 + 6 * i), at + i * 2 * fr, gain=0.4, pan=(i - n / 2) * 0.2)
+for i, (at, n) in enumerate(MINES):
+    sfx.add(thud(70 + 6 * i), at, gain=0.4, pan=(i - 1.5) * 0.2)
     sfx.add(zing(0.5), at, gain=0.12)
 sfx.add(sub_boom(2.2, 64, 30), MINES[-1][0] + 0.2, gain=0.7)
 sfx.add(braam(2.0, 43), MINES[-1][0] + 0.2, gain=0.22, verb=0.35)
 
-# ---- participants: each one arrives with a low note and a bell
-for i, line in enumerate(["p2", "p3", "p4", "p5"]):
-    sfx.add(thud(60 + 8 * i), L(line, -2), gain=0.4)
-    mus.add(chime(57 + [0, 3, 7, 12][i]), L(line, 2), gain=0.16, verb=0.5)
-sfx.add(reverse_swell(0.8), Lc("p6", "但大多数") - 0.8, gain=0.35)
-sfx.add(sub_boom(2.5, 62, 30), Lc("p6", "但大多数"), gain=0.7)
+# ---- participants: no hit per player (their cuts stay silent); the data labels tick below
 
 # ---- the candle again: the path squeezed into four numbers, the two cases side by side
-sfx.add(whoosh(1.0, 3200, 300), Lc("w2", "过程"), gain=0.3)
 for i in range(9):
-    sfx.add(tick(2400), Lc("w3", "可能是") + i * 0.42, gain=0.14)
+    sfx.add(tick(2400), Lc("w3", "可能是") + i * 0.42, gain=0.12)
 for i in range(7):
-    sfx.add(thud(66 + 4 * i), Lc("w4", "止损被") + 0.2 + i * 0.26, gain=0.32)
-sfx.add(sub_boom(2.4, 60, 30), Lc("w5", "结果"), gain=0.5)
+    sfx.add(tick(1500, 0.05), Lc("w4", "止损被") + 0.2 + i * 0.26, gain=0.14)
 
 # ---- recap: three cards, the question, the caveat, next time
 for i, at in enumerate(CUES["recapCards"]):
-    sfx.add(thud(80 + 10 * i), at / FPS, gain=0.45)
-    mus.add(pluck(64 + [0, 3, 7][i]), at / FPS, gain=0.3, verb=0.3)
+    sfx.add(tick(3000), at / FPS, gain=0.1)
+    mus.add(pluck(64 + [0, 3, 7][i]), at / FPS, gain=0.26, verb=0.3)
 mus.add(pad([45, 52, 57, 60, 64], T_END - L("r1") + 0.2), L("r1") - 0.2, gain=0.42, verb=0.5)
-mus.add(chime(57), Lc("r1", "是谁"), gain=0.36, verb=0.5)
-sfx.add(sub_boom(2.6, 58, 28), Lc("r1", "是谁"), gain=0.5)
+mus.add(chime(57), Lc("r1", "是谁"), gain=0.3, verb=0.5)
 mus.add(chime(64), L("r3"), gain=0.34, verb=0.6)
+
+# ---- every data label: one light tick as it lands (no tick for cards, chrome or conclusion type)
+LABELS = ROOT / "src/zhanqian/labels.json"
+for i, lb in enumerate(json.loads(LABELS.read_text(encoding="utf-8")) if LABELS.exists() else []):
+    sfx.add(tick(3600, 0.03), lb["at"] / FPS + 0.1, gain=0.07, pan=0.15 if i % 2 else -0.15)
 # ------------------------------------------------------------ mix
 vo = np.frombuffer(subprocess.run([str(FFMPEG), "-v", "error", "-i", str(ROOT / "public/zhanqian/vo.wav"), "-ac", "1", "-ar", str(SR), "-f", "f32le", "-"], capture_output=True, check=True).stdout, dtype=np.float32).astype(np.float64)
 vo = np.pad(vo, (0, max(0, N - len(vo))))[:N]

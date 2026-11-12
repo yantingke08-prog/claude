@@ -16,7 +16,7 @@ const SLOTS = PRE.length + BREAKDOWN.length; // identical time window both sides
 
 const Side: React.FC<{ x: number; f: number; kind: "down" | "hold" }> = ({ x, f, kind }) => {
   const ch = chapter("hook");
-  const s = makeScale(x + 20, PANEL.y + 80, PANEL.w - 96, 560, SLOTS, 95, 103.5);
+  const s = makeScale(x + 20, PANEL.y + 80, PANEL.w - 112, 560, SLOTS, 95, 103.5);
   const preReveal = keys(f, [[0, 6], [at(ch, 0, 0.7), PRE.length]]);
   // both branches print on the same clock
   const branchReveal = lin(f, at(ch, 0, 0.75), at(ch, 2, 0.9) - at(ch, 0, 0.75)) * BREAKDOWN.length;
@@ -42,8 +42,8 @@ export const Hook: React.FC = () => {
   const f = useCurrentFrame();
   const ch = chapter("hook");
   const push = keys(f, [[0, 1], [ch.dur, 1.03]]);
-  const sL = makeScale(LEFT_X + 20, PANEL.y + 80, PANEL.w - 96, 560, SLOTS, 95, 103.5);
-  const sR = makeScale(RIGHT_X + 20, PANEL.y + 80, PANEL.w - 96, 560, SLOTS, 95, 103.5);
+  const sL = makeScale(LEFT_X + 20, PANEL.y + 80, PANEL.w - 112, 560, SLOTS, 95, 103.5);
+  const sR = makeScale(RIGHT_X + 20, PANEL.y + 80, PANEL.w - 112, 560, SLOTS, 95, 103.5);
   const leftTag = prog(f, at(ch, 1, 0.2), 14);
   const rightTag = prog(f, at(ch, 2, 0.35), 14);
   const same = prog(f, at(ch, 3, 0.05), 16);

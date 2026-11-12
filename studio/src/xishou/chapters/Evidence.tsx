@@ -37,7 +37,7 @@ const ProfileMini: React.FC<{ x: number; y: number; w: number; h: number; p: num
         return (
           <g key={label} opacity={d > 0 ? 1 : 0}>
             <line x1={x} x2={x + w * d} y1={Y(v)} y2={Y(v)} stroke={col} strokeWidth={2} strokeDasharray={v === POC ? undefined : "6 5"} />
-            <text x={x + w} y={Y(v) - 8} fill={col} fontFamily={FONT} fontSize={T.xs} textAnchor="end" opacity={d}>
+            <text x={x + w} y={v === VAH ? Y(v) - 8 : Y(v) + 26} fill={col} fontFamily={FONT} fontSize={T.xs} textAnchor="end" opacity={d}>
               {label} {v.toFixed(2)}
             </text>
           </g>

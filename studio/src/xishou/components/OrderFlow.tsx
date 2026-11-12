@@ -20,6 +20,7 @@ export const DOMLadder: React.FC<{
   const priceW = w * 0.26;
   const sideW = (w - priceW) / 2;
   const maxSize = 1000;
+  const fs = Math.min(T.xs, Math.floor(rh * 0.8));
   return (
     <g opacity={o}>
       <text x={x + sideW / 2} y={y - 14} fill={C.greenText} fontFamily={MONO} fontSize={T.xs - 2} textAnchor="middle">
@@ -46,24 +47,24 @@ export const DOMLadder: React.FC<{
             <rect x={x + sideW - 6 - bidW} y={ry + rh * 0.2} width={bidW} height={rh * 0.6} fill={C.green} opacity={r.isWall ? 0.95 : 0.55} rx={2} />
             {flash > 0 ? <rect x={x + sideW - 6 - bidW} y={ry + rh * 0.2} width={bidW} height={rh * 0.6} fill={C.red} opacity={flash} rx={2} /> : null}
             <rect x={x + sideW + priceW + 6} y={ry + rh * 0.2} width={askW} height={rh * 0.6} fill={C.red} opacity={0.5} rx={2} />
-            <text x={x + 10} y={ry + rh / 2 + 7} fill={r.bid ? C.text : "transparent"} fontFamily={MONO} fontSize={T.xs - 2}>
+            <text x={x + 10} y={ry + rh / 2 + fs * 0.32} fill={r.bid ? C.text : "transparent"} fontFamily={MONO} fontSize={fs - 2}>
               {r.bid || ""}
             </text>
-            <text x={x + w - 10} y={ry + rh / 2 + 7} fill={r.ask ? C.text : "transparent"} fontFamily={MONO} fontSize={T.xs - 2} textAnchor="end">
+            <text x={x + w - 10} y={ry + rh / 2 + fs * 0.32} fill={r.ask ? C.text : "transparent"} fontFamily={MONO} fontSize={fs - 2} textAnchor="end">
               {r.ask || ""}
             </text>
             <text
               x={x + sideW + priceW / 2}
-              y={ry + rh / 2 + 7}
+              y={ry + rh / 2 + fs * 0.35}
               fill={r.isLast ? C.text : r.isWall ? C.amber : C.sub}
               fontFamily={MONO}
               fontWeight={r.isLast || r.isWall ? 700 : 400}
-              fontSize={T.xs}
+              fontSize={fs}
               textAnchor="middle"
             >
               {fmt(r.p)}
             </text>
-            {r.isLast ? <rect x={x + sideW + 4} y={ry + 3} width={priceW - 8} height={rh - 6} fill="none" stroke={C.text} strokeOpacity={0.5} rx={4} /> : null}
+            {r.isLast ? <rect x={x + sideW + 4} y={ry + 1} width={priceW - 8} height={rh - 2} fill="none" stroke={C.text} strokeOpacity={0.5} rx={4} /> : null}
           </g>
         );
       })}

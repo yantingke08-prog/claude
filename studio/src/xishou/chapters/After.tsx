@@ -18,7 +18,7 @@ const SLOTS = F0 + SUCCESS.length;
 export const After: React.FC = () => {
   const f = useCurrentFrame();
   const ch = chapter("after");
-  const s = makeScale(96, 380, 720, 600, SLOTS, 95.75, 103.0);
+  const s = makeScale(96, 380, 660, 600, SLOTS, 95.75, 103.0);
   const y0 = 1170;
   const seal = prog(f, at(ch, 0, 0), 16) * (1 - prog(f, at(ch, 1, 0) - 10, 12));
   const succ = lin(f, at(ch, 1, 0.05), ch.lineStart[3] - ch.lineStart[1]) * SUCCESS.length;
@@ -64,15 +64,15 @@ export const After: React.FC = () => {
   return (
     <AbsoluteFill>
       <Cam s={push} oy={760}>
-        <Panel x={64} y={296} w={812} h={1050} title="吸收之后" en="WHAT HAPPENS NEXT" />
-        <ReplaySlot name={toFail > 0.5 ? "absorption-failure" : "absorption-success"} x={64} y={296} w={812} h={1050} synthetic={chart} tagCorner="right" />
+        <Panel x={64} y={296} w={772} h={1050} title="吸收之后" en="WHAT HAPPENS NEXT" />
+        <ReplaySlot name={toFail > 0.5 ? "absorption-failure" : "absorption-success"} x={64} y={296} w={772} h={1050} synthetic={chart} tagCorner="right" />
         <Tag x={110} y={420} ax={s.X(F0 + 2)} ay={s.Y(reclaimC.h)} text="站回上沿" en="RECLAIM" color={C.greenText} o={reclaimTag * (1 - toFail)} size={T.xs} />
         <Tag x={110} y={482} ax={s.X(F0 + 7)} ay={s.Y(pullC.l) + 30} text="回踩不破 · Delta 转正" color={C.greenText} o={holdTag * (1 - toFail)} size={T.xs} />
         <Tag x={110} y={420} ax={s.X(F0 + 2)} ay={s.Y(breakC.l)} text="跌破下沿" en="BREAK" color={C.redText} o={breakTag * (1 - voidTag)} size={T.xs} />
         <Tag x={110} y={482} ax={s.X(F0 + 9)} ay={s.Y(FAILURE[9].l)} text="承接被吃穿 · 吸收逻辑作废" color={C.redText} o={voidTag * (1 - verdict)} size={T.xs} />
         <svg width={W} height={H} style={{ position: "absolute" }}>
           <EvidenceRail
-            x={1000}
+            x={984}
             y={440}
             h={480}
             steps={steps}

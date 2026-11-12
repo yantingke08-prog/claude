@@ -38,7 +38,7 @@ export const Mechanism: React.FC = () => {
       <svg width={W} height={H} style={{ position: "absolute" }}>
         <defs>
           <clipPath id="xs-mech-clip">
-            <rect x={64} y={340} width={chartW} height={500} />
+            <rect x={64} y={356} width={chartW} height={490} />
           </clipPath>
         </defs>
         <g clipPath="url(#xs-mech-clip)">
@@ -68,7 +68,7 @@ export const Mechanism: React.FC = () => {
       ) : null}
       <Tag x={810} y={862} ax={dom.x + dom.w - 30} ay={wallY} text="主动盘 · 市价卖单" en="INITIATIVE" color={C.redText} o={initTag * (1 - fpIn)} size={T.xs} align="center" />
       <Tag x={300} y={862} ax={dom.x + 120} ay={wallY} text="响应盘 · 限价买单" en="RESPONSIVE" color={C.greenText} o={respTag * (1 - fpIn)} size={T.xs} align="center" />
-      <Tag x={870} y={330} text={`被吃掉 → 补回 ×${Math.max(1, refills)}`} color={C.greenText} o={refillTag} size={T.xs} align="center" />
+      <Tag x={600} y={470} text={`被吃→补回 ×${Math.max(1, refills)}`} color={C.greenText} o={refillTag} size={T.xs} align="center" />
       {fpIn > 0 ? (
         <div style={{ position: "absolute", inset: 0, opacity: fpIn, transform: `translateY(${(1 - fpIn) * 14}px)` }}>
           <Panel x={64} y={904} w={952} h={440} title="足迹图" en="FOOTPRINT · 事后确认" />

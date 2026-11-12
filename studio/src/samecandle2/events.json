@@ -1,0 +1,199 @@
+{
+  "_doc": "Picture and sound share these moments. An event is a frame, or a line id + char index (resolved against timeline.json word marks) + offset frames, or a line id + end:true (the frame the line ends) + offset.",
+  "pull": {
+    "frame": 14
+  },
+  "reveal": {
+    "frame": 40
+  },
+  "grow": {
+    "line": "h2",
+    "char": 3,
+    "off": 0
+  },
+  "laneA": {
+    "line": "h2",
+    "char": 3,
+    "off": 0
+  },
+  "laneB": {
+    "line": "h2",
+    "char": 11,
+    "off": 0
+  },
+  "laneC": {
+    "line": "h3",
+    "char": 5,
+    "off": -5
+  },
+  "rewind": {
+    "line": "w1",
+    "char": 0,
+    "off": 0
+  },
+  "result": {
+    "line": "w2",
+    "char": 9,
+    "off": -6
+  },
+  "three": {
+    "line": "w3",
+    "char": 12,
+    "off": -6
+  },
+  "pos": {
+    "line": "w3",
+    "end": true,
+    "off": 18
+  },
+  "posA": {
+    "line": "p2",
+    "char": 7,
+    "off": -6
+  },
+  "posA2": {
+    "line": "p2",
+    "char": 15,
+    "off": -6
+  },
+  "posB": {
+    "line": "p2",
+    "end": true,
+    "off": 18
+  },
+  "posB2": {
+    "line": "p3",
+    "char": 20,
+    "off": -6
+  },
+  "posC": {
+    "line": "p3",
+    "end": true,
+    "off": 18
+  },
+  "posC2": {
+    "line": "p4",
+    "char": 8,
+    "off": -4
+  },
+  "vol": {
+    "line": "p4",
+    "end": true,
+    "off": 18
+  },
+  "volRise": {
+    "line": "p4",
+    "end": true,
+    "off": 32
+  },
+  "volA": {
+    "line": "v2",
+    "char": 3,
+    "off": -6
+  },
+  "volA2": {
+    "line": "v2",
+    "char": 15,
+    "off": -6
+  },
+  "volB": {
+    "line": "v3",
+    "char": 7,
+    "off": -6
+  },
+  "volB2": {
+    "line": "v3",
+    "char": 13,
+    "off": -6
+  },
+  "volC": {
+    "line": "v4",
+    "char": 3,
+    "off": -6
+  },
+  "volC2": {
+    "line": "v4",
+    "char": 13,
+    "off": -8
+  },
+  "hold": {
+    "line": "v4",
+    "end": true,
+    "off": 18
+  },
+  "laser": {
+    "line": "c2",
+    "char": 12,
+    "off": -6
+  },
+  "holdGrowA": {
+    "line": "c3",
+    "char": 0,
+    "off": 4
+  },
+  "holdA": {
+    "line": "c3",
+    "char": 11,
+    "off": -6
+  },
+  "breakB": {
+    "line": "c4",
+    "char": 2,
+    "off": 2
+  },
+  "holdRestB": {
+    "line": "c4",
+    "char": 14,
+    "off": -6
+  },
+  "holdGrowC": {
+    "line": "c5",
+    "char": 0,
+    "off": 6
+  },
+  "breakC": {
+    "line": "c5",
+    "char": 8,
+    "off": 0
+  },
+  "trap": {
+    "line": "c5",
+    "char": 16,
+    "off": 0
+  },
+  "recap": {
+    "line": "c5",
+    "end": true,
+    "off": 18
+  },
+  "recA": {
+    "line": "r2",
+    "char": 0,
+    "off": -2
+  },
+  "recB": {
+    "line": "r3",
+    "char": 0,
+    "off": -2
+  },
+  "recC": {
+    "line": "r4",
+    "char": 0,
+    "off": -2
+  },
+  "end": {
+    "line": "r4",
+    "end": true,
+    "off": 18
+  },
+  "question": {
+    "line": "e2",
+    "char": 2,
+    "off": 0
+  },
+  "answer": {
+    "line": "e3",
+    "char": 0,
+    "off": 0
+  }
+}

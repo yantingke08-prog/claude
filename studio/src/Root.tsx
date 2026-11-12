@@ -19,6 +19,8 @@ import { ZhanqianCover, ZhanqianFilm } from "./zhanqian/Film";
 import { FRAMES as ZQ_FRAMES, FPS as ZQ_FPS } from "./zhanqian/cue";
 import { SameCandleCover, SameCandleFilm } from "./samecandle/Film";
 import { FRAMES as SC_FRAMES, FPS as SC_FPS } from "./samecandle/cue";
+import { SameCandle2Cover, SameCandle2Film } from "./samecandle2/Film";
+import { FRAMES as SC2_FRAMES, FPS as SC2_FPS } from "./samecandle2/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -57,6 +59,10 @@ export const RemotionRoot: React.FC = () => (
     <Folder name="SameCandle">
       <Composition id="SameCandle" component={SameCandleFilm} durationInFrames={SC_FRAMES} fps={SC_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
       <Still id="SameCandleCover" component={SameCandleCover} width={1080} height={1920} />
+      <Composition id="SameCandle2" component={SameCandle2Film} durationInFrames={SC2_FRAMES} fps={SC2_FPS} width={1080} height={1920} defaultProps={{ muted: false, dpr: 1 }} />
+      <Still id="SameCandle2Cover" component={SameCandle2Cover} width={1080} height={1920} defaultProps={{ dpr: 1 }} />
+      <Composition id="SameCandle2K" component={SameCandle2Film} durationInFrames={SC2_FRAMES} fps={SC2_FPS} width={1440} height={2560} defaultProps={{ muted: false, dpr: 1 }} />
+      <Still id="SameCandle2Cover2K" component={SameCandle2Cover} width={1440} height={2560} defaultProps={{ dpr: 1 }} />
     </Folder>
     <Folder name="Fakeout-v6">
       <Composition id="FakeoutV6" component={FakeoutFilm} durationInFrames={FO_FRAMES} fps={FO_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />

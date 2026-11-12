@@ -47,7 +47,19 @@
     "zq:qc": "python scripts/breakout-qc.py \"D:/claude视频/zhanqian-awakening-ep01-v6.mp4\" 170 175",
     "zq:qc:2k": "python scripts/breakout-qc.py \"D:/claude视频/zhanqian-awakening-ep01-v6-2k.mp4\" 170 175",
     "zq:qc:4k": "python scripts/breakout-qc.py \"D:/claude视频/zhanqian-awakening-ep01-v6-4k.mp4\" 170 175",
-    "zq:layout": "node scripts/zhanqian-qa.mjs 2"
+    "zq:layout": "node scripts/zhanqian-qa.mjs 2",
+    "sc:vo": "python scripts/samecandle-vo.py",
+    "sc:audio": "python scripts/samecandle-score.py",
+    "sc:srt": "python scripts/samecandle-srt.py",
+    "sc:stills": "node scripts/breakout-stills.mjs SameCandle out/samecandle/stills 0 40 120 320 650 1060 1560 1915 2330 2500",
+    "sc:prep": "node -e \"const fs=require('fs');fs.mkdirSync('D:/claude视频',{recursive:true});fs.copyFileSync('../outputs-samecandle-v1/subtitles.srt','D:/claude视频/same-candle-v1.srt')\"",
+    "sc:render": "remotion render SameCandle \"D:/claude视频/same-candle-v1.mp4\" --gl=angle --concurrency=50% --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sc:render:cpu": "remotion render SameCandle \"D:/claude视频/same-candle-v1.mp4\" --gl=swangle --concurrency=2 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sc:cover": "remotion still SameCandleCover \"D:/claude视频/same-candle-v1-cover.png\" --gl=angle",
+    "sc:cover:cpu": "remotion still SameCandleCover \"D:/claude视频/same-candle-v1-cover.png\" --gl=swangle",
+    "sc:verify": "node scripts/samecandle-verify.mjs \"D:/claude视频/same-candle-v1.mp4\" \"D:/claude视频/same-candle-v1-cover.png\" 60 90",
+    "sc:make": "npm run sc:prep && npm run sc:render && npm run sc:cover && npm run sc:verify",
+    "sc:make:cpu": "npm run sc:prep && npm run sc:render:cpu && npm run sc:cover:cpu && npm run sc:verify"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

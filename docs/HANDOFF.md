@@ -2,17 +2,17 @@
 
 | 项 | 值 |
 |---|---|
-| 仓库 | __REPO_URL__ |
+| 仓库 | https://github.com/yantingke08-prog/claude.git |
 | 分支 | `xishou-v1` |
-| 源码提交 | `__COMMIT__` |
+| 源码提交 | `f072316`（下一个提交只更新本文档） |
 | Composition | `XishouLVP`（1080×1920 · 30fps · 4678 帧 ≈ 155.9 s） |
 | 入口 | `studio/src/xishou/index.ts`（只打包本片，渲染时不联网） |
-| 已渲染完整成片 | **NO**（云端只跑了类型检查、lint、compositions 和 4 张单帧） |
+| 已渲染完整成片 | **NO**（云端只跑了类型检查、lint、compositions，以及第 262 / 1412 / 1869 / 2669 帧的单帧检查） |
 
 ## 安装
 
 ```powershell
-git clone __REPO_URL__
+git clone https://github.com/yantingke08-prog/claude.git
 cd <repo-directory>
 git fetch origin
 git switch --track origin/xishou-v1

@@ -22,7 +22,16 @@
     "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
     "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
     "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
-    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
+    "xs:studio": "remotion studio src/xishou/index.ts",
+    "xs:typecheck": "tsc --noEmit",
+    "xs:lint": "node scripts/xishou-lint.mjs",
+    "xs:compositions": "remotion compositions src/xishou/index.ts",
+    "xs:stills": "remotion still src/xishou/index.ts XishouLVP out/xishou/f0262.png --frame=262 && remotion still src/xishou/index.ts XishouLVP out/xishou/f1412.png --frame=1412 && remotion still src/xishou/index.ts XishouLVP out/xishou/f1869.png --frame=1869 && remotion still src/xishou/index.ts XishouLVP out/xishou/f2669.png --frame=2669",
+    "xs:prep": "node -e \"require('fs').mkdirSync('D:/claude视频',{recursive:true})\"",
+    "xs:render": "remotion render src/xishou/index.ts XishouLVP \"D:/claude视频/吸收_LVP订单流_xishou-v1.mp4\" --gl=angle --concurrency=50% --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "xs:render:cpu": "remotion render src/xishou/index.ts XishouLVP \"D:/claude视频/吸收_LVP订单流_xishou-v1.mp4\" --gl=swangle --concurrency=2 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "xs:make": "npm run xs:prep && npm run xs:render"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

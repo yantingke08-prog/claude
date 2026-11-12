@@ -1,5 +1,5 @@
 // Verifies the rendered 《同一根大阳线》 MP4 (and cover) using the ffprobe/ffmpeg bundled with Remotion.
-// Usage: node scripts/samecandle-verify.mjs <video.mp4> [cover.png] [minSec=60] [maxSec=90]
+// Usage: node scripts/samecandle-verify.mjs <video.mp4> [cover.png] [minSec=60] [maxSec=90] [width=1080]
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 
@@ -41,7 +41,7 @@ if (cover) {
   ok(fs.existsSync(cover), `cover exists: ${cover}`);
   if (fs.existsSync(cover)) {
     const c = JSON.parse(run(["ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "json", q(cover)]));
-    ok(c.streams[0].width === 1080 && c.streams[0].height === 1920, `cover 1080×1920`);
+    ok(c.streams[0].width === WW && c.streams[0].height === WH, `cover ${WW}×${WH} (got ${c.streams[0].width}×${c.streams[0].height})`);
   }
 }
 if (fail.length) {

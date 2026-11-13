@@ -21,6 +21,8 @@ import { SameCandleCover, SameCandleFilm } from "./samecandle/Film";
 import { FRAMES as SC_FRAMES, FPS as SC_FPS } from "./samecandle/cue";
 import { SameCandle3Cover, SameCandle3Film, SameCandle3Phone } from "./samecandle3/Film";
 import { FRAMES as SC3_FRAMES, FPS as SC3_FPS } from "./samecandle3/cue";
+import { SameCandle4Cover, SameCandle4Film, SameCandle4Phone } from "./samecandle4/Film";
+import { FRAMES as SC4_FRAMES, FPS as SC4_FPS } from "./samecandle4/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -63,6 +65,11 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="SameCandle3K" component={SameCandle3Film} durationInFrames={SC3_FRAMES} fps={SC3_FPS} width={1440} height={2560} defaultProps={{ muted: false }} />
       <Still id="SameCandle3Cover" component={SameCandle3Cover} width={1080} height={1920} />
       <Still id="SameCandle3Cover2K" component={SameCandle3Cover} width={1440} height={2560} />
+      <Composition id="SameCandle4" component={SameCandle4Film} durationInFrames={SC4_FRAMES} fps={SC4_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
+      <Composition id="SameCandle4K" component={SameCandle4Film} durationInFrames={SC4_FRAMES} fps={SC4_FPS} width={1440} height={2560} defaultProps={{ muted: false }} />
+      <Still id="SameCandle4Cover" component={SameCandle4Cover} width={1080} height={1920} />
+      <Still id="SameCandle4Cover2K" component={SameCandle4Cover} width={1440} height={2560} />
+      <Composition id="SameCandle4Phone" component={SameCandle4Phone} durationInFrames={SC4_FRAMES} fps={SC4_FPS} width={1080} height={1920} />
       <Composition id="SameCandle3Phone" component={SameCandle3Phone} durationInFrames={SC3_FRAMES} fps={SC3_FPS} width={1080} height={1920} />
     </Folder>
     <Folder name="Fakeout-v6">

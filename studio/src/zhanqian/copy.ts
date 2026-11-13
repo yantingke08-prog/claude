@@ -52,6 +52,9 @@ export const C = {
   liquidity: "流动性 = 可以成交的挂单",
   active: ["主动订单", "不等 · 直接吃掉挂单", "消耗流动性"],
   eatAsk: "卖一剩余",
+  /** in-shot focus labels on the 3D book (o.passive / o.eat) */
+  waitLiq: ["等待流动性", "挂单排队 · 不主动成交"],
+  takeLiq: ["消耗流动性", "主动买单吃掉卖一"],
   step: ["一档吃光", "价格 +1 档"],
   last: "最新价",
   hopTable: ["档位", "挂单", "被吃光", "价格"],
@@ -65,6 +68,7 @@ export const C = {
   priorHigh: "前高",
   shortMark: "空",
   stopCluster: ["空头止损买单", "堆在前高上方"],
+  buyStop: "BUY STOP",
   trigger: "触发价",
   toTrigger: "距触发",
   ticksUnit: "跳",

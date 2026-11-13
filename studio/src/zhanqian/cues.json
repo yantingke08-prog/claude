@@ -169,14 +169,6 @@
    "trans": null
   },
   {
-   "at": 1310,
-   "lay": "o.passiveLadder",
-   "world": "flat",
-   "flash": null,
-   "part": 0,
-   "trans": null
-  },
-  {
    "at": 1363,
    "lay": "o.case2",
    "world": "book",
@@ -188,14 +180,6 @@
    "at": 1451,
    "lay": "o.eat",
    "world": "book",
-   "flash": null,
-   "part": 0,
-   "trans": null
-  },
-  {
-   "at": 1515,
-   "lay": "o.eatLadder",
-   "world": "flat",
    "flash": null,
    "part": 0,
    "trans": null
@@ -270,14 +254,6 @@
    "world": "flat",
    "flash": "#ff8a1f",
    "part": 0,
-   "trans": null
-  },
-  {
-   "at": 2105,
-   "lay": "s.chart",
-   "world": "flat",
-   "flash": null,
-   "part": 1,
    "trans": null
   },
   {
@@ -494,14 +470,6 @@
    "world": "anatomy",
    "flash": null,
    "part": 0,
-   "trans": null
-  },
-  {
-   "at": 3813,
-   "lay": "w.same",
-   "world": "anatomy",
-   "flash": null,
-   "part": 1,
    "trans": null
   },
   {
@@ -913,82 +881,82 @@
   {
    "side": "bid",
    "k": -1,
-   "at": 402
+   "at": 396
   },
   {
    "side": "bid",
    "k": -2,
-   "at": 408
+   "at": 399
   },
   {
    "side": "bid",
    "k": -3,
-   "at": 414
+   "at": 402
   },
   {
    "side": "bid",
    "k": -4,
-   "at": 420
+   "at": 405
   },
   {
    "side": "bid",
    "k": -5,
-   "at": 426
+   "at": 408
   },
   {
    "side": "bid",
    "k": -6,
-   "at": 432
+   "at": 411
   },
   {
    "side": "ask",
    "k": 1,
-   "at": 436
+   "at": 432.2
   },
   {
    "side": "ask",
    "k": 2,
-   "at": 440
+   "at": 434.4
   },
   {
    "side": "ask",
    "k": 3,
-   "at": 444
+   "at": 436.6
   },
   {
    "side": "ask",
    "k": 4,
-   "at": 448
+   "at": 438.8
   },
   {
    "side": "ask",
    "k": 5,
-   "at": 452
+   "at": 441
   },
   {
    "side": "ask",
    "k": 6,
-   "at": 456
+   "at": 443.2
   },
   {
    "side": "ask",
    "k": 7,
-   "at": 460
+   "at": 445.4
   },
   {
    "side": "ask",
    "k": 8,
-   "at": 464
+   "at": 447.6
   },
   {
    "side": "ask",
    "k": 9,
-   "at": 468
+   "at": 449.8
   },
   {
    "side": "ask",
    "k": 10,
-   "at": 472
+   "at": 452
   }
  ],
  "refills": [

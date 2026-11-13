@@ -7,8 +7,8 @@
 // Every shot moves from camera a to camera b; shots are joined by hard cuts (some with a colour flash),
 // and any shot longer than SPLIT frames is cut in two so no framing holds for more than ~3.3 s.
 import * as THREE from "three";
-import { HOPS, STOP_HOPS, beadK, ky } from "./book";
-import { FPS, FRAMES, L, Lc, Le, S, cubicInOut, pulse } from "./cue";
+import { HOPS, PASSIVE_AT, STOP_HOPS, beadK, ky } from "./book";
+import { FPS, FRAMES, L, Lc, Le, S, cubicInOut, pulse, span } from "./cue";
 
 export const X = { hook: 0, book: 300, table: 600, anatomy: 900, flat: 0 };
 export const FOV = 34;
@@ -17,8 +17,12 @@ type Cam = [V3, V3];
 export type World = keyof typeof X;
 export type Lay = string;
 /** trans "morph": no cut into this shot; the camera carries on from the last one and the HUD wipes over it.
- *  hold: never split this shot (the camera keeps moving instead) */
-type Shot = { at: number; w: World; a: Cam; b?: Cam; lay: Lay; flash?: string; fov?: number; trans?: "morph"; hold?: boolean; ci?: number };
+ *  hold: never split this shot (the camera keeps moving instead)
+ *  ease "inout": slow in and slow out over the whole shot (default is a near-linear drift that settles)
+ *  push: inside the same shot, from frame `at` the camera eases (over `d` frames) onto `to` — a focus push
+ *        with no cut; the a→b drift keeps running underneath so the move never stops dead */
+type Push = { at: number; to: Cam; d?: number };
+type Shot = { at: number; w: World; a: Cam; b?: Cam; lay: Lay; flash?: string; fov?: number; trans?: "morph"; hold?: boolean; ci?: number; ease?: "inout"; push?: Push };
 
 // pieces on the sand table (table-local x, z)
 export const PIECES = { mm: [-4.3, -3.2], inst: [4.3, -3.2], hedge: [-4.3, 3.6], short: [4.3, 3.6] } as const;
@@ -41,6 +45,17 @@ const CAVEAT_END: Cam = [
 const FLAT: Cam = [
   [0, 0, 10],
   [0, 0, 0],
+];
+
+/** focus pushes (o.passive onto 买一, o.eat onto 卖一): gentle, ~25 % closer, so the wall keeps air above
+ *  and below it on a phone instead of filling the frame */
+const PASSIVE_PUSH: Cam = [
+  [-4.9, 0.1, 15.6],
+  [0, -1.2, 0.5],
+];
+const EAT_PUSH: Cam = [
+  [4, 2, 14.6],
+  [1.1, 1.1, 0.2],
 ];
 
 const SH: Shot[] = [
@@ -66,11 +81,10 @@ const SH: Shot[] = [
   // ---------------- three kinds of order
   { at: L("o1") - 4, w: "flat", a: FLAT, lay: "o.three", flash: "#ffffff" },
   { at: L("o2") - 2, w: "book", a: [[5.2, -2.6, 15.5], [0, -2.4, 0]], b: [[3.8, -2.2, 12], [0, -2.2, 0]], lay: "o.case1" },
-  { at: Lc("o2", "它挂着") - 2, w: "book", a: [[-4.4, -0.6, 13], [0, -1.4, 0]], b: [[-3.2, -1, 10.5], [0, -1.6, 0]], lay: "o.passive" },
-  { at: Lc("o2", "提供") - 2, w: "flat", a: FLAT, lay: "o.passiveLadder" },
+  // passive / eat: one continuous 3D shot each; the "liquidity" beat is a framed push onto 买一 / 卖一, not a cut to 2D
+  { at: Lc("o2", "它挂着") - 2, w: "book", a: [[-6.6, 0.8, 21], [0, -1.3, 0]], b: [[-6.2, 0.7, 20], [0, -1.3, 0]], lay: "o.passive", hold: true, push: { at: PASSIVE_AT + 10, to: PASSIVE_PUSH, d: 70 } },
   { at: L("o3") - 2, w: "book", a: [[-1.8, -6, 13], [0, 1, 0]], b: [[-1.2, -4, 10.4], [0, 1, 0]], lay: "o.case2", flash: "#f2bd62" },
-  { at: Lc("o3", "直接吃掉") - 2, w: "book", a: [[3, 1.7, 10], [0, 1.1, 0]], b: [[2, 1.4, 7.8], [0, 1.1, 0]], lay: "o.eat" },
-  { at: Lc("o3", "消耗") - 2, w: "flat", a: FLAT, lay: "o.eatLadder" },
+  { at: Lc("o3", "直接吃掉") - 2, w: "book", a: [[5.2, 2.6, 20], [0.6, 1.1, 0]], b: [[4.9, 2.5, 19], [0.6, 1.1, 0]], lay: "o.eat", hold: true, push: { at: Lc("o3", "直接吃掉") + 8, to: EAT_PUSH, d: 70 } },
   { at: L("o4") - 2, w: "book", a: [[7, 1.2, 18], [0, 1.2, 0]], b: [[5.6, 1.6, 14.5], [0, 1.4, 0]], lay: "o.hop" },
   { at: L("o5") - 2, w: "book", a: [[-4.6, 2.4, 17], [0, 2, 0]], b: [[-3, 2.8, 13], [0, 2.2, 0]], lay: "o.hop2" },
   { at: Lc("o5", "这就是") - 2, w: "flat", a: FLAT, lay: "o.chain" },
@@ -78,7 +92,7 @@ const SH: Shot[] = [
   // ---------------- stops
   { at: L("s1") - 2, w: "book", a: [[11, 4.2, -9], [0, 4.4, -1.7]], b: [[8.4, 4.6, -8.6], [0, 4.6, -1.7]], lay: "s.hidden" },
   { at: Lc("s1", "像埋好") - 2, w: "book", a: [[3.4, 3.6, -6.4], [0, 3.2, -1.7]], b: [[2.4, 3.4, -5.2], [0, 3.2, -1.7]], lay: "s.mine" },
-  { at: L("s2") - 2, w: "flat", a: FLAT, lay: "s.chart", flash: "#ff8a1f" },
+  { at: L("s2") - 2, w: "flat", a: FLAT, lay: "s.chart", flash: "#ff8a1f", hold: true },
   { at: L("s3") - 2, w: "book", a: [[5, 3.4, 9], [0, 3.6, 0]], b: [[3.6, 3.6, 7], [0, 3.8, 0]], lay: "s.trigger" },
   { at: CONVERT_AT(), w: "book", a: [[6, 3, 15], [0, 3.6, -0.8]], b: [[4.8, 3.6, 12], [0, 3.8, -0.8]], lay: "s.convert", flash: "#ff8a1f" },
   { at: L("s4") - 2, w: "book", a: [[2.2, 4.8, 6.5], [0, 5.4, -1]], b: [[1.6, 5.4, 5.4], [0, 5.6, -1]], lay: "s.boom1", flash: "#ff8a1f" },
@@ -105,7 +119,7 @@ const SH: Shot[] = [
   // split view: the candles sit between the case labels and the path charts, so the cut-in only swings (ci 1)
   { at: L("w3") - 2, w: "anatomy", a: [[-1.5, 4.8, 54], [0, 1.6, 0]], b: [[-1.5, 4.8, 51], [0, 1.6, 0]], lay: "w.caseA", flash: "#7fa8ff", ci: 1 },
   { at: L("w4") - 2, w: "anatomy", a: [[1.5, 4.8, 51], [0, 1.6, 0]], b: [[1.5, 4.8, 54], [0, 1.6, 0]], lay: "w.caseB", ci: 1 },
-  { at: L("w5") - 2, w: "anatomy", a: [[-1, 8, 78], [0.5, 4.5, 0]], b: [[1.5, 8.4, 74], [0.5, 4.5, 0]], lay: "w.same" },
+  { at: L("w5") - 2, w: "anatomy", a: [[-1, 8, 78], [0.5, 4.5, 0]], b: [[1.5, 8.4, 74], [0.5, 4.5, 0]], lay: "w.same", hold: true, ease: "inout" },
   // ---------------- recap
   { at: Le("w5") + 4, w: "flat", a: FLAT, lay: "r.k1", flash: "#ff3b4e" },
   { at: Le("w5") + 17, w: "flat", a: FLAT, lay: "r.k2", flash: "#f2bd62" },
@@ -164,11 +178,18 @@ export const direct = (f: number): Dir => {
   const t = f / FPS;
   const s = shotAt(f);
   const u = Math.min(1, Math.max(0, (f - s.at) / Math.max(1, s.end - s.at)));
-  const k = 0.45 * u + 0.55 * cubicInOut(u);
+  const k = s.ease === "inout" ? cubicInOut(u) : 0.45 * u + 0.55 * cubicInOut(u);
   const world = s.w;
   const o = new THREE.Vector3(X[world], 0, 0);
-  const pos = new THREE.Vector3(...s.a[0]).lerp(new THREE.Vector3(...(s.b ?? s.a)[0]), k).add(o);
-  const target = new THREE.Vector3(...s.a[1]).lerp(new THREE.Vector3(...(s.b ?? s.a)[1]), k).add(o);
+  const pos = new THREE.Vector3(...s.a[0]).lerp(new THREE.Vector3(...(s.b ?? s.a)[0]), k);
+  const target = new THREE.Vector3(...s.a[1]).lerp(new THREE.Vector3(...(s.b ?? s.a)[1]), k);
+  if (s.push) {
+    const w = span(f, s.push.at, s.push.at + (s.push.d ?? 60), cubicInOut);
+    pos.lerp(new THREE.Vector3(...s.push.to[0]), w);
+    target.lerp(new THREE.Vector3(...s.push.to[1]), w);
+  }
+  pos.add(o);
+  target.add(o);
   if (world === "book") {
     const y = ky(beadK(f)) * 0.75;
     pos.y += y;

@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { CameraRig } from "../components/Stage";
 import { mulberry32 } from "../lib/rng";
-import { BW, FIRST_HIT, HOPS, LEVELS, MINES, MINES_IN, PASSIVE, PASSIVE_AT, REFILLS, beadK, hitAt, isStop, ky } from "./book";
+import { BW, FIRST_HIT, HOPS, LEVELS, WALL_DROP, WALL_STAG, MINES, MINES_IN, PASSIVE, PASSIVE_AT, REFILLS, beadK, hitAt, isStop, ky } from "./book";
 import { FPS, L, Lc, Le, S, clamp01, cubicInOut, expoOut, hold, pulse, smooth, span } from "./cue";
 import { CASE_X, PIECES, X, type Dir } from "./director";
 
@@ -184,19 +184,19 @@ const Hook: React.FC<{ d: Dir }> = ({ d }) => {
 type BrickAt = { x: number; y: number; z: number; s: number; col: THREE.Color; glow: number };
 const RED = new THREE.Color("#d92a3e");
 const GRN = new THREE.Color("#12a86a");
-const dropIn = (f: number, at: number) => span(f, at, at + 12, expoOut);
+const dropIn = (f: number, at: number, d = 12) => span(f, at, at + d, expoOut);
 
 const brickState = (f: number) => {
   const out: BrickAt[] = [];
   const comets: { from: THREE.Vector3; to: THREE.Vector3; u: number; stop: boolean }[] = [];
   const passivePulse = hold(f, PASSIVE_AT - 4, PASSIVE_AT + 70, 12);
   for (const l of LEVELS) {
-    const appear = dropIn(f, l.at);
+    const appear = dropIn(f, l.at, WALL_DROP);
     if (appear <= 0) continue;
     const y = ky(l.k);
     for (let j = 0; j < l.n; j++) {
       const x = (j - (l.n - 1) / 2) * BW;
-      const stag = dropIn(f, l.at + j * 1.1);
+      const stag = dropIn(f, l.at + j * WALL_STAG, WALL_DROP);
       if (stag <= 0) continue;
       let s = stag;
       let glow = l.side === "bid" ? passivePulse * 0.35 : 0;

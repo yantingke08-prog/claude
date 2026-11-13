@@ -289,6 +289,8 @@ for i, c in enumerate(SHOTS):
     if c.get("trans") == "morph":  # no cut: the wipe into the footprint gets a long, soft sweep
         sfx.add(whoosh(0.7, 300, 3800), at - 0.1, gain=0.18)
         continue
+    if c["lay"].startswith("r.k"):  # the three recap cards flip ~0.4 s apart: no air on them, only the
+        continue  # low thud + pluck scored in the recap block below (three whooshes read as "唰唰唰")
     if c["flash"]:
         sfx.add(whoosh(0.35, 400, 5200), at - 0.18, gain=0.2, pan=0.2 if i % 2 else -0.2)
         sfx.add(thud(90), at, gain=0.18)

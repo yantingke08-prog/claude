@@ -15,9 +15,13 @@ export type Side = "bid" | "ask";
 export type Level = { side: Side; k: number; n: number; at: number };
 const NS = [9, 7, 10, 8, 6, 5, 4, 5, 8, 11];
 
-/** when the walls go up (each level lands a little after the one nearer the middle) */
-export const bidAt = (k: number) => Lc("a2", "买方") + 6 + -k * 6;
-export const askAt = (k: number) => Lc("a2", "卖方") + 4 + k * 4;
+/** when the walls go up (each level lands a little after the one nearer the middle). Kept quick so both
+ *  walls are standing ~2 s before "两堵墙" ends: bids done ≈ 14.2 s, asks done ≈ 15.6 s, a3 starts 17.8 s */
+export const bidAt = (k: number) => Lc("a2", "买方") + 3 + -k * 3;
+export const askAt = (k: number) => Lc("a2", "卖方") + 2 + k * 2.2;
+/** frames between bricks on one wall level, and how long one brick takes to drop in */
+export const WALL_STAG = 0.6;
+export const WALL_DROP = 8;
 export const LEVELS: Level[] = [
   ...[-1, -2, -3, -4, -5, -6].map((k) => ({ side: "bid" as const, k, n: [10, 8, 11, 7, 9, 10][-k - 1], at: bidAt(k) })),
   ...NS.map((n, i) => ({ side: "ask" as const, k: i + 1, n, at: askAt(i + 1) })),
@@ -100,7 +104,7 @@ export const sizeAt = (f: number, side: Side, k: number) => {
   let q = 0;
   for (const l of LEVELS) {
     if (l.side !== side || l.k !== k) continue;
-    for (let j = 0; j < l.n; j++) if (f >= l.at + j * 1.1 && f < hitAt(k, j)) q += lots(k, j);
+    for (let j = 0; j < l.n; j++) if (f >= l.at + j * WALL_STAG && f < hitAt(k, j)) q += lots(k, j);
   }
   if (side === "bid") {
     for (const r of [...REFILLS, ...PASSIVE].filter((r) => r.k === k)) for (let j = 0; j < r.n; j++) if (f >= r.at + j * 1.4) q += lots(k + 40, j);

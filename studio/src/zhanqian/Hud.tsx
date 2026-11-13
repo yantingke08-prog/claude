@@ -2,6 +2,7 @@
 // Rules carried over from earlier reviews: no narrative text appears before the narration reaches it, and
 // anything over a busy picture sits on a solid plate with a thin glowing edge. Each shot has one focus;
 // the panels around it come and go with the shot (hard cuts), not all at once.
+import React from "react";
 import { useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { C } from "./copy";
@@ -89,12 +90,13 @@ const Statement: React.FC<{ f: number; lines: SLine[]; end: number; top: number;
 };
 
 /** a plate pinned to a screen point: ring, leader, then title and notes */
-const Tag: React.FC<{ f: number; a: number; b: number; at: P; plate: P; side: "l" | "r"; color?: string; title: string; notes?: [string, number][]; size?: number; mono?: boolean }> = ({ f, a, b, at, plate, side, color = PAL.gold, title, notes = [], size = 46, mono: m }) => {
+const Tag: React.FC<{ f: number; a: number; b: number; at: P; plate: P; side: "l" | "r"; color?: string; title: string; notes?: [string, number][]; size?: number; mono?: boolean; fast?: boolean }> = ({ f, a, b, at, plate, side, color = PAL.gold, title, notes = [], size = 46, mono: m, fast }) => {
   const { width, height } = useVideoConfig();
   const out = 1 - span(f, b - 4, b, smooth);
   if (f < a || f >= b || out < 0.01) return null;
-  const draw = span(f, a + 1, a + 9, smooth);
-  const kp = span(f, a + 6, a + 14, expoOut);
+  // fast: ring, leader and plate are all in within ~0.2 s (6 f) instead of ~0.45 s
+  const draw = fast ? span(f, a, a + 4, smooth) : span(f, a + 1, a + 9, smooth);
+  const kp = fast ? span(f, a + 1, a + 6, expoOut) : span(f, a + 6, a + 14, expoOut);
   // the plate must fit: flip to the other side of the anchor if it runs off, then clamp into the safe area
   const pw = Math.max(tw(title, size), ...notes.map(([n]) => tw(n, 34))) + 50;
   const ph = size * 1.2 + notes.length * 34 * 1.3 + 26;
@@ -168,6 +170,48 @@ const Corners: React.FC<{ f: number; a: number; x0: number; y0: number; x1: numb
       </svg>
       {label && <div data-qa={`corners:${label}`} style={{ position: "absolute", left: x0 - g, top: y0 - g - 54, ...mono(), fontSize: 28, letterSpacing: 4, color, opacity: k, padding: "2px 12px", background: "rgba(6,8,14,0.86)", border: `1px solid ${color}88`, borderRadius: 6 }}>{label}</div>}
     </>
+  );
+};
+
+/** an in-shot focus: corner brackets that track a 3D box (its 8 corners projected every frame, so the box
+ *  rides the camera push), plus one label plate under it (or over it when there is no room below) */
+type Box3 = [[number, number, number], [number, number, number]];
+const Focus: React.FC<{ f: number; a: number; b: number; pr: Proj; box: Box3; color: string; title: string; note?: [string, number]; labelAt?: number; align?: "c" | "r" }> = ({ f, a, b, pr, box, color, title, note, labelAt, align = "c" }) => {
+  const out = 1 - span(f, b - 5, b, smooth);
+  if (f < a || out < 0.01) return null;
+  const [[ax, ay, az], [bx, by, bz]] = box;
+  const pts = [ax, bx].flatMap((x) => [ay, by].flatMap((y) => [az, bz].map((z) => pr(x, y, z))));
+  const pad = 14;
+  const x0 = clampN(Math.min(...pts.map((p) => p.x)) - pad, SAFE.l + 6, SAFE.r - 6),
+    x1 = clampN(Math.max(...pts.map((p) => p.x)) + pad, SAFE.l + 6, SAFE.r - 6),
+    y0 = clampN(Math.min(...pts.map((p) => p.y)) - pad, STRIP + 10, LOW - 10),
+    y1 = clampN(Math.max(...pts.map((p) => p.y)) + pad, STRIP + 10, LOW - 10);
+  const la = labelAt ?? a + 6;
+  const kp = span(f, la, la + 7, expoOut);
+  const TS = 54,
+    NS = 34;
+  const pw = Math.max(tw(title, TS), note ? tw(note[0], NS) : 0) + 56;
+  const ph = TS * 1.2 + (note ? NS * 1.35 : 0) + 30;
+  // below the box if it fits above the caption band, else above it; centred on the box, kept in the safe area
+  const below = y1 + 34 + ph <= LOW;
+  const ly = below ? y1 + 34 : Math.max(STRIP + 10, y0 - 34 - ph);
+  const lx = clampN(align === "r" ? x1 - pw : (x0 + x1) / 2 - pw / 2, SAFE.l, SAFE.r - pw);
+  const lc = clampN(lx + pw / 2, x0 + 20, x1 - 20); // leader x: under the label, inside the box
+  const kn = note ? fin(f, note[1]) : 0;
+  return (
+    <div style={{ position: "absolute", inset: 0, opacity: out }}>
+      <div style={{ position: "absolute", left: x0, top: y0, width: x1 - x0, height: y1 - y0, background: `${color}14`, opacity: span(f, a, a + 10), borderRadius: 6 }} />
+      <Corners f={f} a={a} x0={x0} y0={y0} x1={x1} y1={y1} color={color} />
+      {kp > 0.01 && (
+        <svg width={1080} height={1920} style={{ position: "absolute", inset: 0, opacity: kp }}>
+          <line x1={lc} x2={lc} y1={below ? y1 + 4 : y0 - 4} y2={below ? ly : ly + ph} stroke={color} strokeWidth={2.5} />
+        </svg>
+      )}
+      <div data-qa={`tag:${title}`} data-qa-kind="card" style={{ position: "absolute", left: lx, top: ly, width: pw, boxSizing: "border-box", padding: "10px 28px 14px", borderRadius: 14, textAlign: "center", whiteSpace: "nowrap", opacity: kp, transform: `translateY(${(1 - kp) * (below ? 14 : -14)}px)`, ...FX(color) }}>
+        <div style={{ ...serif(), fontSize: TS, lineHeight: 1.2, color, textShadow: `0 0 18px ${color}88` }}>{title}</div>
+        {note && <div style={{ ...sans(500), fontSize: NS, lineHeight: 1.35, color: SOFT, opacity: kn, transform: `translateY(${(1 - kn) * 8}px)` }}>{note[0]}</div>}
+      </div>
+    </div>
   );
 };
 
@@ -453,7 +497,7 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   const bk = beadK(f);
   // panels per shot: ladder right, tape left, spread top, volume bottom
   const ladder = is("a.bids", "a.asks", "a.board", "a.urgent", "a.urgent2", "o.eat", "o.hop", "o.hop2", "s.hidden", "s.trigger", "s.convert", "s.after");
-  const tape = is("a.board", "a.trade", "a.urgent", "o.eat", "s.convert", "s.boom2");
+  const tape = is("a.board", "a.trade", "a.urgent", "s.convert", "s.boom2");
   const vol = is("a.board", "a.urgent", "a.urgent2", "o.eat", "s.after", "s.boom2");
   const spread = is("a.board", "a.gap", "a.trade", "a.urgent");
   const types = f >= L("o1") && f < S("players") && !is("o.three", "o.chain", "s.chart", "s.sweep");
@@ -462,7 +506,7 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
   return (
     <>
       {ladder && <Ladder f={f} x={SAFE.r - 300} y={MAIN + 10} w={300} row={42} k={fin(f, s0, 6)} hidden={is("s.hidden", "s.trigger")} mark={is("o.eat") ? [{ side: "ask", k: 1, color: PAL.gold }] : is("s.trigger") ? [{ side: "ask", k: TRIGGER_K, color: PAL.amber }] : []} />}
-      {tape && <Tape f={f} x={SAFE.l} y={is("a.board", "s.boom2") ? 480 : is("o.eat") ? 820 : MAIN + 10} w={270} k={fin(f, s0, 6)} n={is("s.convert", "s.boom2") ? 10 : 8} />}
+      {tape && <Tape f={f} x={SAFE.l} y={is("a.board", "s.boom2") ? 480 : MAIN + 10} w={270} k={fin(f, s0, 6)} n={is("s.convert", "s.boom2") ? 10 : 8} />}
       {vol && <Vol f={f} x={SAFE.l} y={BOT} w={SAFE.r - SAFE.l} h={58} k={fin(f, s0, 6)} />}
       {spread && <Spread f={f} k={fin(f, s0, 6)} />}
       <Types f={f} k={types ? 1 : 0} />
@@ -475,10 +519,10 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
           {C.live}
         </div>
       )}
-      {is("a.bids") && <Big x={48} y={1200} label={C.bidCount} value={`${lvl("bid").length} ${C.levels} · ${lotsOf("bid")}`} sub={C.lots} color={PAL.up} k={pop(f, s0 + 2)} />}
-      {is("a.bids") && <Tag f={f} a={Lc("a2", "买方") + 4} b={d.shot.end} at={P(-1.4, -2, 0.6)} plate={{ x: 90, y: 420 }} side="r" color={PAL.up} title={`${C.bid} ↑`} />}
-      {is("a.asks") && <Big x={48} y={1200} label={C.askCount} value={`${lvl("ask").length} ${C.levels} · ${lotsOf("ask")}`} sub={C.lots} color={PAL.down} k={pop(f, s0 + 2)} />}
-      {is("a.asks") && <Tag f={f} a={Lc("a2", "卖方") + 4} b={d.shot.end} at={P(-1.4, 3, 0.6)} plate={{ x: 90, y: 330 }} side="r" color={PAL.down} title={`${C.ask} ↓`} />}
+      {is("a.bids") && <Big x={48} y={1200} label={C.bidCount} value={`${lvl("bid").length} ${C.levels} · ${lotsOf("bid")}`} sub={C.lots} color={PAL.up} k={pop(f, s0 + 1, 6)} />}
+      {is("a.bids") && <Tag f={f} a={Lc("a2", "买方") + 1} b={d.shot.end} at={P(-1.4, -2, 0.6)} plate={{ x: 90, y: 420 }} side="r" color={PAL.up} title={`${C.bid} ↑`} fast />}
+      {is("a.asks") && <Big x={48} y={1200} label={C.askCount} value={`${lvl("ask").length} ${C.levels} · ${lotsOf("ask")}`} sub={C.lots} color={PAL.down} k={pop(f, s0 + 1, 6)} />}
+      {is("a.asks") && <Tag f={f} a={Lc("a2", "卖方") + 1} b={d.shot.end} at={P(-1.4, 3, 0.6)} plate={{ x: 90, y: 330 }} side="r" color={PAL.down} title={`${C.ask} ↓`} fast />}
       {is("a.board") && <Stamp f={f} a={s0 + 4} x={540} y={1330} text={C.board} color={BLUE} rot={0} size={40} />}
       {is("a.gap") &&
         (() => {
@@ -510,9 +554,11 @@ const BookHud: React.FC<{ d: Dir; pr: Proj }> = ({ d, pr }) => {
 
       {/* orders */}
       {is("o.case1", "o.passive") && <CaseCard f={f} a={Lc("o2", "被动订单")} n={0} title={C.passive[0]} color={PAL.up} y={290} notes={[[C.passive[1], Lc("o2", "限价单")], [C.passive[2], Lc("o2", "提供")]]} />}
-      {is("o.passive") && <Tag f={f} a={PASSIVE_AT + 4} b={d.shot.end} at={pr(X.book, ky(-1), 1.15)} plate={{ x: 700, y: 1250 }} side="r" color={PAL.up} title={C.queue} notes={[[`${C.bid1} +${sizeAt(f, "bid", -1) - sizeAt(PASSIVE_AT - 1, "bid", -1)} ${C.lots}`, PASSIVE_AT + 10]]} />}
+      {/* 买一: the resting bids plus the new limit orders queueing in front of them; the camera pushes in under it */}
+      {is("o.passive") && <Focus f={f} a={PASSIVE_AT + 6} b={d.shot.end} pr={pr} box={[[X.book - 2.1, ky(-1) - 0.45, -0.55], [X.book + 2.1, ky(-1) + 0.45, 1.7]]} color={PAL.up} title={C.waitLiq[0]} note={[C.waitLiq[1], Lc("o2", "提供")]} labelAt={Lc("o2", "等别人")} />}
       {is("o.case2", "o.eat") && <CaseCard f={f} a={Lc("o3", "主动订单")} n={1} title={C.active[0]} color={PAL.gold} y={290} notes={[[C.active[1], Lc("o3", "不等")], [C.active[2], Lc("o3", "消耗")]]} />}
-      {is("o.eat") && <Big x={48} y={1200} label={C.eatAsk} value={`${sizeAt(f, "ask", 1)}`} sub={`${px(1)} · ${C.lots}`} color={PAL.down} />}
+      {/* 卖一: the level the market buys are eating; the ladder (right) keeps the one number that matters */}
+      {is("o.eat") && <Focus f={f} a={Lc("o3", "直接吃掉") + 6} b={d.shot.end} pr={pr} box={[[X.book - 0.4, ky(1) - 0.45, -0.55], [X.book + 3.1, ky(1) + 0.45, 0.6]]} color={PAL.gold} title={C.takeLiq[0]} note={[C.takeLiq[1], Lc("o3", "消耗")]} labelAt={Lc("o3", "直接吃掉") + 12} align="r" />}
       {is("o.hop") && (
         <>
           <Big x={48} y={300} label={C.last} value={px(lastK(f))} color={PAL.gold} sub={f >= JUMP ? C.step[1] : `${C.eatAsk} ${sizeAt(f, "ask", 1)} ${C.lots}`} />
@@ -678,28 +724,16 @@ const Three: React.FC<{ f: number; a: number }> = ({ f, a }) => (
   </>
 );
 
-const BigLadder: React.FC<{ f: number; a: number; mode: "passive" | "eat" | "sweep" }> = ({ f, a, mode }) => {
+const BigLadder: React.FC<{ f: number; a: number; mode: "sweep" }> = ({ f, a, mode }) => {
   const k = fin(f, a, 8);
   const row = 70;
   const x = 220,
     y = mode === "sweep" ? 388 : 320;
   // the sweep is replayed fast: the ladder runs on its own clock through the stop chain
   const g = mode === "sweep" ? Math.round(CHAIN - 20 + span(f, a + 4, a + 34, (t) => t) * 60) : f;
-  const rowY = (q: number) => y + 48 + 30 + (Math.round(beadK(g)) + 6 - q) * row + row / 2;
   return (
     <>
-      <Ladder f={g} x={x} y={y} w={640} row={row} k={k} mark={mode === "passive" ? [{ side: "bid", k: -1, color: PAL.up }] : mode === "eat" ? [{ side: "ask", k: 1, color: PAL.gold }] : []} />
-      {mode === "passive" && (
-        <>
-          <Tag f={f} a={a + 6} b={FRAMES} at={{ x: x + 120, y: rowY(-1) }} plate={{ x: 60, y: 1300 }} side="r" color={PAL.up} title={C.liquidity} size={40} notes={[[C.passive[2], Lc("o2", "提供")]]} />
-        </>
-      )}
-      {mode === "eat" && (
-        <>
-          <Arrow f={f} a={a + 4} from={{ x: 980, y: 1300 }} to={{ x: x + 560, y: rowY(1) + 20 }} color={PAL.gold} />
-          <Tag f={f} a={a + 8} b={FRAMES} at={{ x: x + 520, y: rowY(1) }} plate={{ x: 60, y: 1300 }} side="r" color={PAL.gold} title={`${C.eatAsk} ${sizeAt(f, "ask", 1)} ${C.lots}`} size={44} notes={[[C.active[2], Lc("o3", "消耗")]]} />
-        </>
-      )}
+      <Ladder f={g} x={x} y={y} w={640} row={row} k={k} />
       {mode === "sweep" && (
         <>
           <Stamp f={f} a={a + 30} x={540} y={1360} text={C.swept} color={PAL.amber} />
@@ -747,6 +781,58 @@ const STOPCHART = (() => {
     return { o, c, hi: Math.min(hi, 3.0), lo: Math.min(o, c) - 0.2 - Math.abs(r(i + 9)) * 0.3 };
   });
 })();
+/** a 2D candle drawn with volume: gradient face, a dark side + base offset down-right (its thickness), a thin
+ *  highlight down the left edge, and the wick behind it. Keeps the information density of a flat chart. */
+const DEPTH = { x: 7, y: 5 };
+const Candle3D: React.FC<{ cx: number; w: number; yo: number; yc: number; yh: number; yl: number; up: boolean }> = ({ cx, w, yo, yc, yh, yl, up }) => {
+  const col = up ? PAL.up : PAL.down;
+  const id = up ? "up" : "dn";
+  const top = Math.min(yo, yc),
+    h = Math.max(6, Math.abs(yc - yo));
+  const x = cx - w / 2;
+  const { x: dx, y: dy } = DEPTH;
+  return (
+    <g>
+      <line x1={cx + dx * 0.6} x2={cx + dx * 0.6} y1={yh + dy * 0.6} y2={yl + dy * 0.6} stroke="#000" strokeOpacity={0.45} strokeWidth={3} />
+      <line x1={cx} x2={cx} y1={yh} y2={yl} stroke={col} strokeWidth={3} />
+      {/* thickness: right side and bottom face, the body colour taken down to near-black */}
+      <polygon points={`${x + w},${top} ${x + w + dx},${top + dy} ${x + w + dx},${top + h + dy} ${x + w},${top + h}`} fill={`url(#zq-side-${id})`} />
+      <polygon points={`${x},${top + h} ${x + w},${top + h} ${x + w + dx},${top + h + dy} ${x + dx},${top + h + dy}`} fill={`url(#zq-side-${id})`} opacity={0.85} />
+      <rect x={x} y={top} width={w} height={h} fill={`url(#zq-face-${id})`} rx={2} />
+      <rect x={x + 2} y={top + 2} width={Math.max(2, w * 0.14)} height={Math.max(2, h - 4)} fill="#fff" opacity={0.38} rx={1} />
+      <line x1={x} x2={x + w} y1={top + 0.5} y2={top + 0.5} stroke="#fff" strokeOpacity={0.35} strokeWidth={1.5} />
+    </g>
+  );
+};
+const CANDLE_COLS: [string, string][] = [
+  ["up", PAL.up],
+  ["dn", PAL.down],
+];
+const CandleDefs: React.FC = () => (
+  <defs>
+    {CANDLE_COLS.map(([id, c]) => (
+      <React.Fragment key={id}>
+        <linearGradient id={`zq-face-${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#ffffff" stopOpacity={0.9} />
+          <stop offset="0.12" stopColor={c} />
+          <stop offset="1" stopColor={c} stopOpacity={0.72} />
+        </linearGradient>
+        <linearGradient id={`zq-side-${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={c} stopOpacity={0.55} />
+          <stop offset="1" stopColor="#05060a" stopOpacity={0.95} />
+        </linearGradient>
+      </React.Fragment>
+    ))}
+  </defs>
+);
+
+/** the stops: 4 buy-stop levels above the prior high (the same levels the book's mines sit on), lots per level */
+const STOP_LEVELS = [
+  { q: 4, n: 6 },
+  { q: 5, n: 5 },
+  { q: 6, n: 4 },
+  { q: 7, n: 3 },
+];
 const StopChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
   // the whole chart, the stops above the high included, fits between the strip and the captions
   const PX = 118;
@@ -755,52 +841,87 @@ const StopChart: React.FC<{ f: number; a: number }> = ({ f, a }) => {
     yp = (p: number) => 1300 - (p + 1.2) * PX; // p in ticks above 5000.00
   const n = STOPCHART.length;
   const cw = (w - 160) / n;
+  const AX = x0 + w - 116; // price axis labels, ~100 px in from the right edge
+  // `a` is one fixed start for the whole shot (never the shot's own frame), so the candles draw once and stay
   const rev = span(f, a, a + 24, (t) => t) * n;
   const hiY = yp(3);
+  const hiAt = Lc("s2", "前高");
+  const stAt = Lc("s2", "止损买单");
+  const upAt = Lc("s2", "上方");
+  const SI = 12; // the one short entry: the down candle after the failed retest of the high
+  const lx0 = x0 + 360,
+    lx1 = AX - 34; // the buy-stop lines run up to just short of the axis
+  const total = STOP_LEVELS.reduce((t, l) => t + l.n, 0);
+  const kb = span(f, stAt + 10, stAt + 20, expoOut);
+  const last = STOPCHART[n - 1];
+  const lcx = x0 + (n - 1) * cw + cw / 2;
+  const ka = span(f, upAt, upAt + 14, expoOut);
+  const ay0 = yp(last.hi) - 10,
+    ay1 = yp(4) + 14;
   return (
     <>
       <div style={{ position: "absolute", left: x0, top: STRIP + 10, ...sans(700), fontSize: 30, letterSpacing: 4, color: BLUE }}>5 MIN · 5000.00 +</div>
       <svg width={1080} height={1920} style={{ position: "absolute", inset: 0 }}>
-        {[0, 1, 2, 3, 4, 5, 6].map((p) => (
+        <CandleDefs />
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((p) => (
           <g key={p}>
-            <line x1={x0} x2={x0 + w - 120} y1={yp(p)} y2={yp(p)} stroke="rgba(127,168,255,0.14)" />
-            <text x={x0 + w - 116} y={yp(p) + 8} fill={SOFT} fontSize={21} fontFamily="IBM Plex Mono, monospace">
+            <line x1={x0} x2={AX - 4} y1={yp(p)} y2={yp(p)} stroke="rgba(127,168,255,0.14)" />
+            <text x={AX} y={yp(p) + 8} fill={p >= 4 ? PAL.amber : SOFT} fontSize={21} fontFamily="IBM Plex Mono, monospace">
               {px(p)}
             </text>
           </g>
         ))}
         {STOPCHART.map((c, i) => {
           if (i > rev) return null;
-          const up = c.c >= c.o;
-          const col = up ? PAL.up : PAL.down;
           const cx = x0 + i * cw + cw / 2;
           return (
             <g key={i} opacity={clamp01(rev - i)}>
-              <line x1={cx} x2={cx} y1={yp(c.hi)} y2={yp(c.lo)} stroke={col} strokeWidth={3} />
-              <rect x={cx - cw * 0.32} y={yp(Math.max(c.o, c.c))} width={cw * 0.64} height={Math.max(4, Math.abs(c.c - c.o) * PX)} fill={col} rx={3} />
+              <Candle3D cx={cx} w={cw * 0.62} yo={yp(c.o)} yc={yp(c.c)} yh={yp(c.hi)} yl={yp(c.lo)} up={c.c >= c.o} />
             </g>
           );
         })}
-        <line x1={x0} x2={x0 + w - 120} y1={hiY} y2={hiY} stroke={INK} strokeWidth={3} strokeDasharray="14 10" opacity={fin(f, Lc("s2", "前高"))} />
+        <line x1={x0} x2={AX - 4} y1={hiY} y2={hiY} stroke={INK} strokeWidth={3} strokeDasharray="14 10" opacity={fin(f, hiAt)} />
+        {/* buy stops: horizontal order lines on their own price levels, grouped by a bracket at the axis */}
+        {STOP_LEVELS.map(({ q, n: lotsN }, j) => {
+          const k = span(f, stAt + j * 3, stAt + j * 3 + 8, expoOut);
+          if (k < 0.01) return null;
+          const y = yp(q);
+          return (
+            <g key={q} opacity={k}>
+              <line x1={lx1 - (lx1 - lx0) * k} x2={lx1} y1={y} y2={y} stroke={PAL.amber} strokeWidth={4} style={{ filter: `drop-shadow(0 0 6px ${PAL.amber})` }} />
+              <circle cx={lx1} cy={y} r={5} fill={PAL.amber} />
+              <text x={lx1 - 8} y={y - 12} textAnchor="end" fill={PAL.amber} fontSize={24} fontFamily="IBM Plex Mono, monospace">
+                {`${C.buyStop} · ${lotsN}${C.lots}`}
+              </text>
+            </g>
+          );
+        })}
+        {kb > 0.01 && <path d={`M${lx1 + 8},${yp(7)} h12 V${yp(4)} h-12 M${lx1 + 20},${(yp(7) + yp(4)) / 2} h8`} fill="none" stroke={PAL.amber} strokeWidth={3} opacity={kb} />}
+        {/* the trigger path: from the last candle up through the high into the first stop level */}
+        {ka > 0.01 && (
+          <g opacity={ka}>
+            <line x1={lcx} x2={lcx} y1={ay0} y2={ay0 - (ay0 - ay1) * ka} stroke={PAL.amber} strokeWidth={3} strokeDasharray="8 8" />
+            {ka > 0.9 && <polygon points={`${lcx - 10},${ay1 + 4} ${lcx + 10},${ay1 + 4} ${lcx},${ay1 - 14}`} fill={PAL.amber} />}
+          </g>
+        )}
       </svg>
-      <Tag f={f} a={Lc("s2", "前高") - 2} b={FRAMES} at={{ x: x0 + 6.5 * cw, y: hiY }} plate={{ x: x0 + 6.5 * cw + 40, y: 1385 }} side="r" color={INK} title={`${C.priorHigh} ${px(3)}`} size={40} mono />
-      {[12, 15, 17].map((i, j) => {
-        const k = pop(f, Lc("s2", "做空") + j * 4);
-        const cx = x0 + i * cw + cw / 2;
+      <Tag f={f} a={hiAt - 2} b={FRAMES} at={{ x: x0 + 6.5 * cw, y: hiY }} plate={{ x: x0 + 6.5 * cw + 40, y: 1385 }} side="r" color={INK} title={`${C.priorHigh} ${px(3)}`} size={40} mono />
+      {(() => {
+        const k = pop(f, Lc("s2", "做空"));
+        const cx = x0 + SI * cw + cw / 2;
         return k > 0.01 ? (
-          <div key={i} style={{ position: "absolute", left: cx - 26, top: yp(STOPCHART[i].hi) - 80, width: 52, textAlign: "center", ...sans(700), fontSize: 30, color: "#06070b", background: PAL.down, borderRadius: 8, transform: `scale(${k})` }}>
+          <div data-qa="mark:short" style={{ position: "absolute", left: cx - 28, top: yp(STOPCHART[SI].hi) - 78, width: 56, textAlign: "center", ...sans(700), fontSize: 32, color: "#06070b", background: PAL.down, borderRadius: 8, transform: `scale(${k})`, boxShadow: `0 4px 0 #0a5a3a, 0 0 14px ${PAL.down}88` }}>
             {C.shortMark}
           </div>
         ) : null;
-      })}
-      {/* the stops: amber diamonds on the four levels above the high */}
-      {[4, 5, 6, 7].map((q, j) => {
-        const k = pop(f, Lc("s2", "止损买单") + j * 3);
-        return [...Array(6 - j)].map((_, i) => (
-          <div key={`${q}-${i}`} style={{ position: "absolute", left: x0 + 520 + i * 40, top: yp(q) - 14, width: 26, height: 26, transform: `rotate(45deg) scale(${k * 0.8})`, background: `${PAL.amber}aa`, border: `2px solid ${PAL.amber}`, boxShadow: `0 0 12px ${PAL.amber}` }} />
-        ));
-      })}
-      <Tag f={f} a={Lc("s2", "止损买单") + 6} b={FRAMES} at={{ x: x0 + 500, y: yp(5.5) }} plate={{ x: x0, y: yp(5.6) }} side="r" color={PAL.amber} title={C.stopCluster[0]} notes={[[C.stopCluster[1], Lc("s2", "上方")]]} size={44} />
+      })()}
+      {/* the group label sits left of the lines, on the same price band */}
+      {kb > 0.01 && (
+        <div data-qa={`tag:${C.stopCluster[0]}`} data-qa-kind="card" style={{ position: "absolute", left: SAFE.l + 20, top: (yp(7) + yp(4)) / 2, transform: `translate(0, calc(-50% + ${(1 - kb) * 12}px))`, opacity: kb, padding: "10px 22px 12px", borderRadius: 12, whiteSpace: "nowrap", ...FX(PAL.amber) }}>
+          <div style={{ ...serif(), fontSize: 44, lineHeight: 1.2, color: INK }}>{C.stopCluster[0]}</div>
+          <div style={{ ...sans(500), fontSize: 30, lineHeight: 1.3, color: PAL.amber, opacity: fin(f, upAt) }}>{`${C.stopCluster[1]} · ${total}${C.lots}`}</div>
+        </div>
+      )}
     </>
   );
 };
@@ -809,17 +930,13 @@ const FlatBookHud: React.FC<{ d: Dir }> = ({ d }) => {
   const f = d.f,
     a = d.shot.at;
   const lay = d.lay;
-  const types = f >= L("o1") && f < S("players") && ["o.passiveLadder", "o.eatLadder"].includes(lay);
   return (
     <>
-      <Types f={f} k={types ? 1 : 0} />
       {lay === "a.depth" && <DepthChart f={f} a={a} />}
       {lay === "a.equal" && <Equal f={f} a={a} />}
       {lay === "o.three" && <Three f={f} a={a} />}
-      {lay === "o.passiveLadder" && <BigLadder f={f} a={a} mode="passive" />}
-      {lay === "o.eatLadder" && <BigLadder f={f} a={a} mode="eat" />}
       {lay === "o.chain" && <Chain f={f} a={a} />}
-      {lay === "s.chart" && <StopChart f={f} a={a} />}
+      {lay === "s.chart" && <StopChart f={f} a={L("s2") - 2} />}
       {lay === "s.sweep" && <BigLadder f={f} a={a} mode="sweep" />}
     </>
   );

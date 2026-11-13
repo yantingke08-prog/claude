@@ -34,7 +34,7 @@
     "fo:qc": "python scripts/breakout-qc.py out/fakeout/false-breakout-v6.mp4 140 160",
     "zq:render": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01-v3.mp4\" --gl=angle --concurrency=50% --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
     "zq:render:cpu": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01-v3.mp4\" --concurrency=1 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
-    "zq:render:4k": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01-v3-4k.mp4\" --props=props/zhanqian-4k.json --scale=2 --gl=angle --concurrency=25% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "zq:render:4k": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01-v4-4k-final.mp4\" --props=props/zhanqian-4k.json --scale=2 --gl=angle --concurrency=25% --image-format=jpeg --jpeg-quality=95 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
     "zq:render:draft": "remotion render Zhanqian \"D:/claude视频/zhanqian-awakening-ep01-v3-draft.mp4\" --scale=0.5 --gl=angle --concurrency=50% --crf=23",
     "zq:cover": "remotion still ZhanqianCover ../outputs-zhanqian/cover.png",
     "zq:cover:4k": "remotion still ZhanqianCover ../outputs-zhanqian/cover-4k.png --props=props/zhanqian-4k.json --scale=2 --gl=angle",

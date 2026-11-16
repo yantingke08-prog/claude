@@ -2,3 +2,7 @@ node_modules/
 studio/out/
 studio/.remotion/
 *.log
+# 止损 film: the voice is injected locally and never committed; the mix and subtitles are rebuilt from it
+studio/public/voiceover/
+studio/public/stophunt/mix.wav
+outputs-stophunt-v1/

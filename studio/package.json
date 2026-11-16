@@ -22,7 +22,21 @@
     "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
     "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
     "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
-    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
+    "sh:typecheck": "tsc --noEmit",
+    "sh:estimate": "python scripts/stophunt-sync.py estimate",
+    "sh:align": "python scripts/stophunt-sync.py align",
+    "sh:srt": "python scripts/stophunt-sync.py srt",
+    "sh:mix": "python scripts/stophunt-sync.py mix",
+    "sh:sync": "python scripts/stophunt-sync.py all",
+    "sh:stills": "node scripts/stophunt-stills.mjs out/stophunt 0.5 20 reveal+60 liqFill+30 shortStops+30 fire+10 counter+10 danmaku+40 c1vol+12 pierce+16 testTag+12 buffer+30 notYou+12 q2+12 absorb+12 cover",
+    "sh:prep": "node -e \"const fs=require('fs');fs.mkdirSync('D:/claude视频',{recursive:true});fs.copyFileSync('../outputs-stophunt-v1/stop-hunt-v1.srt','D:/claude视频/stop-hunt-v1.srt')\"",
+    "sh:render": "remotion render StopHunt \"D:/claude视频/stop-hunt-v1.mp4\" --gl=angle --concurrency=50% --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sh:render:cpu": "remotion render StopHunt \"D:/claude视频/stop-hunt-v1.mp4\" --gl=swangle --concurrency=2 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sh:cover": "remotion still StopHuntCover \"D:/claude视频/stop-hunt-v1-cover.png\" --gl=angle",
+    "sh:cover:cpu": "remotion still StopHuntCover \"D:/claude视频/stop-hunt-v1-cover.png\" --gl=swangle",
+    "sh:make": "npm run sh:typecheck && npm run sh:sync && npm run sh:prep && npm run sh:render && npm run sh:cover",
+    "sh:make:cpu": "npm run sh:typecheck && npm run sh:sync && npm run sh:prep && npm run sh:render:cpu && npm run sh:cover:cpu"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

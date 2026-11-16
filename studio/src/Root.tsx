@@ -13,6 +13,8 @@ import { LvpV1Seeing } from "./lvp/V1Seeing";
 import { LvpV2Footprint } from "./lvp/V2Footprint";
 import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
+import { StopHunt, StopHuntCover } from "./stophunt/Film";
+import SH from "./stophunt/timeline.json";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -43,6 +45,11 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+    </Folder>
+    <Folder name="StopHunt">
+      {/* length comes from timeline.json (placeholder estimate, or the real vo.wav after `npm run sh:sync`) */}
+      <Composition id="StopHunt" component={StopHunt} durationInFrames={SH.frames} fps={SH.fps} width={SH.width} height={SH.height} defaultProps={{ muted: false }} />
+      <Still id="StopHuntCover" component={StopHuntCover} width={SH.width} height={SH.height} />
     </Folder>
   </>
 );

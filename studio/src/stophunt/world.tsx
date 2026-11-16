@@ -1,29 +1,46 @@
-// The 3D set: candles standing in space, glass level shelves, piles of resting stop orders (cubes) behind the levels,
-// an order-book ladder, volume floors. Everything is a pure function of the frame.
+// The 3D trading stage. Bevelled, clear-coated candles standing over a reflective floor, gold glass price levels,
+// stop orders as a few large bricks behind the levels, volume columns rising from the floor, light shafts and fog.
+// Palette: deep blue-black, warm white, gold (key levels), red (up / buy stops), green (down / sell stops).
+// Everything is a pure function of the frame.
+import { MeshReflectorMaterial } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import React, { useMemo } from "react";
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { E, clamp01, ease, out3, ramp, win } from "./cue";
-import { A_HIGH, A_HI, A_LO, A_LOW, A_N, B_HI, B_HIGH, B_N, CUBE, HUNT, ROUND, SERIES_A, SERIES_REAL, SERIES_TEST, TEST_WICK, TOUCH, XS, YS, avgVol, pile, px, py, type Bar, type Cube } from "./data";
-import { LADDER_X, YOU, cam, huntCross, stage } from "./director";
+import {
+  A_HIGH, A_HI, A_LO, A_LOW, A_N, BAD_STOP, B_HI, B_HIGH, Brick, FLOOR_Y, GOOD_STOP, HUNT, LADDER_X, ROUND, SA, SB, SC,
+  SERIES_A, SERIES_REAL, SERIES_STOP, SPIKE_I, STACK_B, STACK_C, STACK_HI, STACK_LO, STACK_RD, Stage, TEST_WICK, TOUCH, XS, YOU_BRICK,
+  YS, avgVol, px, py, type Bar,
+} from "./data";
+import { cam, huntCross, huntPath, stage } from "./director";
 
 export const COL = {
-  bg: "#04060b",
-  up: "#1fcf8f",
-  down: "#f0475d",
-  buyStop: "#39d4ff", // shorts' stops: buy orders
-  sellStop: "#ff5f9e", // longs' stops: sell orders
-  level: "#ffc24a",
-  round: "#a98bff",
-  gold: "#ffcf5a",
-  good: "#3ee08f",
-  bad: "#ff5468",
-  you: "#ffffff",
-  grid: "#7f93b5",
-  steel: "#6f88ad",
+  bg: "#04070d",
+  fog: "#070c16",
+  up: "#e5484d", // red: up candles, buy stops
+  down: "#25b07a", // green: down candles, sell stops
+  gold: "#e9b44c",
+  warm: "#f3ead9",
+  steel: "#8e9ab0",
 };
 
-// ---------------------------------------------------------------- camera rig
+// ---------------------------------------------------------------- shared geometry
+const geoCache = new Map<string, THREE.BufferGeometry>();
+const rbox = (w: number, h: number, d: number, r = 0.045) => {
+  const q = (v: number) => Math.max(0.01, Math.round(v * 100) / 100);
+  const key = `${q(w)}|${q(h)}|${q(d)}|${r}`;
+  let g = geoCache.get(key);
+  if (!g) {
+    g = new RoundedBoxGeometry(q(w), q(h), q(d), 3, Math.min(r, q(h) / 2 - 0.001, q(w) / 2 - 0.001));
+    geoCache.set(key, g);
+  }
+  return g;
+};
+const UNIT_CYL = new THREE.CylinderGeometry(1, 1, 1, 16);
+const UNIT_SPHERE = new THREE.SphereGeometry(1, 20, 14);
+
+// ---------------------------------------------------------------- camera rig + key light that follows the subject
 const Rig: React.FC<{ f: number }> = ({ f }) => {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
   const c = cam(f);
@@ -36,176 +53,233 @@ const Rig: React.FC<{ f: number }> = ({ f }) => {
   camera.updateMatrixWorld();
   return null;
 };
+const KeyLight: React.FC<{ f: number }> = ({ f }) => {
+  const c = cam(f);
+  const light = useMemo(() => {
+    const l = new THREE.DirectionalLight("#fff3e0", 2.2);
+    l.castShadow = true;
+    l.shadow.mapSize.set(2048, 2048);
+    l.shadow.radius = 6;
+    l.shadow.blurSamples = 12;
+    l.shadow.bias = -0.0004;
+    const s = l.shadow.camera as THREE.OrthographicCamera;
+    s.left = -16;
+    s.right = 16;
+    s.top = 16;
+    s.bottom = -16;
+    s.near = 1;
+    s.far = 60;
+    return l;
+  }, []);
+  light.position.set(c.t[0] + 5, c.t[1] + 14, c.t[2] + 8);
+  light.target.position.set(c.t[0], c.t[1] - 2, c.t[2]);
+  light.target.updateMatrixWorld();
+  return (
+    <>
+      <primitive object={light} />
+      <primitive object={light.target} />
+    </>
+  );
+};
 
-// ---------------------------------------------------------------- candles (real boxes, lit)
-type Live = Bar & { g: number; hot?: number };
-const Candles: React.FC<{ bars: Live[]; i0: number; op: number }> = ({ bars, i0, op }) => {
+// ---------------------------------------------------------------- candles
+export type Live = Bar & { g: number; hot?: number };
+const Candle: React.FC<{ b: Live; x: number; st: Stage; op: number }> = ({ b, x, st, op }) => {
+  if (b.g <= 0.001 || op <= 0.002) return null;
+  const wk = out3(b.g / 0.4);
+  const bk = out3((b.g - 0.4) / 0.6);
+  const up = b.c >= b.o;
+  const close = b.o + (b.c - b.o) * bk;
+  const hi = b.o + (b.h - b.o) * wk;
+  const lo = b.o - (b.o - b.l) * wk;
+  const col = up ? COL.up : COL.down;
+  const hot = b.hot ?? 0;
+  const bh = Math.max(0.05, Math.abs(close - b.o) * YS);
+  const wl = Math.max(0.02, py(hi, st) - py(lo, st));
+  const tr = op < 0.995;
+  return (
+    <group>
+      <mesh geometry={UNIT_CYL} position={[x, (py(hi, st) + py(lo, st)) / 2, 0]} scale={[0.026, wl, 0.026]} castShadow>
+        <meshPhysicalMaterial color={col} emissive={col} emissiveIntensity={0.25 + 1.2 * hot} roughness={0.35} clearcoat={1} transparent={tr} opacity={op} />
+      </mesh>
+      {bk > 0 && (
+        <mesh geometry={rbox(XS * 0.66, bh, XS * 0.66)} position={[x, (py(close, st) + py(b.o, st)) / 2, 0]} castShadow receiveShadow>
+          <meshPhysicalMaterial color={col} emissive={col} emissiveIntensity={0.1 + 0.9 * hot} roughness={0.24} metalness={0.05} clearcoat={1} clearcoatRoughness={0.12} sheen={0.4} sheenColor="#ffffff" transparent={tr} opacity={op} />
+        </mesh>
+      )}
+    </group>
+  );
+};
+const Candles: React.FC<{ bars: Live[]; st: Stage; op: number; from?: number }> = ({ bars, st, op, from = 0 }) =>
+  op <= 0.002 ? null : (
+    <group>
+      {bars.map((b, i) => (i < from ? null : <Candle key={i} b={b} x={px(i, st)} st={st} op={op} />))}
+    </group>
+  );
+
+/** volume columns standing on the floor under their candles */
+const Volume: React.FC<{ bars: Live[]; st: Stage; op: number; from: number; hot?: (i: number) => number; vol?: (i: number) => number; k?: number; base?: number }> = ({ bars, st, op, from, hot = () => 0, vol, k = 0.32, base = FLOOR_Y }) =>
+  op <= 0.002 ? null : (
+    <group>
+      {bars.map((b, i) => {
+        if (i < from || b.g <= 0.001) return null;
+        const h = Math.max(0.03, (vol ? vol(i) : b.v) * k * out3(b.g));
+        const hh = hot(i);
+        const col = hh > 0.05 ? COL.up : COL.steel;
+        return (
+          <mesh key={i} geometry={rbox(XS * 0.5, h, XS * 0.5, 0.03)} position={[px(i, st), base + h / 2 + 0.01, 0]} castShadow>
+            <meshPhysicalMaterial color={col} emissive={col} emissiveIntensity={0.05 + 1.4 * hh} roughness={0.4} clearcoat={0.6} transparent opacity={op * (0.5 + 0.5 * Math.max(hh, 0.3))} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+
+// ---------------------------------------------------------------- price level: gold glass shelf with a lit front edge
+const Level: React.FC<{ y: number; x0: number; x1: number; k: number; op: number; glow?: number; color?: string }> = ({ y, x0, x1, k, op, glow = 0, color = COL.gold }) => {
+  if (k <= 0.002 || op <= 0.002) return null;
+  const w = Math.max(0.02, (x1 - x0) * out3(k));
+  return (
+    <group>
+      <mesh position={[x0 + w / 2, y, -0.75]}>
+        <boxGeometry args={[w, 0.012, 2.2]} />
+        <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={0.05 + 0.3 * glow} roughness={0.1} transparent opacity={(0.04 + 0.06 * glow) * op} depthWrite={false} />
+      </mesh>
+      <mesh geometry={UNIT_CYL} position={[x0 + w / 2, y, 0.36]} rotation={[0, 0, Math.PI / 2]} scale={[0.022, w, 0.022]}>
+        <meshBasicMaterial color={color} toneMapped={false} transparent opacity={op * (0.85 + 0.15 * glow)} />
+      </mesh>
+    </group>
+  );
+};
+
+// ---------------------------------------------------------------- order bricks
+type BrickState = { s: number; dy?: number; glow?: number; ghost?: number; color?: string } | null;
+const Bricks: React.FC<{ bricks: Brick[]; color: string; op: number; at: (b: Brick, j: number) => BrickState }> = ({ bricks, color, op, at }) => {
   if (op <= 0.002) return null;
   return (
     <group>
-      {bars.map((b, i) => {
-        if (b.g <= 0.001) return null;
-        const wk = out3(b.g / 0.4);
-        const bk = out3((b.g - 0.4) / 0.6);
-        const up = b.c >= b.o;
-        const close = b.o + (b.c - b.o) * bk;
-        const hi = b.o + (b.h - b.o) * wk;
-        const lo = b.o - (b.o - b.l) * wk;
-        const x = px(i, i0);
-        const col = up ? COL.up : COL.down;
-        const hb = Math.max(0.035, Math.abs(close - b.o) * YS);
-        const hot = b.hot ?? 0;
+      {bricks.map((b, j) => {
+        const st = at(b, j);
+        if (!st || st.s <= 0.002) return null;
+        const ghost = st.ghost ?? 0;
+        const glow = st.glow ?? 0;
+        const c = st.color ?? color;
         return (
-          <group key={i}>
-            <mesh position={[x, (py(hi) + py(lo)) / 2, 0]}>
-              <boxGeometry args={[0.055, Math.max(0.02, py(hi) - py(lo)), 0.055]} />
-              <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.35 + hot} transparent opacity={op} roughness={0.5} />
-            </mesh>
-            {bk > 0 && (
-              <mesh position={[x, (py(close) + py(b.o)) / 2, 0]}>
-                <boxGeometry args={[XS * 0.62, hb, XS * 0.62]} />
-                <meshStandardMaterial color={col} emissive={col} emissiveIntensity={0.16 + hot} transparent opacity={op} roughness={0.32} metalness={0.15} />
-              </mesh>
-            )}
-          </group>
+          <mesh key={j} geometry={rbox(b.w, b.h, b.d, 0.05)} position={[b.x, b.y + (st.dy ?? 0), b.z]} scale={[st.s, st.s, st.s]} castShadow={ghost < 0.5}>
+            <meshPhysicalMaterial color={c} emissive={c} emissiveIntensity={0.16 + 1.1 * glow} roughness={0.22} clearcoat={1} clearcoatRoughness={0.1} transparent opacity={op * (0.92 - 0.72 * ghost)} depthWrite={ghost < 0.5} />
+          </mesh>
         );
       })}
     </group>
   );
 };
 
-// ---------------------------------------------------------------- piles of stop orders (instanced)
-type CubeState = { x: number; y: number; z: number; s: number; heat: number } | null;
-const Pile: React.FC<{ cubes: Cube[]; color: string; op: number; ghost?: number; glow?: number; at: (j: number, c: Cube) => CubeState }> = ({ cubes, color, op, ghost = 0, glow = 0, at }) => {
-  const mesh = useMemo(() => {
-    const g = new THREE.BoxGeometry(CUBE, CUBE, CUBE);
-    const m = new THREE.MeshStandardMaterial({ color: "#ffffff", emissive: color, emissiveIntensity: 0.4, roughness: 0.35, metalness: 0.1, transparent: true });
-    const im = new THREE.InstancedMesh(g, m, cubes.length);
-    im.frustumCulled = false;
-    return im;
-  }, [cubes, color]);
-  const base = useMemo(() => new THREE.Color(color), [color]);
-  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), c: new THREE.Color(), q: new THREE.Quaternion(), s: new THREE.Vector3(), p: new THREE.Vector3() }), []);
-  const mat = mesh.material as THREE.MeshStandardMaterial;
-  mat.opacity = op * (1 - 0.72 * ghost);
-  mat.emissiveIntensity = (0.32 + 0.9 * glow) * (1 - 0.7 * ghost);
-  mat.depthWrite = ghost < 0.5;
-  mesh.visible = op > 0.002;
-  cubes.forEach((c, j) => {
-    const st = op > 0.002 ? at(j, c) : null;
-    const s = st ? st.s : 0;
-    tmp.p.set(st?.x ?? 0, st?.y ?? 0, st?.z ?? 0);
-    tmp.s.set(s, s, s);
-    tmp.m.compose(tmp.p, tmp.q, tmp.s);
-    mesh.setMatrixAt(j, tmp.m);
-    const k = 0.55 + 0.25 * c.k;
-    tmp.c.copy(base).multiplyScalar(k * (1 + (st?.heat ?? 0) * 3));
-    mesh.setColorAt(j, tmp.c);
-  });
-  mesh.instanceMatrix.needsUpdate = true;
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  return <primitive object={mesh} />;
-};
-
-// ---------------------------------------------------------------- glass level shelf with a bright front edge
-const Shelf: React.FC<{ y: number; x0: number; x1: number; color: string; k: number; op: number; z0?: number; z1?: number; glow?: number }> = ({ y, x0, x1, color, k, op, z0 = 0.34, z1 = -2.3, glow = 0 }) => {
-  if (k <= 0.002 || op <= 0.002) return null;
-  const w = (x1 - x0) * out3(k);
-  return (
-    <group>
-      <mesh position={[x0 + w / 2, y, (z0 + z1) / 2]}>
-        <boxGeometry args={[w, 0.02, z0 - z1]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.05 + 0.4 * glow} transparent opacity={(0.035 + 0.07 * glow) * op} depthWrite={false} />
-      </mesh>
-      <mesh position={[x0 + w / 2, y, z0]}>
-        <boxGeometry args={[w, 0.035, 0.035]} />
-        <meshBasicMaterial color={color} transparent opacity={0.95 * op} toneMapped={false} />
-      </mesh>
-    </group>
-  );
-};
-
-const Box: React.FC<{ p: [number, number, number]; s: [number, number, number]; color: string; op: number; ei?: number; basic?: boolean }> = ({ p, s, color, op, ei = 0.3, basic }) =>
-  op <= 0.002 || s[0] <= 0.001 || s[1] <= 0.001 ? null : (
-    <mesh position={p}>
-      <boxGeometry args={s} />
-      {basic ? <meshBasicMaterial color={color} transparent opacity={op} toneMapped={false} depthWrite={false} /> : <meshStandardMaterial color={color} emissive={color} emissiveIntensity={ei} transparent opacity={op} roughness={0.4} />}
+const Bead: React.FC<{ p: [number, number, number]; r: number; color: string; op: number }> = ({ p, r, color, op }) =>
+  op <= 0.002 || r <= 0.001 ? null : (
+    <mesh geometry={UNIT_SPHERE} position={p} scale={[r, r, r]}>
+      <meshBasicMaterial color={color} toneMapped={false} transparent opacity={op} />
     </mesh>
   );
 
-// ---------------------------------------------------------------- back wall grid + depth dust
-const Grid: React.FC<{ op: number }> = ({ op }) => {
-  const geo = useMemo(() => {
-    const pts: number[] = [];
-    // one wall from the charts to the ladder, so the camera always flies past structure, never through a void
-    for (let y = -7; y <= 8.01; y += 1) pts.push(-16, y, -2.7, 58, y, -2.7);
-    for (let x = -16; x <= 58.01; x += 2) pts.push(x, -7, -2.7, x, 8, -2.7);
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
-    return g;
-  }, []);
+const Slab: React.FC<{ p: [number, number, number]; s: [number, number, number]; color: string; op: number; ei?: number; r?: number }> = ({ p, s, color, op, ei = 0.2, r = 0.06 }) =>
+  op <= 0.002 || s[0] <= 0.01 || s[1] <= 0.01 ? null : (
+    <mesh geometry={rbox(s[0], s[1], s[2], r)} position={p} castShadow>
+      <meshPhysicalMaterial color={color} emissive={color} emissiveIntensity={ei} roughness={0.25} clearcoat={1} transparent opacity={op} depthWrite={op > 0.6} />
+    </mesh>
+  );
+
+/** up / down arrow made of a shaft and a cone (a stop turning into a market order) */
+const Arrow: React.FC<{ p: [number, number, number]; dir: 1 | -1; len: number; color: string; op: number }> = ({ p, dir, len, color, op }) =>
+  op <= 0.002 || len <= 0.01 ? null : (
+    <group position={p}>
+      <mesh geometry={UNIT_CYL} position={[0, (dir * len) / 2, 0]} scale={[0.05, len, 0.05]}>
+        <meshBasicMaterial color={color} toneMapped={false} transparent opacity={op} />
+      </mesh>
+      <mesh position={[0, dir * (len + 0.12), 0]} rotation={[dir > 0 ? 0 : Math.PI, 0, 0]}>
+        <coneGeometry args={[0.14, 0.28, 20]} />
+        <meshBasicMaterial color={color} toneMapped={false} transparent opacity={op} />
+      </mesh>
+    </group>
+  );
+
+/** expanding ring on the floor: a volume pulse */
+const Ring: React.FC<{ x: number; z: number; k: number; color: string; op: number }> = ({ x, z, k, color, op }) =>
+  k <= 0.001 || k >= 1 || op <= 0.002 ? null : (
+    <mesh position={[x, FLOOR_Y + 0.02, z]} rotation={[-Math.PI / 2, 0, 0]} scale={[0.3 + 2.4 * k, 0.3 + 2.4 * k, 1]}>
+      <ringGeometry args={[0.9, 1, 64]} />
+      <meshBasicMaterial color={color} toneMapped={false} transparent opacity={op * (1 - k)} depthWrite={false} />
+    </mesh>
+  );
+
+// ---------------------------------------------------------------- atmosphere: light shafts, dust, floor
+const BEAM_V = /* glsl */ `
+uniform float uH;
+varying float vT;
+varying vec3 vN;
+varying vec3 vV;
+void main(){
+  vT = (position.y + uH * 0.5) / uH;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  vN = normalize(normalMatrix * normal);
+  vV = normalize(-mv.xyz);
+  gl_Position = projectionMatrix * mv;
+}`;
+const BEAM_F = /* glsl */ `
+uniform vec3 uC;
+uniform float uO;
+varying float vT;
+varying vec3 vN;
+varying vec3 vV;
+void main(){
+  float edge = pow(abs(dot(vN, vV)), 2.0);
+  float a = uO * edge * mix(0.15, 1.0, vT);
+  gl_FragColor = vec4(uC * a, a);
+}`;
+const Beam: React.FC<{ x: number; y: number; z: number; h: number; r: number; op: number; color?: string }> = ({ x, y, z, h, r, op, color = COL.warm }) => {
+  const mat = useMemo(
+    () => new THREE.ShaderMaterial({ vertexShader: BEAM_V, fragmentShader: BEAM_F, uniforms: { uH: { value: h }, uC: { value: new THREE.Color(color) }, uO: { value: 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+    [h, color],
+  );
+  mat.uniforms.uO.value = op;
   if (op <= 0.002) return null;
   return (
-    <lineSegments geometry={geo}>
-      <lineBasicMaterial color={COL.grid} transparent opacity={0.11 * op} />
-    </lineSegments>
+    <mesh position={[x, y + h / 2, z]} material={mat}>
+      <cylinderGeometry args={[0.08, r, h, 40, 1, true]} />
+    </mesh>
   );
 };
 const Dust: React.FC = () => {
   const geo = useMemo(() => {
-    let s = 5;
+    let s = 7;
     const r = () => ((s = (s * 16807) % 2147483647) / 2147483647);
     const pts: number[] = [];
-    for (let i = 0; i < 1600; i++) pts.push(-30 + r() * 90, -14 + r() * 30, -4 - r() * 26);
+    for (let i = 0; i < 2600; i++) pts.push(-90 + r() * 130, FLOOR_Y + r() * 15, -9 + r() * 15);
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3));
     return g;
   }, []);
   return (
     <points geometry={geo}>
-      <pointsMaterial color="#7d95c4" size={0.06} sizeAttenuation transparent opacity={0.5} depthWrite={false} />
+      <pointsMaterial color={COL.warm} size={0.035} sizeAttenuation transparent opacity={0.35} depthWrite={false} />
     </points>
   );
 };
+const Floor: React.FC = () => (
+  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-25, FLOOR_Y, -2]} receiveShadow>
+    <planeGeometry args={[150, 40]} />
+    <MeshReflectorMaterial resolution={1024} blur={[400, 120]} mixBlur={1} mixStrength={2.2} mixContrast={1} roughness={0.85} depthScale={0.8} minDepthThreshold={0.4} maxDepthThreshold={1.2} color="#0a0f19" metalness={0.5} mirror={0.6} />
+  </mesh>
+);
 
-// ---------------------------------------------------------------- data on stage
-const PH = pile(31, A_HIGH, 1, 27, 41, 230);
-const PL = pile(47, A_LOW, -1, 26, 41, 200);
-const PR = pile(53, ROUND, 1, 31, 41, 110);
-const PB = pile(61, B_HIGH, 1, 14, 27, 210);
-const PRICE = (y: number) => y / YS + 98.3;
-export const GOLD = { x: px(44), y: (py(99.7) + py(100.12)) / 2, h: py(100.12) - py(99.7), w: 0.9, z: -0.9, d: 1.2 };
-/** the big order on the ladder: slides in, eats the thick row from the front, shrinks as it fills */
-export const ladderBlock = (f: number, n: number) => {
-  const fill = E("liqFill");
-  const k = ease((f - (fill - 26)) / 26);
-  let eaten = 0;
-  for (let j = 0; j < n; j++) eaten += ramp(f, fill + 10 + j * 3.2, 6);
-  const w = 2.4 * (1 - 0.82 * (eaten / n));
-  const contact = LADDER_X + 0.05 + eaten * 0.72;
-  return { x: LADDER_X - 7 + (contact - w / 2 - (LADDER_X - 7)) * k, w, done: eaten / n, op: clamp01((f - (fill - 26)) / 8) };
-};
-const hash = (j: number) => {
-  const x = Math.sin(j * 127.1 + 11.7) * 43758.5453;
-  return x - Math.floor(x);
-};
-export const VA_Y = py(A_LOW) - 1.55;
-export const VB_Y = -1.85;
-const VOLK = 0.42;
+// ---------------------------------------------------------------- data on stage at frame f
 
-/** a bar that prints live: up to its extreme first, then back to its close */
-export const liveBar = (f: number, b: Bar, a: number, top: number, end: number, upFirst = true): Live => {
+/** a bar that prints live: to its extreme first, then back to its close */
+export const liveBar = (f: number, b: Bar, a: number, top: number, end: number): Live => {
   if (f < a) return { ...b, g: 0 };
+  const upFirst = b.h - Math.max(b.o, b.c) >= Math.min(b.o, b.c) - b.l;
   const ext = upFirst ? b.h : b.l;
-  let p: number;
-  let reach: number;
-  if (f < top) {
-    p = b.o + (ext - b.o) * ease((f - a) / Math.max(1, top - a));
-    reach = p;
-  } else {
-    p = ext + (b.c - ext) * ease((f - top) / Math.max(1, end - top));
-    reach = ext;
-  }
+  const p = f < top ? b.o + (ext - b.o) * ease((f - a) / Math.max(1, top - a)) : ext + (b.c - ext) * ease((f - top) / Math.max(1, end - top));
+  const reach = f < top ? p : ext;
   const done = clamp01((f - end) / 8);
   return upFirst
     ? { o: b.o, h: Math.max(b.o, reach), l: Math.min(p, b.o) - (Math.min(p, b.o) - b.l) * done, c: p, v: b.v, g: 1 }
@@ -215,206 +289,270 @@ export const liveBar = (f: number, b: Bar, a: number, top: number, end: number, 
 export const barsA = (f: number): Live[] =>
   SERIES_A.map((b, i) => {
     if (i < HUNT) return { ...b, g: 1 };
-    if (i === HUNT) return { ...liveBar(f, b, E("hunt"), E("fire") + 16, E("counter") + 6), hot: 0.5 * win(f, E("fire"), E("wickIn"), 6, 20) };
-    return { ...b, g: clamp01((f - (E("wickIn") + 4 + (i - HUNT - 1) * 6)) / 10) };
+    if (i === HUNT) {
+      if (f < E("hunt")) return { ...b, g: 0 };
+      const hp = huntPath(f, b.o, A_HIGH, b.h, b.c);
+      return { o: b.o, h: Math.max(b.o, hp.hi), l: f > E("counter") + 30 ? b.l : Math.min(b.o, hp.p), c: hp.p, v: b.v, g: 1, hot: 0.5 * win(f, E("fire"), E("wickIn"), 6, 20) + 0.6 * win(f, E("wickTag"), E("pollIn"), 8, 14) };
+    }
+    return { ...b, g: clamp01((f - (E("wickIn") + (i - HUNT - 1) * 5)) / 10) };
   });
 
 const realG = (f: number, i: number) => {
-  const at = [E("c1"), E("c2"), E("c2") + 12, E("c3"), E("c3catch"), E("c3catch") + 10][i - TOUCH];
+  const at = [E("c1"), E("c2"), E("c2") + 10, E("c3"), E("c3catch"), E("c3catch") + 10][i - TOUCH];
   return clamp01((f - at) / 14);
 };
 export const barsB = (f: number): Live[] => {
   const testIn = E("testIn");
-  const collapse = 1 - ramp(f, testIn, 10);
   const real = f < testIn + 10;
-  return (real ? SERIES_REAL : SERIES_TEST).map((b, i) => {
-    if (i < TOUCH) return { ...b, g: clamp01((f - (E("checkIn") - 8 + i * 0.9)) / 9) };
-    if (real) return { ...b, g: realG(f, i) * collapse, hot: i === TOUCH ? 0.6 * win(f, E("c1vol"), E("c2"), 6, 12) : i === TOUCH + 3 ? 0.6 * win(f, E("c3catch"), testIn, 6, 10) : 0 };
-    if (i === TOUCH) return { ...liveBar(f, b, E("pierce") - 10, E("pierce") + 8, E("back") + 6), hot: 0.5 * win(f, E("pierce"), E("noFollow"), 6, 12) };
-    const at = i <= TOUCH + 3 ? E("noFollow") + (i - TOUCH - 1) * 7 : E("notReal") + (i - TOUCH - 4) * 7;
+  const collapse = 1 - ramp(f, testIn, 10);
+  const src = real ? SERIES_REAL : SERIES_STOP;
+  return src.map((b, i) => {
+    if (i < TOUCH) return { ...b, g: clamp01((f - (E("checkIn") + 6 + i * 0.8)) / 9) };
+    if (real) return { ...b, g: realG(f, i) * collapse, hot: i === TOUCH ? 0.5 * win(f, E("c1vol"), E("c2"), 6, 12) : i === TOUCH + 1 || i === TOUCH + 2 ? 0.4 * win(f, E("c2hold"), E("c3"), 6, 12) : 0 };
+    if (i === TOUCH) return { ...liveBar(f, b, E("pierce"), E("pierce") + 14, E("back") + 8), hot: 0.5 * win(f, E("pierce"), E("noFollow"), 6, 12) };
+    if (i === SPIKE_I) return { ...liveBar(f, b, E("badStop") + 14, E("badHit") + 4, E("badHit") + 22), hot: 0.4 * win(f, E("badHit"), E("goodIn"), 6, 10) };
+    const at = i <= TOUCH + 3 ? E("noFollow") + (i - TOUCH - 1) * 6 : E("notReal") + (i - TOUCH - 4) * 6;
     return { ...b, g: clamp01((f - at) / 12) };
   });
 };
+/** the same market on the comparison stage: everything printed, the probe replays when the voice reaches 缓冲 */
+export const barsC = (f: number): Live[] =>
+  SERIES_STOP.map((b, i) => (i === SPIKE_I ? liveBar(f, b, E("goodHold"), E("goodHold") + 18, E("goodHold") + 36) : { ...b, g: 1 }));
 
-/** price of the buffer stop at frame f (series B), and which state it is in */
-export const stopPlan = (f: number) => {
-  const bad = B_HIGH + 0.06;
-  const good = TEST_WICK + 0.24;
-  const move = ramp(f, E("buffer") - 4, 26);
-  const span = 0.24 + (0.1 - 0.24) * ramp(f, E("tune"), 18) + (0.4 - 0.1) * ramp(f, E("vol"), 18) + (0.24 - 0.4) * ramp(f, E("coreIn"), 24);
-  const good2 = TEST_WICK + span;
-  return { price: bad + (good2 - bad) * move, bad, good, good2, move, span };
-};
+/** buffer above the structure high on stage C; it widens / narrows with the volatility the voice names */
+export const bufferSpan = (f: number) => 0.2 + (0.1 - 0.2) * ramp(f, E("tune"), 16) + (0.36 - 0.1) * ramp(f, E("vol"), 16);
+
+export const VB_TRAY = py(97.55, SB);
+export const GOLD_SLAB = { x: px(43.6), y: py(99.94), w: 0.9, h: py(100.22) - py(99.66), d: 1.0, z: -0.25 };
 
 // ---------------------------------------------------------------- the world
 export const World: React.FC<{ f: number }> = ({ f }) => {
   const st = stage(f);
   const A = barsA(f);
-  const B = barsB(f);
+  const Bb = barsB(f);
+  const Cb = barsC(f);
   const xA1 = px(A_N - 1) + 0.6;
-  const xB1 = px(B_N - 1) + 0.6;
 
-  // ---- pile above the series-A high
+  // ---------- opening: your brick alone, swept once, then the crowd lands around it
   const mechIn = E("mechIn");
-  // switch to the mechanism state while series A is off stage (between the opening and the ladder's exit)
-  const inMech = f >= E("liqIn") + 14;
-  const buildHi = inMech ? 0.4 * ramp(f, E("shortStops"), 40) + 0.6 * ramp(f, E("pile"), 60) : 1;
-  const buildLo = inMech ? 0.4 * ramp(f, E("longStops"), 40) + 0.6 * ramp(f, E("pile"), 60) : 0;
-  const ghost = inMech ? ramp(f, E("hidden"), 10) * (1 - ramp(f, E("pile") + 20, 30)) : 0;
+  const reveal = E("reveal");
+  const inMech = f >= E("liqIn") + 26; // switched while series A is off stage
+  const youGlow = 1 - ramp(f, E("seeYou"), 14);
+  const sweepK = clamp01((f - E("sweepYou")) / 14);
+  const liqGlow = win(f, E("seeLiq"), E("liqIn") + 20, 10, 10);
+  // ---------- the mechanism
+  const hidden = E("hidden");
+  const pile = E("pile");
+  const buildHi = inMech ? 0.34 * ramp(f, E("shortStops"), 24) + 0.66 * ramp(f, pile, 40) : 1;
+  const buildLo = inMech ? 0.34 * ramp(f, E("longStops"), 24) + 0.66 * ramp(f, pile, 40) : 0;
+  const ghostK = inMech ? ramp(f, hidden, 10) * (1 - ramp(f, pile, 14)) : 0;
+  const fire = E("fire");
+  const volume = E("volume");
+  const counter = E("counter");
   const huntH = SERIES_A[HUNT].h;
-  const huntO = SERIES_A[HUNT].o;
+  const tip = (): [number, number, number] => [px(HUNT), py(Math.max(A[HUNT].h, A[HUNT].c)), 0.05];
   const pollIn = E("pollIn");
-  const refill = ramp(f, pollIn + 6, 30);
-  const underGhost = ramp(f, E("pileUnder"), 14);
-  const youHeat = 1 - ramp(f, E("seeYou"), 16);
-  const hiAt = (j: number, c: Cube): CubeState => {
-    if (f >= pollIn + 6) return c.t < refill ? { x: c.x, y: c.y, z: c.z, s: out3((refill - c.t) * 8), heat: 0 } : null;
-    if (c.t >= buildHi) return null;
-    const grow = out3((buildHi - c.t) * 8);
+  const refill = ramp(f, E("gather"), 30);
+  const underGhost = ramp(f, E("pileUnder"), 12);
+  const ignite = (b: Brick) => huntCross(b.price - 0.03, A_HIGH, huntH) + (b.k / 5) * 14; // layer by layer, from the candle outward
+  const hiAt = (b: Brick): BrickState => {
     if (!inMech) {
-      const isYou = Math.abs(c.x - YOU[0]) < 0.12 && Math.abs(c.y - YOU[1]) < 0.05 && Math.abs(c.z - YOU[2]) < 0.05;
-      return { x: c.x, y: c.y, z: c.z, s: grow, heat: isYou ? 0 : 0 };
+      // opening: only your brick at first, the others drop in when the voice says 放得太显眼
+      if (b === YOU_BRICK) return { s: 1, glow: 0.12 * youGlow + 0.35 * win(f, E("sweepYou"), E("sweepYou") + 16, 2, 10), color: youGlow > 0.5 ? COL.warm : undefined };
+      const land = reveal + 4 + b.t * 22;
+      const k = clamp01((f - land) / 10);
+      return k <= 0 ? null : { s: 1, dy: (1 - out3(k)) * 1.2, glow: 0.5 * liqGlow };
     }
-    const launch = huntCross(PRICE(c.y) - CUBE / YS / 2, huntO, huntH) + hash(j) * 16;
-    if (f < launch) return { x: c.x, y: c.y, z: c.z, s: grow, heat: 0.4 * win(f, E("pile"), E("hunt"), 20, 10) * (c.k > 0.7 ? 1 : 0) };
-    const u = (f - launch) / 24;
-    if (u >= 1) {
-      // gone; shown again as a ghost when the voice asks what was sitting there
-      return underGhost > 0 && f < pollIn + 6 ? { x: c.x, y: c.y, z: c.z, s: underGhost, heat: 0 } : null;
-    }
-    const tx = GOLD.x - GOLD.w / 2 + 0.1 + hash(j + 3) * 0.3;
-    const ty = GOLD.y + (hash(j + 5) - 0.5) * GOLD.h * 0.8;
-    const tz = GOLD.z + (hash(j + 7) - 0.5) * GOLD.d * 0.8;
-    const k = ease(u);
-    return { x: c.x + (tx - c.x) * k, y: c.y + (ty - c.y) * k + Math.sin(Math.PI * k) * 0.7, z: c.z + (tz - c.z) * k, s: 1 - 0.5 * k, heat: 1 };
+    if (f >= E("gather")) return b.t < refill ? { s: out3((refill - b.t) * 6), glow: 0.25 * win(f, E("visible"), E("checkIn"), 10, 10) } : null;
+    if (b.t >= buildHi) return null;
+    const grow = out3((buildHi - b.t) * 6);
+    const demo = b.layer === 0 && b.k === 0 ? win(f, E("buyTag"), E("loLevel"), 4, 10) : 0;
+    if (f < fire) return { s: grow, ghost: ghostK, glow: demo };
+    const t0 = ignite(b);
+    if (f < t0) return { s: 1 };
+    if (f < t0 + 8) return { s: 1, glow: 1 }; // lit
+    if (f < t0 + 22) return { s: 1 - ease((f - t0 - 8) / 14), glow: 1 }; // collapses into a bead
+    return f >= E("pileUnder") ? { s: underGhost, ghost: 0.8 } : null;
   };
-  const ghostHi = f >= E("pileUnder") && f < pollIn + 6 ? 1 : ghost;
-  const loAt = (_j: number, c: Cube): CubeState => (c.t < buildLo || !inMech ? (inMech ? { x: c.x, y: c.y, z: c.z, s: out3((buildLo - c.t) * 8), heat: 0 } : null) : null);
-  const buildR = ramp(f, E("round"), 30);
-  const rAt = (_j: number, c: Cube): CubeState => (f >= pollIn && c.t < buildR ? { x: c.x, y: c.y, z: c.z, s: out3((buildR - c.t) * 8), heat: 0 } : null);
-  const gatherGlow = win(f, E("visible"), E("checkIn"), 14, 12);
+  // beads: each lit brick sends one bead along its layer into the sweep candle
+  const beads: React.ReactNode[] = [];
+  if (inMech && f >= fire && f < volume + 30 && st.A > 0.01) {
+    STACK_HI.forEach((b, j) => {
+      const t0 = ignite(b) + 14;
+      const u = (f - t0) / 16;
+      if (u < 0) return;
+      const [tx, ty, tz] = tip();
+      if (u < 1) {
+        const k = ease(u);
+        beads.push(<Bead key={j} p={[b.x + (tx - b.x) * k, b.y + (ty - 0.25 - b.y) * k, b.z + (tz - b.z) * k]} r={0.07} color={COL.up} op={st.A} />);
+      }
+    });
+  }
+  const knot = inMech && f >= fire + 20 ? clamp01((f - fire - 20) / 20) * (1 - ramp(f, volume, 10)) : 0;
+  const drop = clamp01((f - volume) / 12);
+  const huntVol = 0.9 + (SERIES_A[HUNT].v - 0.9) * out3((f - volume - 10) / 14);
+  const ringK = (f - volume - 10) / 26;
+  const slabIn = ramp(f, counter, 12) * (1 - ramp(f, E("wickIn") + 10, 12));
+  const absorb = win(f, counter + 6, counter + 40, 6, 20);
+  const loAt = (b: Brick): BrickState => {
+    if (!inMech) return null;
+    if (f >= E("gather")) return b.t < refill ? { s: out3((refill - b.t) * 6) } : { s: 1 };
+    if (b.t >= buildLo) return null;
+    const demo = b.layer === 0 && b.k === 0 ? win(f, E("sellTag"), E("hidden"), 4, 10) : 0;
+    return { s: out3((buildLo - b.t) * 6), ghost: ghostK, glow: demo };
+  };
+  const buildR = ramp(f, E("round"), 24);
+  const rAt = (b: Brick): BrickState => (f >= pollIn && b.t < buildR ? { s: out3((buildR - b.t) * 6), glow: 0.25 * win(f, E("visible"), E("checkIn"), 10, 10) } : null);
+  const same = win(f, E("same"), E("checkIn"), 6, 12) * (0.5 + 0.5 * Math.cos(((f - E("same")) / 14) * Math.PI * 2) ** 2);
 
-  // ---- pile above the series-B high
-  const buildB = ramp(f, E("checkIn") + 26, 40);
-  const testTop = TEST_WICK;
-  const pierceA = E("pierce") - 10;
-  const pierceT = E("pierce") + 8;
+  // ---------- stage B: checks, test, stop hugging the level
+  const checkIn = E("checkIn");
+  const buildB = ramp(f, checkIn + 20, 30);
   const stopIn = E("stopIn");
-  const refillB = ramp(f, stopIn + 4, 26);
-  const bAt = (j: number, c: Cube): CubeState => {
-    if (c.t >= buildB) return null;
-    const grow = out3((buildB - c.t) * 8);
-    const p = PRICE(c.y) - CUBE / YS / 2;
-    if (p > testTop || f < pierceA) return { x: c.x, y: c.y, z: c.z, s: grow, heat: 0 };
-    const k0 = clamp01((p - SERIES_TEST[TOUCH].o) / (testTop - SERIES_TEST[TOUCH].o));
-    const launch = pierceA + (pierceT - pierceA) * k0 + hash(j) * 6;
-    if (f < launch) return { x: c.x, y: c.y, z: c.z, s: grow, heat: 0 };
-    if (f >= stopIn + 4) return c.t < refillB ? { x: c.x, y: c.y, z: c.z, s: out3((refillB - c.t) * 8), heat: 0 } : null;
-    const u = (f - launch) / 14;
-    if (u >= 1) return null;
-    const tx = px(TOUCH) + 0.05;
-    return { x: c.x + (tx - c.x) * ease(u), y: c.y + 0.4 * Math.sin(Math.PI * u), z: c.z * (1 - ease(u)), s: 1 - 0.7 * u, heat: 1 };
+  const refillB = ramp(f, stopIn, 18);
+  const pierceA = E("pierce");
+  const bAt = (b: Brick, j: number): BrickState => {
+    if (b.t >= buildB) return null;
+    const base = { s: out3((buildB - b.t) * 6), ghost: f < stopIn ? 0.55 : 0 };
+    // the test pierce takes the bricks below its wick high
+    if (b.price - 0.03 < TEST_WICK && f >= pierceA + 6) {
+      const t0 = pierceA + 6 + (b.layer * 5 + (b.k / 5) * 6);
+      if (f >= stopIn) return b.t < 1.01 ? { s: out3((refillB - b.layer * 0.2) * 3), ghost: 0, glow: spikeHit(b, j) } : null;
+      if (f < t0) return base;
+      if (f < t0 + 8) return { ...base, glow: 1, ghost: 0 };
+      return { s: 1 - ease((f - t0 - 8) / 12), glow: 1, ghost: 0 };
+    }
+    return { ...base, glow: f >= stopIn ? spikeHit(b, j) : 0 };
   };
-  const ghostB = win(f, E("checkIn"), E("testIn"), 20, 10) * 0.55;
-  const glowB = win(f, E("coreIn") + 10, 1e9, 20, 10);
+  /** the probe on stage B lights the bricks it passes (your stop is one of them) */
+  const spikeHit = (b: Brick, _j: number) => {
+    const reach = Bb[SPIKE_I].h;
+    return b.price - 0.03 < reach && f >= E("badStop") + 14 ? win(f, E("badHit") - 2, E("goodIn") + 10, 4, 12) : 0;
+  };
+  // ---------- stage C: same market, stop beyond the structure
+  const cAt = (b: Brick): BrickState => {
+    const lit = b.price - 0.03 < Cb[SPIKE_I].h && f >= E("goodHold") ? win(f, E("goodHold") + 8, E("goodHold") + 50, 4, 16) : 0;
+    return { s: 1, glow: lit + 0.5 * win(f, E("notYou"), 1e9, 14, 10) * st.dimEnd };
+  };
+  const span = bufferSpan(f);
+  const goodStop = GOOD_STOP(span);
+  const badOp = win(f, E("badStop"), E("goodIn") + 18, 10, 10) * st.B;
+  const badBroken = ramp(f, E("badHit") + 4, 10);
+  const goodOp = ramp(f, E("goodIn") + 4, 12) * st.C;
+  const bandOp = ramp(f, E("buffer"), 14) * st.C;
+  const awayGlow = win(f, E("away"), 1e9, 12, 10);
 
-  // ---- volume floors
-  const volA = win(f, mechIn + 8, pollIn, 14, 12) * st.seriesA;
-  const huntVol = 0.9 + (SERIES_A[HUNT].v - 0.9) * ramp(f, E("fire"), 34);
-  const volB = win(f, E("c1") - 10, stopIn, 12, 12) * st.seriesB;
-  const avgB = avgVol(SERIES_REAL, TOUCH);
-
-  // ---- gold counterparty block
-  const goldOp = win(f, E("hunt") - 4, E("wickIn") + 6, 12, 14) * st.seriesA;
-  const goldHit = win(f, E("fire") + 4, E("counter") + 30, 6, 24);
-
-  // ---- stop plan (series B)
-  const sp = stopPlan(f);
-  const planOp = win(f, E("badStop") - 10, 1e9, 12, 12) * st.seriesB;
-  const bandOp = ramp(f, E("buffer") + 8, 16) * planOp;
-  const stopCol = sp.move < 0.5 ? COL.bad : COL.good;
-
-  // ---- ladder
+  // ---------- ladder (order book depth)
   const L = st.ladder;
-  const ROWS = [3, 2, 4, 2, 12, 3, 2, 4, 2];
+  const many = ramp(f, E("liqMany"), 18);
+  const rowHi = ramp(f, E("liqRow"), 10);
   const fill = E("liqFill");
-  const many = ramp(f, E("liqMany"), 14);
-  const rowHi = ramp(f, E("liqRow"), 12);
+  const done = ramp(f, E("liqDone"), 26);
+  const ROWS = [1.1, 0.7, 1.4, 0.8, 1.0, 0.6, 1.2, 0.9, 0.7];
+  const THICK = 4;
+
+  const checkVol = win(f, E("c1") - 6, stopIn + 6, 10, 10) * st.B;
+  const avgB = avgVol(SERIES_REAL, TOUCH);
 
   return (
     <>
       <Rig f={f} />
       <color attach="background" args={[COL.bg]} />
-      <fog attach="fog" args={[COL.bg, 30, 70]} />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[6, 9, 12]} intensity={1.5} />
-      <directionalLight position={[-8, 3, -6]} intensity={0.55} color="#7fa7ff" />
+      <fog attach="fog" args={[COL.fog, 14, 46]} />
+      <ambientLight intensity={0.22} color="#9fb2d6" />
+      <hemisphereLight args={["#2a3550", "#05070c", 0.5]} />
+      <KeyLight f={f} />
+      <pointLight position={[cam(f).t[0] - 6, cam(f).t[1] + 3, -4]} intensity={18} distance={20} color="#ffd9a0" />
+      <Floor />
       <Dust />
-      <Grid op={st.dimEnd} />
 
-      {/* series A */}
-      {/* the opening starts on the cube alone; the chart arrives with the pull-back */}
-      <Candles bars={A} i0={24} op={st.seriesA * (inMech ? 1 : ramp(f, E("reveal") - 6, 26))} />
-      <Shelf y={py(A_HIGH)} x0={px(A_HI) - 0.3} x1={xA1} color={COL.level} k={1} op={st.seriesA} glow={gatherGlow * 0.8} />
-      <Shelf y={py(A_LOW)} x0={px(A_LO) - 0.3} x1={xA1} color={COL.level} k={ramp(f, E("longStops") - 14, 24)} op={st.seriesA} glow={gatherGlow * 0.8} />
-      <Shelf y={py(ROUND)} x0={px(28)} x1={xA1} color={COL.round} k={ramp(f, E("round") - 8, 22)} op={st.seriesA * (f >= pollIn ? 1 : 0)} glow={gatherGlow * 0.8} />
-      <Pile cubes={PH} color={COL.buyStop} op={st.seriesA} ghost={ghostHi} glow={gatherGlow} at={hiAt} />
-      <Pile cubes={PL} color={COL.sellStop} op={st.seriesA} ghost={ghost} glow={gatherGlow} at={loAt} />
-      <Pile cubes={PR} color={COL.round} op={st.seriesA} glow={gatherGlow} at={rAt} />
-      {/* your stop in the opening: one white cube in the crowd */}
-      <Box p={YOU} s={[CUBE * 1.04, CUBE * 1.04, CUBE * 1.04].map((v) => v * (1 - ramp(f, E("seeYou") + 10, 14) * 0.04)) as [number, number, number]} color={youHeat > 0.02 ? COL.you : COL.buyStop} op={st.seriesA * (inMech ? 0 : 1)} ei={0.4 + 1.6 * youHeat} />
-      <Box p={[GOLD.x, GOLD.y, GOLD.z]} s={[GOLD.w, GOLD.h * out3(goldOp), GOLD.d]} color={COL.gold} op={goldOp * 0.8} ei={0.12 + 0.35 * goldHit} />
-      {volA > 0.002 &&
-        A.map((b, i) => {
-          if (b.g <= 0.001 || i < 18) return null;
-          const v = i === HUNT ? huntVol : b.v;
-          const h = v * VOLK * out3(b.g);
-          return <Box key={`va${i}`} p={[px(i), VA_Y + h / 2, 0]} s={[XS * 0.5, h, XS * 0.5]} color={i === HUNT ? COL.gold : COL.steel} op={volA * (i === HUNT ? 1 : 0.55)} ei={i === HUNT ? 0.6 : 0.15} />;
-        })}
+      {/* light shafts: two over each stage, plus the ones that point at what the voice is about */}
+      <Beam x={4} y={-6.2} z={-3.5} h={18} r={2.6} op={0.05 * Math.max(st.A, 0.2)} />
+      <Beam x={-38} y={-6.2} z={-3.5} h={18} r={2.6} op={0.05 * Math.max(st.B, 0.2)} />
+      <Beam x={-68} y={-6.2} z={-3.5} h={18} r={2.6} op={0.05 * Math.max(st.C, 0.2)} />
+      <Beam x={YOU_BRICK.x} y={YOU_BRICK.y} z={YOU_BRICK.z} h={10} r={0.7} op={0.18 * (1 - ramp(f, reveal, 20))} />
+      {[A_HIGH, A_LOW, ROUND].map((p, i) => (
+        <Beam key={p} x={px(36)} y={py(p) + (p === A_LOW ? -0.8 : 0)} z={-0.8} h={11} r={1.6} op={0.16 * win(f, E("visible") + i * 5, E("checkIn"), 10, 12) * st.A} />
+      ))}
+      <Beam x={STACK_C[2].x} y={STACK_C[0].y} z={-0.8} h={10} r={2.2} op={0.12 * win(f, E("notYou"), 1e9, 16, 10) * st.dimEnd} />
 
-      {/* order-book ladder */}
+      {/* ================= stage A: the range and the sweep ================= */}
+      <Candles bars={A} st={SA} op={st.A * (inMech ? 1 : ramp(f, reveal, 20))} from={22} />
+      <Volume bars={A} st={SA} op={st.A * win(f, mechIn, pollIn + 20, 14, 12)} from={26} vol={(i) => (i === HUNT ? huntVol : SERIES_A[i].v)} hot={(i) => (i === HUNT ? out3((f - volume - 10) / 10) * (1 - ramp(f, E("wickIn") + 20, 20)) : 0)} />
+      <Level y={py(A_HIGH)} x0={px(A_HI) - 0.3} x1={xA1} k={inMech ? ramp(f, E("hiLevel"), 16) : 1} op={st.A} glow={same + 0.6 * win(f, E("look"), pollIn, 8, 12)} />
+      <Level y={py(A_LOW)} x0={px(A_LO) - 0.3} x1={xA1} k={ramp(f, E("loLevel"), 16)} op={st.A * (inMech ? 1 : 0)} glow={same} />
+      <Level y={py(ROUND)} x0={px(28)} x1={xA1} k={ramp(f, E("round"), 16)} op={st.A * (f >= pollIn ? 1 : 0)} glow={same} />
+      <Bricks bricks={STACK_HI} color={COL.up} op={st.A} at={hiAt} />
+      {/* one mechanism per shot: the low stack steps back while the sweep plays above */}
+      <Bricks bricks={STACK_LO} color={COL.down} op={st.A * (1 - 0.75 * win(f, E("hunt"), E("wickIn") + 10, 12, 16))} at={loAt} />
+      <Bricks bricks={STACK_RD} color={COL.up} op={st.A} at={rAt} />
+      {/* the one-off flick through your brick in the first sentence */}
+      {sweepK > 0 && sweepK < 1 && <Bead p={[YOU_BRICK.x + 0.7, YOU_BRICK.y - 0.6 + 1.6 * ease(sweepK), 0.1]} r={0.05} color={COL.warm} op={1 - sweepK} />}
+      {sweepK > 0 && sweepK < 1 && (
+        <mesh geometry={UNIT_CYL} position={[YOU_BRICK.x + 0.7, YOU_BRICK.y - 0.6 + 0.8 * ease(sweepK), 0.1]} scale={[0.02, 1.6 * ease(sweepK), 0.02]}>
+          <meshBasicMaterial color={COL.warm} toneMapped={false} transparent opacity={0.8 * (1 - sweepK)} />
+        </mesh>
+      )}
+      {/* "触发 → 买入 / 卖出": one brick turns into a market order */}
+      <Arrow p={[STACK_HI.find((b) => b.layer === 0 && b.k === 0)!.x, STACK_HI[0].y + 0.2, -0.78]} dir={1} len={1.1 * out3((f - E("buyTag")) / 12)} color={COL.up} op={win(f, E("buyTag"), E("loLevel"), 4, 10) * st.A} />
+      <Arrow p={[STACK_LO.find((b) => b.layer === 0 && b.k === 0)!.x, STACK_LO[0].y - 0.2, -0.78]} dir={-1} len={1.1 * out3((f - E("sellTag")) / 12)} color={COL.down} op={win(f, E("sellTag"), E("hidden"), 4, 10) * st.A} />
+      {beads}
+      <Bead p={tip()} r={0.22 * out3(knot * 1.4)} color={COL.up} op={knot * st.A} />
+      {drop > 0 && drop < 1 && <Bead p={[px(HUNT), tip()[1] + (FLOOR_Y + 0.4 - tip()[1]) * ease(drop), 0.05]} r={0.2} color={COL.up} op={st.A} />}
+      <Ring x={px(HUNT)} z={0} k={ringK} color={COL.up} op={st.A} />
+      <Ring x={px(HUNT)} z={0} k={ringK - 0.25} color={COL.up} op={st.A * 0.6} />
+      <Slab p={[GOLD_SLAB.x, GOLD_SLAB.y, GOLD_SLAB.z]} s={[GOLD_SLAB.w * (1 - 0.25 * ramp(f, counter + 10, 30)), GOLD_SLAB.h * out3(slabIn), GOLD_SLAB.d]} color="#cfc3ad" op={0.92 * slabIn * st.A} ei={0.04 + 0.45 * absorb} />
+
+      {/* ================= ladder: order-book depth ================= */}
       {L > 0.002 &&
         ROWS.map((n, r) => {
-          const y = (r - 4) * 0.86;
-          const thick = r === 4;
-          const rowIn = ramp(f, E("liqIn") - 4 + r * 2, 12);
+          const y = (r - THICK) * 0.62;
+          const thick = r === THICK;
+          const rowIn = ramp(f, E("liqIn") + 6 + r * 2, 12);
+          let len = n * (thick ? 1 + 4.2 * many : 1);
+          if (thick) len *= 1 - 0.85 * done;
+          const col = thick && rowHi > 0.5 ? COL.gold : COL.steel;
           return (
             <group key={`row${r}`}>
-              <Box p={[LADDER_X + 4.1, y, 0.42]} s={[9.6 * rowIn, 0.03, 0.03]} color={thick ? COL.gold : COL.grid} op={L * (thick ? 0.4 + 0.6 * rowHi : 0.35)} basic />
-              {Array.from({ length: n }, (_, j) => {
-                const eat = thick ? ramp(f, fill + 10 + j * 3.2, 6) : 0;
-                const s = rowIn * (1 - eat);
-                const col = thick ? (many > 0.5 ? COL.gold : COL.steel) : COL.steel;
-                return <Box key={j} p={[LADDER_X + 0.4 + j * 0.72, y, -0.1]} s={[0.6 * s, 0.6 * s, 0.7 * s]} color={col} op={L * (thick ? 1 : 1 - 0.45 * many)} ei={thick ? 0.25 + 0.5 * many : 0.12} />;
-              })}
+              <Slab p={[LADDER_X + 0.2 + (len * rowIn) / 2, y, -0.3]} s={[Math.max(0.02, len * rowIn), 0.42, 0.7]} color={col} op={L * (thick ? 1 : 0.75 - 0.35 * many)} ei={thick ? 0.12 + 0.4 * rowHi : 0.05} />
+              <Level y={y - 0.26} x0={LADDER_X - 4.2} x1={LADDER_X + 7.5} k={rowIn} op={L * (thick ? 0.6 * rowHi : 0)} />
             </group>
           );
         })}
       {L > 0.002 &&
         (() => {
-          const b = ladderBlock(f, ROWS[4]);
-          return <Box p={[b.x, 0, -0.1]} s={[b.w, 0.7, 0.9]} color={COL.gold} op={L * b.op} ei={0.3 + 0.4 * b.done} />;
+          const k = ease((f - fill) / 20);
+          const w = 2.4 * (1 - 0.8 * done);
+          const x = LADDER_X - 6 + (LADDER_X + 0.1 - w / 2 - (LADDER_X - 6)) * k;
+          return <Slab p={[x, 0, -0.3]} s={[w, 0.5, 0.8]} color={COL.warm} op={L * clamp01((f - fill) / 6)} ei={0.2 + 0.8 * done} />;
         })()}
 
-      {/* series B */}
-      <Candles bars={B} i0={24} op={st.seriesB * st.dimEnd} />
-      <Shelf y={py(B_HIGH)} x0={px(B_HI) - 0.3} x1={xB1} color={COL.level} k={ramp(f, E("checkIn") + 10, 24)} op={st.seriesB * st.dimEnd} glow={glowB} />
-      <Pile cubes={PB} color={COL.buyStop} op={st.seriesB * (0.4 + 0.6 * st.dimEnd)} ghost={ghostB} glow={glowB} at={bAt} />
-      {volB > 0.002 &&
-        B.map((b, i) => {
-          if (b.g <= 0.001 || i < 16) return null;
-          const h = b.v * 0.38 * out3(b.g);
-          const hot = i === TOUCH ? win(f, E("c1vol"), E("c2"), 6, 14) + win(f, E("pierce"), E("noFollow"), 6, 14) : 0;
-          return <Box key={`vb${i}`} p={[px(i), VB_Y + h / 2, 0]} s={[XS * 0.5, h, XS * 0.5]} color={hot > 0.05 ? COL.gold : COL.steel} op={volB * (0.55 + 0.45 * hot)} ei={0.15 + 0.6 * hot} />;
-        })}
-      <Box p={[(px(16) + xB1) / 2, VB_Y + avgB * 0.38, 0.3]} s={[xB1 - px(16), 0.025, 0.025]} color="#cfd8e6" op={volB * 0.6 * ramp(f, E("c1vol") - 4, 12)} basic />
-      {/* stop plan */}
-      <Box p={[(px(18) + xB1) / 2, py(sp.price), 0.36]} s={[xB1 - px(18), 0.05, 0.05]} color={stopCol} op={planOp} basic />
-      <Box p={[(px(18) + xB1) / 2, (py(TEST_WICK) + py(sp.price)) / 2, -0.35]} s={[xB1 - px(18), Math.max(0.01, py(sp.price) - py(TEST_WICK)), 1.4]} color={COL.good} op={bandOp * 0.1} ei={0.25} />
-      <Box p={[(px(18) + xB1) / 2, py(TEST_WICK), 0.36]} s={[xB1 - px(18), 0.03, 0.03]} color="#ffffff" op={bandOp * 0.7} basic />
-      <Box p={[px(31), py(sp.price) + CUBE * 0.6, 0.05]} s={[CUBE * 1.2, CUBE * 1.2, CUBE * 1.2]} color={COL.you} op={planOp} ei={1.4} />
+      {/* ================= stage B: the checks, the test, a stop hugging the level ================= */}
+      <Candles bars={Bb} st={SB} op={st.B} from={6} />
+      {/* the volume of stage B stands on its own glass tray just under the chart */}
+      <Slab p={[(px(14, SB) + px(33, SB)) / 2, VB_TRAY - 0.03, -0.1]} s={[px(33, SB) - px(14, SB) + 0.8, 0.05, 1.1]} color="#1a2232" op={checkVol * 0.9} ei={0.02} r={0.02} />
+      <Volume bars={Bb} st={SB} op={checkVol} from={14} k={0.36} base={VB_TRAY} hot={(i) => (i === TOUCH ? win(f, E("c1vol"), E("c2"), 6, 12) : 0)} />
+      <Slab p={[(px(14, SB) + px(33, SB)) / 2, VB_TRAY + avgB * 0.36, 0.2]} s={[px(33, SB) - px(14, SB), 0.03, 0.03]} color={COL.warm} op={checkVol * ramp(f, E("c1vol"), 10)} ei={0.8} r={0.01} />
+      <Level y={py(B_HIGH, SB)} x0={px(B_HI, SB) - 0.3} x1={px(SPIKE_I, SB) + 0.6} k={ramp(f, checkIn + 8, 18)} op={st.B} glow={0.6 * win(f, E("c2hold"), E("c3"), 6, 12)} />
+      <Bricks bricks={STACK_B} color={COL.up} op={st.B} at={bAt} />
+      {/* a buyer catches the retest */}
+      <Slab p={[px(TOUCH + 3, SB), py(B_HIGH, SB) - 0.12, 0.25]} s={[0.55, 0.2, 0.4]} color={COL.up} op={win(f, E("c3catch"), E("testIn"), 8, 10) * st.B} ei={0.8} />
+      {/* your stop hugging the level: inside the stack, taken by the probe */}
+      <Slab p={[px(31, SB), py(BAD_STOP, SB) - 0.6 * ease(clamp01((f - E("badHit") - 10) / 16)), 0.25]} s={[0.5, 0.12, 0.5]} color={badBroken > 0.5 ? COL.up : COL.warm} op={badOp * (1 - 0.6 * ramp(f, E("badHit") + 14, 16))} ei={0.6 + 1.2 * badBroken} />
+      <Slab p={[(px(20, SB) + px(SPIKE_I, SB) + 0.6) / 2, py(BAD_STOP, SB), 0.36]} s={[px(SPIKE_I, SB) + 0.6 - px(20, SB), 0.035, 0.035]} color={COL.warm} op={badOp * (1 - badBroken * 0.75)} ei={0.8} r={0.01} />
+
+      {/* ================= stage C: same market, the stop beyond the structure ================= */}
+      <Candles bars={Cb} st={SC} op={st.C * st.bars} from={6} />
+      <Level y={py(B_HIGH, SC)} x0={px(B_HI, SC) - 0.3} x1={px(SPIKE_I, SC) + 0.6} k={1} op={st.C * st.dimEnd} />
+      <Bricks bricks={STACK_C} color={COL.up} op={st.C * (0.5 + 0.5 * st.dimEnd)} at={cAt} />
+      {/* structure high and the buffer above it */}
+      <Slab p={[(px(20, SC) + px(SPIKE_I, SC) + 0.6) / 2, py(TEST_WICK, SC), 0.36]} s={[px(SPIKE_I, SC) + 0.6 - px(20, SC), 0.025, 0.025]} color={COL.warm} op={bandOp * 0.6 * st.bars} ei={0.4} r={0.01} />
+      <mesh position={[(px(20, SC) + px(SPIKE_I, SC) + 0.6) / 2, (py(TEST_WICK, SC) + py(goodStop, SC)) / 2, -0.2]}>
+        <boxGeometry args={[px(SPIKE_I, SC) + 0.6 - px(20, SC), Math.max(0.01, py(goodStop, SC) - py(TEST_WICK, SC)), 1.1]} />
+        <meshPhysicalMaterial color={COL.warm} emissive={COL.warm} emissiveIntensity={0.15} transparent opacity={0.1 * bandOp} depthWrite={false} roughness={0.1} />
+      </mesh>
+      <Slab p={[(px(20, SC) + px(SPIKE_I, SC) + 0.6) / 2, py(goodStop, SC), 0.36]} s={[px(SPIKE_I, SC) + 0.6 - px(20, SC), 0.04, 0.04]} color={COL.warm} op={goodOp} ei={0.9 + awayGlow} r={0.015} />
+      <Slab p={[px(31, SC), py(goodStop, SC) + 0.08, 0.25]} s={[0.5, 0.12, 0.5]} color={COL.warm} op={goodOp} ei={0.8 + 1.2 * awayGlow} />
     </>
   );
 };
-
-export { PRICE as priceOfY };

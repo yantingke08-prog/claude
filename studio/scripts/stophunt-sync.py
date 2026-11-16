@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """Timeline, subtitles and mix for 《你的止损，为什么总被精准扫掉？》 (src/stophunt).
 
-Every picture, caption and animation is keyed to a line ID; this script decides when each line plays.
+Every picture, caption and animation is keyed to line IDs and to the time of individual characters in the voice.
+This script decides those times; the animation code never contains a frame number.
 
-  python scripts/stophunt-sync.py estimate   placeholder timeline from character counts (no audio needed)
-  python scripts/stophunt-sync.py align      timeline from the real voice: public/voiceover/vo.wav
-  python scripts/stophunt-sync.py srt [out]  subtitles from the timeline (default ../outputs-stophunt-v1/stop-hunt-v1.srt)
-  python scripts/stophunt-sync.py mix        public/stophunt/mix.wav = voice + quiet bed + sparse cues, -14 LUFS
-  python scripts/stophunt-sync.py all        align + srt + mix (what you run after replacing vo.wav)
+  python scripts/stophunt-sync.py estimate          placeholder timeline from character counts (no audio; committed)
+  python scripts/stophunt-sync.py align             word-level timeline from the real voice public/voiceover/vo.wav
+        [--model small|medium|large-v3] [--words words.json]
+  python scripts/stophunt-sync.py srt [out.srt]     subtitles from the timeline (default ../outputs-stophunt-v2/stop-hunt-v2.srt)
+  python scripts/stophunt-sync.py mix               public/stophunt/mix.wav = voice + quiet bed + sparse cues, -14 LUFS
+  python scripts/stophunt-sync.py all [...]         align + srt + mix  (what `npm run sh:sync` runs after replacing vo.wav)
 
-Run from studio/. Needs Python 3 with numpy and scipy only (no ffmpeg, no network).
-Alignment: the voice is cut at its pauses; a dynamic programme matches pauses to the script's punctuation,
-so each phrase (text between two punctuation marks) gets its own start/end. Swapping the recording only
-needs `all` again: the animation reads line/phrase times from src/stophunt/timeline.json.
+Alignment (runs only on your machine): faster-whisper transcribes vo.wav with word timestamps, using the script as a
+prompt. The recognised characters are then matched one by one to the script's characters (dynamic programming;
+same character or, with pypinyin installed, same pinyin counts as a match), so every script character gets the
+time it is actually spoken. Characters the recogniser missed are interpolated between their matched neighbours.
+Instead of whisper you can pass --words with any word-timestamp JSON: [{"word": "你的", "start": 0.12, "end": 0.40}, ...].
+
+Needs Python 3 + numpy + scipy; alignment also needs `pip install faster-whisper pypinyin` (the model downloads once).
 """
 from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -30,11 +36,13 @@ TIMELINE = SRC / "timeline.json"
 EVENTS = SRC / "events.json"
 VO = ROOT / "public" / "voiceover" / "vo.wav"
 MIX = ROOT / "public" / "stophunt" / "mix.wav"
-SRT_DEFAULT = ROOT.parent / "outputs-stophunt-v1" / "stop-hunt-v1.srt"
+SRT_DEFAULT = ROOT.parent / "outputs-stophunt-v2" / "stop-hunt-v2.srt"
 
-BREAK = "，。？！；："  # phrase ends (、 stays inside a phrase)
-SKIP = "，。？！；：、“”\"'（）() "
-CAP_MAX = 15  # characters per caption line (1440 px wide, 64 px type)
+SKIP = set("，。？！；：、“”\"'（）() ")
+SENT = "。？！；"
+CAP_ROW = 17  # characters per caption row (1440 px wide, 60 px type)
+CAP_MIN = 1.3  # seconds a caption stays on screen at least
+CAP_HOLD = 0.3  # seconds a caption stays after its last character
 
 
 def load_script():
@@ -45,50 +53,18 @@ def weight(s: str) -> int:
     return sum(1 for ch in s if ch not in SKIP)
 
 
-def phrases(text: str):
-    """[(c0, c1, punct)] char spans (c1 exclusive, punctuation included)"""
-    out, c0 = [], 0
-    for i, ch in enumerate(text):
-        if ch in BREAK:
-            out.append((c0, i + 1, ch))
-            c0 = i + 1
-    if c0 < len(text):
-        out.append((c0, len(text), ""))
-    return [p for p in out if weight(text[p[0]:p[1]]) > 0]
-
-
 # ------------------------------------------------------------------ timeline assembly
-def build(sc, times, total_s, source):
-    """times: per line, list of (t0, t1) seconds per phrase"""
+def build(sc, char_times, total_s, source):
+    """char_times: per line, a [start, end] (seconds) for every character of the text; punctuation = zero length"""
     fps = sc["fps"]
     F = lambda t: int(round(t * fps))
-    lines, caps = [], []
-    for ln, ph_t in zip(sc["lines"], times):
-        text = ln["text"]
-        ph = phrases(text)
-        ph_f = [[c0, c1, F(a), max(F(a) + 1, F(b))] for (c0, c1, _), (a, b) in zip(ph, ph_t)]
-        lines.append({"id": ln["id"], "section": ln["section"], "text": text, "from": ph_f[0][2], "to": ph_f[-1][3], "ph": ph_f})
-        # captions: greedy groups of phrases up to CAP_MAX characters, never across lines
-        group = []
-        for p in ph_f:
-            seg = text[p[0]:p[1]]
-            hard = bool(group) and text[group[-1][1] - 1] in "。？！；"
-            if group and (hard or weight("".join(text[g[0]:g[1]] for g in group) + seg) > CAP_MAX):
-                caps.append((ln["id"], group))
-                group = []
-            group.append(p)
-        if group:
-            caps.append((ln["id"], group))
-    captions = []
-    for k, (lid, group) in enumerate(caps):
-        text = next(l["text"] for l in lines if l["id"] == lid)
-        raw = text[group[0][0]:group[-1][1]]
-        while raw and raw[-1] in "，。；：、":
-            raw = raw[:-1]
-        nxt = caps[k + 1][1][0][2] if k + 1 < len(caps) else 10**9
-        to = min(group[-1][3] + int(0.35 * fps), nxt)
-        captions.append({"line": lid, "text": raw.replace("，", " ").replace("。", " ").replace("；", " "), "from": group[0][2], "to": to})
-    frames = F(total_s)
+    lines = []
+    for ln, ct in zip(sc["lines"], char_times):
+        ch = [[F(a), max(F(a), F(b))] for a, b in ct]
+        idx = [i for i, c in enumerate(ln["text"]) if c not in SKIP]
+        lines.append({"id": ln["id"], "section": ln["section"], "text": ln["text"], "from": ch[idx[0]][0], "to": ch[idx[-1]][1], "ch": ch})
+    captions = build_captions(lines, fps)
+    frames = max(F(total_s), lines[-1]["to"] + 1)
     secs = []
     for ln in lines:
         if not secs or secs[-1]["id"] != ln["section"]:
@@ -99,33 +75,106 @@ def build(sc, times, total_s, source):
     return {"fps": fps, "width": 1440, "height": 2560, "frames": frames, "seconds": round(frames / fps, 2), "source": source, "sections": secs, "lines": lines, "captions": captions}
 
 
+def split_semantic(text):
+    """sentences (。？！；), and a sentence longer than two caption rows is cut at the comma nearest its middle"""
+    out, c0 = [], 0
+    for i, c in enumerate(text):
+        if c in SENT:
+            out.append((c0, i + 1))
+            c0 = i + 1
+    if c0 < len(text):
+        out.append((c0, len(text)))
+    res = []
+    stack = list(reversed(out))
+    while stack:
+        a, b = stack.pop()
+        if weight(text[a:b]) <= CAP_ROW * 2 - 2:
+            res.append((a, b))
+            continue
+        commas = [i for i in range(a, b - 1) if text[i] in "，：、"]
+        if not commas:
+            res.append((a, b))
+            continue
+        mid = (a + b) / 2
+        k = min(commas, key=lambda i: abs(i - mid))
+        stack.extend([(k + 1, b), (a, k + 1)])
+    return [(a, b) for a, b in res if weight(text[a:b]) > 0]
+
+
+def rows_of(s):
+    """one row, or two rows broken at the comma nearest the middle"""
+    s = s.rstrip("。；，、")
+    if weight(s) <= CAP_ROW:
+        return [s]
+    commas = [i for i, c in enumerate(s[:-1]) if c in "，：、？"]
+    mid = len(s) / 2
+    k = min(commas, key=lambda i: abs(i - mid)) if commas else int(mid) - 1
+    return [s[: k + 1].rstrip("，、"), s[k + 1:]]
+
+
+def build_captions(lines, fps):
+    caps = []
+    for l in lines:
+        segs = split_semantic(l["text"])
+        first = lambda a, b: next(l["ch"][i][0] for i in range(a, b) if l["text"][i] not in SKIP)
+        last = lambda a, b: next(l["ch"][i][1] for i in reversed(range(a, b)) if l["text"][i] not in SKIP)
+        items = [[a, b] for a, b in segs]
+        # merge a segment that would be too short with its neighbour inside the same line
+        changed = True
+        while changed and len(items) > 1:
+            changed = False
+            for k, (a, b) in enumerate(items):
+                if (last(a, b) - first(a, b)) / fps < CAP_MIN * 0.75 and weight(l["text"][a:b]) < CAP_ROW:
+                    j = k + 1 if k + 1 < len(items) else k - 1
+                    lo, hi = min(k, j), max(k, j)
+                    if weight(l["text"][items[lo][0]:items[hi][1]]) <= CAP_ROW * 2:
+                        items[lo:hi + 1] = [[items[lo][0], items[hi][1]]]
+                        changed = True
+                        break
+        for a, b in items:
+            caps.append({"line": l["id"], "from": first(a, b), "end": last(a, b), "text": l["text"][a:b]})
+    out = []
+    for k, c in enumerate(caps):
+        nxt = caps[k + 1]["from"] if k + 1 < len(caps) else 10**9
+        to = max(c["end"] + int(CAP_HOLD * fps), c["from"] + int(CAP_MIN * fps))
+        to = min(to, nxt) if nxt >= c["end"] else c["end"]
+        to = max(to, c["end"])  # never leave before the last character is spoken
+        rows = rows_of(c["text"])
+        out.append({"line": c["line"], "text": "".join(rows) if len(rows) == 1 else rows[0] + " " + rows[1], "rows": rows, "from": c["from"], "to": to})
+    return out
+
+
 def write_timeline(tl):
-    TIMELINE.write_text(json.dumps(tl, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"timeline.json: {tl['frames']} frames = {tl['seconds']} s ({tl['source']}), {len(tl['lines'])} lines, {len(tl['captions'])} captions")
+    TIMELINE.write_text(json.dumps(tl, ensure_ascii=False, separators=(",", ":")).replace('{"id"', '\n{"id"').replace('{"line"', '\n{"line"') + "\n", encoding="utf-8")
+    short = [c for c in tl["captions"] if (c["to"] - c["from"]) / tl["fps"] < 1.0]
+    print(f"timeline.json: {tl['frames']} frames = {tl['seconds']} s ({tl['source']}), {len(tl['lines'])} lines, {len(tl['captions'])} captions, {len(short)} under 1 s")
 
 
-# ------------------------------------------------------------------ estimate
+# ------------------------------------------------------------------ estimate (placeholder, no audio)
 def estimate():
     sc = load_script()
     est = sc["estimate"]
     t = est["lead"]
-    times = []
+    out = []
     L = sc["lines"]
     for i, ln in enumerate(L):
         if ln.get("hint") == "laugh_before":
             t += 0.7
-        cur = []
-        ph = phrases(ln["text"])
-        for k, (c0, c1, pu) in enumerate(ph):
-            d = weight(ln["text"][c0:c1]) / est["cps"]
-            cur.append((t, t + d))
-            t += d + (est["pause"].get(pu, 0.1) if k < len(ph) - 1 else 0)
-        times.append(cur)
+        ct = []
+        for k, c in enumerate(ln["text"]):
+            if c in SKIP:
+                ct.append([t, t])
+                if k < len(ln["text"]) - 1:
+                    t += est["pause"].get(c, 0.05)
+            else:
+                ct.append([t, t + 1 / est["cps"]])
+                t += 1 / est["cps"]
+        out.append(ct)
         if ln.get("hint") == "pause_after":
             t += 0.6
         if i + 1 < len(L):
             t += est["sectionGap"] if L[i + 1]["section"] != ln["section"] else est["lineGap"]
-    write_timeline(build(sc, times, t + est["tail"], "estimate"))
+    write_timeline(build(sc, out, t + est["tail"], "estimate (placeholder: run `npm run sh:sync` with the real voice)"))
 
 
 # ------------------------------------------------------------------ audio io
@@ -153,121 +202,147 @@ def to_rate(x, sr, target=48000):
     return resample_poly(x, target // g, sr // g, axis=0)
 
 
-# ------------------------------------------------------------------ align
-def speech_gaps(mono, sr, min_gap):
-    hop = int(sr * 0.01)
-    win = int(sr * 0.03)
-    n = max(1, (len(mono) - win) // hop)
-    idx = np.arange(n)[:, None] * hop + np.arange(win)[None, :]
-    rms = np.sqrt(np.mean(mono[idx] ** 2, axis=1) + 1e-12)
-    db = 20 * np.log10(rms)
-    floor, peak = np.percentile(db, 8), np.percentile(db, 98)
-    thr = max(floor + 12, peak - 38)
-    sp = db > thr
-    if not sp.any():
-        raise SystemExit("vo.wav seems silent")
-    first, last = np.argmax(sp), len(sp) - 1 - np.argmax(sp[::-1])
-    gaps, i = [], first
-    while i <= last:
-        if not sp[i]:
-            j = i
-            while j <= last and not sp[j]:
-                j += 1
-            if (j - i) * 0.01 >= min_gap:
-                gaps.append((i * 0.01 + 0.01, j * 0.01 + 0.01))  # window centre correction
-            i = j
-        else:
-            i += 1
-    return first * 0.01 + 0.015, last * 0.01 + 0.03, gaps
+# ------------------------------------------------------------------ word-level alignment
+def is_tok(c):
+    return c not in SKIP and not c.isspace() and c not in ",.?!;:'\"-"
 
 
-def align():
+def recognise(model_name):
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise SystemExit("word-level alignment needs faster-whisper:  pip install faster-whisper pypinyin\n(or pass --words with your own word timestamps)")
+    sc = load_script()
+    prompt = "".join(l["text"] for l in sc["lines"])[:220]
+    model = None
+    for device, ctype in (("cuda", "float16"), ("cpu", "int8")):
+        try:
+            model = WhisperModel(model_name, device=device, compute_type=ctype)
+            print(f"whisper {model_name} on {device}")
+            break
+        except Exception as e:  # no CUDA → CPU
+            print(f"  ({device} unavailable: {str(e)[:80]})")
+    if model is None:
+        raise SystemExit("could not load faster-whisper")
+    segs, _ = model.transcribe(str(VO), language="zh", word_timestamps=True, initial_prompt=prompt, beam_size=5, vad_filter=False, condition_on_previous_text=True)
+    words = []
+    for s in segs:
+        for w in s.words or []:
+            words.append({"word": w.word, "start": float(w.start), "end": float(w.end)})
+    return words
+
+
+def pin(c):
+    try:
+        from pypinyin import lazy_pinyin
+
+        return lazy_pinyin(c)[0]
+    except Exception:
+        return c
+
+
+def align(args):
+    sc = load_script()
     if not VO.exists():
         raise SystemExit(f"missing {VO} - put the voice there (wav, any rate, mono or stereo)")
-    sc = load_script()
     sr, x = read_wav(VO)
-    mono = x.mean(axis=1)
-    dur = len(mono) / sr
-    ph = []  # (line index, weight, punct, is_line_end); line index -1 = a non-text sound (the [笑] before a line)
-    for li, ln in enumerate(sc["lines"]):
-        if ln.get("hint") == "laugh_before":
-            ph.append((-1, 3, "，", False))
-        p = phrases(ln["text"])
-        for k, (c0, c1, pu) in enumerate(p):
-            ph.append((li, weight(ln["text"][c0:c1]), pu, k == len(p) - 1))
-    P = len(ph)
-    for min_gap in (0.14, 0.1, 0.07, 0.05):
-        t0, t1, gaps = speech_gaps(mono, sr, min_gap)
-        if len(gaps) >= P - 1:
-            break
-    if len(gaps) < P - 1:
-        print(f"warning: only {len(gaps)} pauses for {P - 1} phrase breaks; falling back to proportional timing")
-        W = sum(p[1] for p in ph)
-        bounds, acc = [], 0
-        for p in ph[:-1]:
-            acc += p[1]
-            m = t0 + (t1 - t0) * acc / W
-            bounds.append((m, m))
-    else:
-        bounds = dp_match(ph, t0, t1, gaps)
-    starts = [t0] + [b[1] for b in bounds]
-    ends = [b[0] for b in bounds] + [t1]
-    times = [[] for _ in sc["lines"]]
-    for k, p in enumerate(ph):
-        if p[0] >= 0:
-            times[p[0]].append((starts[k], ends[k]))
+    dur = len(x) / sr
+    words_path = args.get("--words")
+    words = json.loads(Path(words_path).read_text(encoding="utf-8")) if words_path else recognise(args.get("--model", os.environ.get("SH_WHISPER_MODEL", "small")))
+    # recognised characters with their own times (a word's span is shared evenly by its characters)
+    R = []
+    for w in words:
+        cs = [c for c in w["word"] if is_tok(c)]
+        if not cs:
+            continue
+        d = (w["end"] - w["start"]) / len(cs)
+        for k, c in enumerate(cs):
+            R.append((c, w["start"] + k * d, w["start"] + (k + 1) * d))
+    # script characters
+    S = [(li, i, c) for li, ln in enumerate(sc["lines"]) for i, c in enumerate(ln["text"]) if c not in SKIP]
+    n, m = len(S), len(R)
+    if m == 0:
+        raise SystemExit("no words recognised")
+    sp = [pin(c) for _, _, c in S]
+    rp = [pin(c) for c, _, _ in R]
+    GAP = 0.8
+    D = np.zeros((n + 1, m + 1))
+    D[:, 0] = np.arange(n + 1) * GAP
+    D[0, :] = np.arange(m + 1) * GAP
+    B = np.zeros((n + 1, m + 1), dtype=np.int8)  # 0 diag, 1 up (script char unmatched), 2 left (extra recognised char)
+    B[1:, 0] = 1
+    B[0, 1:] = 2
+    for i in range(1, n + 1):
+        si, pi_ = S[i - 1][2], sp[i - 1]
+        for j in range(1, m + 1):
+            c = 0.0 if si == R[j - 1][0] else (0.25 if pi_ == rp[j - 1] else 1.0)
+            a, b, d = D[i - 1, j - 1] + c, D[i - 1, j] + GAP, D[i, j - 1] + GAP
+            if a <= b and a <= d:
+                D[i, j], B[i, j] = a, 0
+            elif b <= d:
+                D[i, j], B[i, j] = b, 1
+            else:
+                D[i, j], B[i, j] = d, 2
+    got = [None] * n
+    good = 0
+    i, j = n, m
+    while i > 0 and j > 0:
+        if B[i, j] == 0:
+            got[i - 1] = (R[j - 1][1], R[j - 1][2])
+            good += 1 if (S[i - 1][2] == R[j - 1][0] or sp[i - 1] == rp[j - 1]) else 0
+            i, j = i - 1, j - 1
+        elif B[i, j] == 1:
+            i -= 1
+        else:
+            j -= 1
+    rate = good / n
+    print(f"matched {good}/{n} script characters ({rate:.0%}) to the voice")
+    if rate < 0.7:
+        print("WARNING: low match rate - check that vo.wav reads script.json, or try --model medium / large-v3")
+    # fill unmatched characters between matched neighbours, keep everything monotonic
+    known = [k for k in range(n) if got[k] is not None]
+    if not known:
+        raise SystemExit("nothing matched")
+    for k in range(n):
+        if got[k] is None:
+            p = max([q for q in known if q < k], default=None)
+            nx = min([q for q in known if q > k], default=None)
+            t0 = got[p][1] if p is not None else max(0.0, got[nx][0] - 0.2 * (nx - k))
+            t1 = got[nx][0] if nx is not None else t0 + 0.2 * (k - p)
+            pa = p if p is not None else k - 1
+            nb = nx if nx is not None else k + 1
+            # characters the recogniser lost follow the last heard one at a normal pace, so a pause after
+            # them (e.g. between two lines) is not stretched into the speech
+            span = min((t1 - t0) / max(1, nb - pa - 1), 0.24)
+            if p is None:
+                t0 = t1 - span * (nb - pa - 1)
+            got[k] = (t0 + (k - pa - 1) * span, t0 + (k - pa) * span)
+    prev = 0.0
+    for k in range(n):
+        a, b = got[k]
+        a = max(a, prev)
+        b = max(b, a + 0.04)
+        got[k] = (a, b)
+        prev = a
+    # per line, every character (punctuation sits at the end of the character before it)
+    ct = [[None] * len(l["text"]) for l in sc["lines"]]
+    for (li, i, _), t in zip(S, got):
+        ct[li][i] = list(t)
+    for li, l in enumerate(sc["lines"]):
+        last = None
+        for i in range(len(l["text"])):
+            if ct[li][i] is None:
+                ref = last if last is not None else next(ct[li][q] for q in range(i, len(l["text"])) if ct[li][q] is not None)
+                e = ref[1] if last is not None else ref[0]
+                ct[li][i] = [e, e]
+            else:
+                last = ct[li][i]
     tail = sc["estimate"]["tail"]
-    total = max(dur, ends[-1] + tail)
-    tl = build(sc, times, total, f"vo.wav {dur:.2f}s @{sr}Hz")
+    end = max(t[1] for t in got)
+    tl = build(sc, ct, max(dur, end + tail), f"vo.wav {dur:.2f}s, word-level ({'--words' if words_path else 'faster-whisper'}), {rate:.0%} matched")
     write_timeline(tl)
     for ln in tl["lines"]:
         print(f"  {ln['id']}  {ln['from'] / tl['fps']:7.2f} - {ln['to'] / tl['fps']:7.2f}  {ln['text'][:16]}")
-
-
-def dp_match(ph, t0, t1, gaps):
-    """assign each phrase break to one pause, in order. returns [(gap_start, gap_end)] per break."""
-    P, G = len(ph), len(gaps)
-    W = sum(p[1] for p in ph)
-    exp_pause = sum(0.4 if p[3] else 0.2 for p in ph[:-1])
-    spc = max(0.12, (t1 - t0 - exp_pause) / W)  # seconds per character
-    gl = np.array([e - s for s, e in gaps])
-    cum = np.concatenate([[0], np.cumsum(gl ** 2)])
-    unused = lambda a, b: (cum[b] - cum[a]) / 0.04 if b > a else 0.0  # gaps a..b-1 left inside a phrase
-
-    def pcost(k, d):
-        e = ph[k][1] * spc
-        return ((d - e) / (0.3 * e + 0.25)) ** 2
-
-    def bcost(k, g):
-        want = 0.38 if ph[k][3] else 0.18
-        return 3.0 * max(0.0, want - gl[g]) / want
-
-    INF = 1e18
-    WIN = 14
-    dp = np.full((P - 1, G), INF)
-    bk = np.full((P - 1, G), -1, dtype=int)
-    for j in range(G):
-        dp[0, j] = pcost(0, gaps[j][0] - t0) + unused(0, j) + bcost(0, j)
-    for k in range(1, P - 1):
-        for j in range(k, G):
-            best, arg = INF, -1
-            for i in range(max(k - 1, j - WIN), j):
-                if dp[k - 1, i] >= INF:
-                    continue
-                c = dp[k - 1, i] + pcost(k, gaps[j][0] - gaps[i][1]) + unused(i + 1, j)
-                if c < best:
-                    best, arg = c, i
-            if arg >= 0:
-                dp[k, j] = best + bcost(k, j)
-                bk[k, j] = arg
-    fin = [dp[P - 2, j] + pcost(P - 1, t1 - gaps[j][1]) + unused(j + 1, G) for j in range(G)]
-    j = int(np.argmin(fin))
-    path = [j]
-    for k in range(P - 2, 0, -1):
-        j = bk[k, j]
-        path.append(j)
-    path.reverse()
-    return [gaps[g] for g in path]
 
 
 # ------------------------------------------------------------------ subtitles
@@ -279,7 +354,7 @@ def srt(out=None):
         ms = int(round(f / fps * 1000))
         return f"{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}"
 
-    rows = [f"{i + 1}\n{ts(c['from'])} --> {ts(c['to'])}\n{c['text']}\n" for i, c in enumerate(tl["captions"])]
+    rows = [f"{i + 1}\n{ts(c['from'])} --> {ts(c['to'])}\n" + "\n".join(c["rows"]) + "\n" for i, c in enumerate(tl["captions"])]
     path = Path(out) if out else SRT_DEFAULT
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(rows), encoding="utf-8")
@@ -294,23 +369,19 @@ def event_times(tl):
     for name, e in ev.items():
         if name.startswith("_"):
             continue
-        l = lines[e["line"]]
-        if e.get("end"):
-            f = l["to"]
+        if e.get("after"):
+            f = lines[e["after"]]["to"]
         else:
-            ch = l["text"].find(e["word"]) if e.get("word") else 0
-            if ch < 0:
-                raise SystemExit(f"event {name}: '{e['word']}' not in {e['line']}")
-            f = char_frame(l, ch)
+            l = lines[e["line"]]
+            if e.get("word"):
+                i = l["text"].find(e["word"])
+                if i < 0:
+                    raise SystemExit(f"event {name}: '{e['word']}' not in {e['line']}")
+                f = l["ch"][i + len(e["word"]) - 1][1] if e.get("at") == "end" else l["ch"][i][0]
+            else:
+                f = l["from"]
         out[name] = (f + e.get("off", 0), e.get("sfx"))
     return out
-
-
-def char_frame(l, ch):
-    for c0, c1, a, b in l["ph"]:
-        if ch < c1:
-            return a + (b - a) * max(0, ch - c0) / max(1, c1 - c0)
-    return l["to"]
 
 
 # ------------------------------------------------------------------ mix
@@ -442,18 +513,21 @@ def mix():
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "estimate"
+    argv = sys.argv[1:]
+    cmd = argv[0] if argv else "estimate"
+    opts = {argv[k]: argv[k + 1] for k in range(1, len(argv) - 1) if argv[k].startswith("--")}
+    pos = [a for k, a in enumerate(argv[1:], 1) if not a.startswith("--") and not argv[k - 1].startswith("--")]
     if cmd == "estimate":
         estimate()
     elif cmd == "align":
-        align()
+        align(opts)
     elif cmd == "srt":
-        srt(sys.argv[2] if len(sys.argv) > 2 else None)
+        srt(pos[0] if pos else None)
     elif cmd == "mix":
         mix()
     elif cmd == "all":
-        align()
-        srt(sys.argv[2] if len(sys.argv) > 2 else None)
+        align(opts)
+        srt(pos[0] if pos else None)
         mix()
     else:
         raise SystemExit(__doc__)

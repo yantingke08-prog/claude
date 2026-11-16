@@ -1,12 +1,15 @@
-// 《你的止损，为什么总被精准扫掉？》 vertical 1440×2560 explainer. One 3D set (candles, level shelves, stop-order piles,
-// order-book ladder) under a projected HUD. Length, timing and captions all come from timeline.json.
+// 《你的止损，为什么总被精准扫掉？》 v2 — vertical 1440×2560. One 3D trading stage (bevelled candles, gold glass levels,
+// order-brick stacks, reflective floor, light shafts, fog, depth of field) under a HUD that follows the voice.
+// Length, timing and captions all come from timeline.json.
 import { useThree } from "@react-three/fiber";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
+import { Bloom, DepthOfField, EffectComposer, Noise, Vignette } from "@react-three/postprocessing";
 import { ThreeCanvas } from "@remotion/three";
+import { BlendFunction } from "postprocessing";
 import React, { useEffect } from "react";
 import { AbsoluteFill, Audio, continueRender, delayRender, getStaticFiles, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import * as THREE from "three";
 import { E } from "./cue";
+import { cam } from "./director";
 import { fontsReady, sans, serif } from "./fonts";
 import { Hud, SAFE } from "./hud";
 import { T } from "./text";
@@ -22,7 +25,10 @@ const Settle: React.FC = () => {
     const h = delayRender("post-mount render");
     const raf = requestAnimationFrame(() => {
       advance(performance.now());
-      continueRender(h);
+      requestAnimationFrame(() => {
+        advance(performance.now());
+        continueRender(h);
+      });
     });
     return () => {
       cancelAnimationFrame(raf);
@@ -34,12 +40,23 @@ const Settle: React.FC = () => {
 
 const Cinema: React.FC<{ f: number }> = ({ f }) => {
   const { width, height } = useVideoConfig();
+  const c = cam(f);
+  const focus = Math.hypot(c.p[0] - c.t[0], c.p[1] - c.t[1], c.p[2] - c.t[2]);
   return (
-    <ThreeCanvas width={width} height={height} dpr={1} camera={{ fov: 30, position: [0, 0, 30], near: 0.1, far: 400 }} gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.08 }}>
+    <ThreeCanvas
+      width={width}
+      height={height}
+      dpr={1}
+      shadows={{ type: THREE.VSMShadowMap }}
+      camera={{ fov: 30, position: [0, 0, 30], near: 0.1, far: 400 }}
+      gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.15 }}
+    >
       <World f={f} />
       <EffectComposer multisampling={0} enableNormalPass={false}>
-        <Bloom mipmapBlur intensity={0.85} luminanceThreshold={0.62} luminanceSmoothing={0.25} radius={0.7} />
-        <Vignette eskil={false} offset={0.3} darkness={0.7} />
+        <DepthOfField worldFocusDistance={focus} worldFocusRange={focus * 0.55} bokehScale={2.2} />
+        <Bloom mipmapBlur intensity={0.75} luminanceThreshold={0.7} luminanceSmoothing={0.25} radius={0.72} />
+        <Noise premultiply blendFunction={BlendFunction.SCREEN} opacity={0.12} />
+        <Vignette eskil={false} offset={0.28} darkness={0.75} />
       </EffectComposer>
       <Settle />
     </ThreeCanvas>
@@ -66,24 +83,22 @@ export const StopHunt: React.FC<{ muted?: boolean }> = ({ muted = false }) => {
   );
 };
 
-/** cover: the sweep at its peak, cubes flying into the counterparty block, with the title */
+/** cover: the stops lighting up layer by layer as the sweep goes through them */
 export const StopHuntCover: React.FC = () => {
-  const f = Math.round(E("fire") + 18);
+  const f = Math.round(E("fire") + 16);
   return (
     <AbsoluteFill style={{ background: COL.bg }}>
       <Cinema f={f} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,6,11,0.92) 0%, rgba(4,6,11,0.55) 26%, rgba(4,6,11,0) 42%, rgba(4,6,11,0) 70%, rgba(4,6,11,0.85) 100%)" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,7,13,0.94) 0%, rgba(4,7,13,0.5) 24%, rgba(4,7,13,0) 40%, rgba(4,7,13,0) 70%, rgba(4,7,13,0.88) 100%)" }} />
       <div style={{ position: "absolute", left: SAFE.l, right: SAFE.l, top: 230, textAlign: "center" }}>
-        <div style={{ ...serif(900), fontSize: 190, lineHeight: 1.1, color: "#f3f6fb" }}>{T.hook1}</div>
-        <div style={{ ...sans(900), fontSize: 112, lineHeight: 1.25, color: COL.level, marginTop: 16 }}>{T.hook2}</div>
+        <div style={{ ...serif(900), fontSize: 190, lineHeight: 1.1, color: "#f3ead9" }}>{T.hook1}</div>
+        <div style={{ ...sans(900), fontSize: 108, lineHeight: 1.25, color: COL.gold, marginTop: 16 }}>{T.hook2}</div>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1960, display: "flex", justifyContent: "center", gap: 24 }}>
-        {["前高", "前低", "整数位"].map((s) => (
-          <div key={s} style={{ ...sans(900), fontSize: 64, color: "#05070b", background: COL.level, borderRadius: 16, padding: "6px 34px 10px" }}>{s}</div>
-        ))}
+      <div style={{ position: "absolute", left: 0, right: 0, top: 2040, textAlign: "center", ...sans(900), fontSize: 72, color: "#f3ead9" }}>
+        {T.core1}
+        <span style={{ color: COL.gold }}>{T.core2}</span>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 2110, textAlign: "center", ...sans(900), fontSize: 70, color: COL.buyStop }}>{T.core1}{T.core2}</div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 2250, textAlign: "center", ...sans(700), fontSize: 38, color: "rgba(255,214,140,0.92)" }}>{T.risk}</div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 2190, textAlign: "center", ...sans(700), fontSize: 38, color: COL.gold }}>{T.risk}</div>
     </AbsoluteFill>
   );
 };

@@ -1,5 +1,5 @@
 // Everything time-related comes from timeline.json (written by scripts/stophunt-sync.py): no frame numbers in code.
-// A line has phrases [c0, c1, from, to]; a char's frame is interpolated inside its phrase.
+// Every character of every line has its own [start, end] frame, taken from the real voice by the local alignment.
 import EV from "./events.json";
 import TL from "./timeline.json";
 
@@ -15,43 +15,39 @@ const line = (id: string) => {
   if (!l) throw new Error(`no line ${id}`);
   return l;
 };
+const at = (id: string, word: string) => {
+  const i = line(id).text.indexOf(word);
+  if (i < 0) throw new Error(`'${word}' not in ${id}`);
+  return i;
+};
 
-/** frame at which the voice reaches char index `ch` of a line */
-export const Lc = (id: string, ch = 0, off = 0) => {
-  const l = line(id);
-  for (const [c0, c1, a, b] of l.ph) if (ch < c1) return a + ((b - a) * Math.max(0, ch - c0)) / Math.max(1, c1 - c0) + off;
-  return l.to + off;
-};
-/** frame at which the voice reaches `word` in a line */
-export const Lw = (id: string, word: string, off = 0) => {
-  const ch = line(id).text.indexOf(word);
-  if (ch < 0) throw new Error(`'${word}' not in ${id}`);
-  return Lc(id, ch, off);
-};
+/** frame at which the voice starts `word` */
+export const Lw = (id: string, word: string, off = 0) => line(id).ch[at(id, word)][0] + off;
+/** frame at which the voice finishes `word` */
+export const LwEnd = (id: string, word: string, off = 0) => line(id).ch[at(id, word) + word.length - 1][1] + off;
 export const Ls = (id: string, off = 0) => line(id).from + off;
 export const Le = (id: string, off = 0) => line(id).to + off;
 
-type Ev = { line: string; word?: string; off?: number; end?: boolean };
+type Ev = { line?: string; word?: string; at?: "start" | "end"; after?: string; off?: number };
 const evs = EV as unknown as Record<string, Ev>;
 const cache = new Map<string, number>();
-/** named moment shared with the mix (events.json) */
+/**
+ * Named moment shared with the mix (events.json). `line + word` = the frame that word starts (or ends, at: "end");
+ * `after` = the frame a line has finished. Actions start on these frames, never before the word.
+ */
 export const E = (name: string) => {
   const hit = cache.get(name);
   if (hit !== undefined) return hit;
   const e = evs[name];
   if (!e || name.startsWith("_")) throw new Error(`no event ${name}`);
-  const v = e.end ? Le(e.line, e.off ?? 0) : e.word ? Lw(e.line, e.word, e.off ?? 0) : Ls(e.line, e.off ?? 0);
+  const off = e.off ?? 0;
+  const v = e.after ? Le(e.after, off) : e.word ? (e.at === "end" ? LwEnd(e.line!, e.word, off) : Lw(e.line!, e.word, off)) : Ls(e.line!, off);
   cache.set(name, v);
   return v;
 };
 
 export const captions = TL.captions;
 export const sections = TL.sections;
-export const SEC = (id: string) => {
-  const s = TL.sections.find((x) => x.id === id);
-  if (!s) throw new Error(`no section ${id}`);
-  return s;
-};
 
 // ---------------------------------------------------------------- easing
 export const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -66,7 +62,7 @@ export const ease = (x: number) => {
 export const out3 = (x: number) => 1 - Math.pow(1 - clamp01(x), 3);
 export const backOut = (x: number) => {
   const t = clamp01(x);
-  const c = 1.5;
+  const c = 1.4;
   return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
 };
 /** 0→1 over d frames from a */

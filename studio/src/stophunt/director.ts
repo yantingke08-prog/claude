@@ -1,58 +1,64 @@
-// Who is on stage when, and where the camera is. Pure functions of the frame, driven only by events/lines,
-// shared by the 3D world and the HUD (which projects 3D anchors with the same camera).
+// Camera and stage presence. Pure functions of the frame, driven only by events (which follow the voice).
+// Camera grammar: push in = explain, lateral move = compare, pull back = summarise. No orbits, no shakes.
 import * as THREE from "three";
-import { E, FRAMES, FPS, HEIGHT, WIDTH, clamp01, ease, ramp } from "./cue";
-import { A_HIGH, BASE, B_HIGH, HUNT, px, py } from "./data";
+import { E, FPS, HEIGHT, WIDTH, clamp01, ease, ramp } from "./cue";
+import { A_HIGH, A_LOW, B_HIGH, HUNT, LADDER_X, SA, SB, SC, YOU_BRICK, px, py } from "./data";
 
 export type V3 = [number, number, number];
 type Pose = { p: V3; t: V3; fov: number; d?: V3 };
-const P = (p: V3, t: V3, fov = 30, d: V3 = [0, 0, 0]): Pose => ({ p, t, fov, d });
-
-// series A sits around x 0..11, series B around x -6..5, the order-book ladder far right at x ≈ 42
-export const LADDER_X = 15.5;
-export const YOU: V3 = [px(39), py(A_HIGH) + 0.05 + 0.085, -0.45];
+const P = (t: V3, off: V3, fov = 30, d: V3 = [0, 0, 0]): Pose => ({ p: [t[0] + off[0], t[1] + off[1], t[2] + off[2]], t, fov, d });
 
 const POSES = () => {
   const hy = py(A_HIGH);
+  const ly = py(A_LOW);
+  const hx = px(HUNT);
+  const bl = py(B_HIGH, SB);
   return {
-    hookClose: P([YOU[0] + 2.2, YOU[1] + 2.1, 5.6], [YOU[0] - 0.4, YOU[1] - 0.1, YOU[2] - 0.5], 34, [-0.05, -0.02, -0.2]),
-    hookWide: P([13.5, 7.8, 21], [5.6, 0.4, -1.0], 30, [-0.06, -0.02, -0.12]),
-    ladder: P([LADDER_X + 9.5, 6.5, 27], [LADDER_X + 3.0, -0.6, -0.2], 30, [-0.08, 0, -0.1]),
-    mech: P([12.5, 6.5, 28], [5.2, -1.6, -1.0], 30, [-0.05, 0, -0.1]),
-    hunt: P([13.4, hy + 5.2, 15.5], [7.9, hy - 0.6, -0.9], 30, [-0.05, 0, -0.08]),
-    mechVol: P([13.6, 4.6, 34], [7.0, -3.1, -0.9], 30, [-0.04, 0, -0.06]),
-    wick: P([13.2, hy + 4.2, 14.5], [8.4, hy - 0.7, -0.6], 30, [-0.06, 0, -0.08]),
-    wick2: P([13.6, hy + 6.0, 16], [7.0, hy - 0.6, -1.1], 30, [-0.06, 0, -0.06]),
-    poll: P([13.5, 7.0, 31], [5.4, -0.9, -1.0], 30, [-0.06, 0, -0.08]),
-    check: P([6.5, 7.0, 24], [0.6, 0.9, -0.7], 30, [-0.05, 0, -0.08]),
-    check2: P([7.2, 7.6, 23], [1.4, 1.4, -0.7], 30, [-0.04, 0, -0.06]),
-    test: P([6.8, 7.2, 23], [1.0, 1.0, -0.7], 30, [-0.05, 0, -0.06]),
-    stop: P([7.2, py(B_HIGH) + 5.0, 17], [1.6, py(B_HIGH) - 0.2, -0.9], 30, [-0.05, 0, -0.06]),
-    core: P([10.5, 9.5, 30], [0.2, 1.6, -0.9], 30, [-0.07, 0, -0.05]),
-    end: P([4, 10, 33], [-1.5, 0.8, -0.9], 32, [0.06, 0, -0.06]),
+    hookClose: P([YOU_BRICK.x - 0.2, YOU_BRICK.y + 0.05, YOU_BRICK.z], [1.7, 1.5, 4.6], 32, [-0.04, 0, -0.1]),
+    hookWide: P([6.2, 1.0, -0.6], [5.4, 4.6, 19], 30, [-0.05, 0, -0.08]),
+    ladder: P([LADDER_X + 2.4, -0.2, -0.3], [3.4, 3.0, 19], 30, [-0.05, 0, -0.06]),
+    mechHigh: P([6.6, hy - 1.0, -0.6], [4.6, 3.0, 15], 30, [-0.04, 0, -0.06]),
+    mechLow: P([6.6, ly + 0.3, -0.6], [4.6, 3.0, 15], 30, [-0.04, 0, -0.06]),
+    mechWide: P([6.2, -1.2, -0.6], [5.6, 4.4, 28], 30, [-0.04, 0, -0.08]),
+    hunt: P([hx - 0.6, hy - 0.4, -0.5], [3.6, 2.2, 12], 30, [-0.03, 0, -0.05]),
+    volume: P([hx - 0.6, -1.4, -0.4], [4.0, 3.2, 25], 30, [-0.03, 0, -0.05]),
+    counter: P([hx + 0.2, hy - 0.5, -0.5], [3.6, 2.2, 13], 30, [-0.03, 0, -0.05]),
+    wick: P([hx, hy + 0.2, -0.2], [2.8, 1.6, 9.5], 30, [-0.03, 0, -0.04]),
+    wick2: P([7.4, hy - 0.6, -0.6], [4.2, 2.8, 14.5], 30, [-0.04, 0, -0.05]),
+    poll: P([5.8, -1.0, -0.6], [5.6, 4.2, 30], 30, [-0.05, 0, -0.06]),
+    check: P([px(25, SB), -2.5, -0.5], [4.8, 4.2, 25], 30, [-0.04, 0, -0.06]),
+    check2: P([px(28, SB), -2.3, -0.5], [4.4, 4.0, 24], 30, [-0.03, 0, -0.05]),
+    stopBad: P([px(29, SB), bl - 0.7, -0.5], [3.2, 2.2, 11.5], 30, [-0.03, 0, -0.04]),
+    stopGood: P([px(29, SC), bl - 0.55, -0.5], [3.2, 2.2, 11.5], 30, [-0.03, 0, -0.04]),
+    core: P([px(26, SC), bl - 0.4, -0.6], [4.0, 3.4, 21], 30, [-0.03, 0, -0.06]),
+    end: P([px(26, SC), bl + 0.6, -0.6], [3.0, 3.6, 27], 30, [-0.02, 0, -0.05]),
   };
 };
 let poseCache: ReturnType<typeof POSES> | null = null;
 const poses = () => (poseCache ??= POSES());
 
+/** [frame, pose, frames to get there]; every key sits on a word, so the camera never moves ahead of the voice */
 const keys = (): [number, Pose, number][] => {
   const q = poses();
   return [
     [0, q.hookClose, 1],
-    [E("reveal") - 4, q.hookWide, 56],
-    [E("liqIn") - 12, q.ladder, 30],
-    [E("mechIn") - 12, q.mech, 32],
-    [E("hunt") - 12, q.hunt, 30],
-    [E("volume") - 6, q.mechVol, 30],
-    [E("wickIn"), q.wick, 30],
-    [E("pileUnder") - 6, q.wick2, 36],
-    [E("pollIn"), q.poll, 40],
-    [E("checkIn") - 10, q.check, 36],
-    [E("c2"), q.check2, 36],
-    [E("testIn"), q.test, 26],
-    [E("stopIn"), q.stop, 34],
-    [E("coreIn"), q.core, 50],
-    [E("endIn"), q.end, 64],
+    [E("reveal"), q.hookWide, 40],
+    [E("liqIn"), q.ladder, 30],
+    [E("mechIn"), q.mechHigh, 30],
+    [E("loLevel"), q.mechLow, 24],
+    [E("hidden"), q.mechWide, 26],
+    [E("hunt"), q.hunt, 24],
+    [E("volume"), q.volume, 18],
+    [E("counter"), q.counter, 18],
+    [E("wickTag"), q.wick, 22],
+    [E("look"), q.wick2, 26],
+    [E("pollIn"), q.poll, 30],
+    [E("checkIn"), q.check, 34],
+    [E("c2"), q.check2, 26],
+    [E("stopIn"), q.stopBad, 28],
+    [E("goodIn"), q.stopGood, 26],
+    [E("coreIn"), q.core, 40],
+    [E("endIn"), q.end, 50],
   ];
 };
 
@@ -61,17 +67,16 @@ const drifted = (q: Pose, s: number): Pose => {
   const d = q.d ?? [0, 0, 0];
   return { ...q, p: [q.p[0] + d[0] * s, q.p[1] + d[1] * s, q.p[2] + d[2] * s] };
 };
-/** camera at frame f: eased moves between key poses, and a slow linear drift while holding (never a still frame) */
+/** camera at frame f: eased moves between key poses, a slow linear creep while holding */
 export const cam = (f: number): Pose => {
   const ks = keys();
   let cur = drifted(ks[0][1], f / FPS);
   for (let k = 1; k < ks.length; k++) {
     const [a, q, d] = ks[k];
     if (f < a) break;
-    const nxt = drifted(q, (f - a) / FPS);
     const t = ease((f - a) / d);
+    const nxt = drifted(q, Math.max(0, f - a - d) / FPS);
     cur = { p: lerp3(cur.p, nxt.p, t), t: lerp3(cur.t, nxt.t, t), fov: cur.fov + (nxt.fov - cur.fov) * t };
-    // carry the previous pose's drift into the blend so the move starts without a jolt
   }
   return cur;
 };
@@ -95,30 +100,47 @@ export const projector = (f: number): Proj => {
   };
 };
 
-// ---------------------------------------------------------------- stage presence (0..1) per element group
+// ---------------------------------------------------------------- stage presence (0..1)
 export const stage = (f: number) => {
   const liqIn = E("liqIn");
   const mechIn = E("mechIn");
   const checkIn = E("checkIn");
-  const endIn = E("endIn");
-  // each scene leaves completely before the next one arrives
-  // (fades are short and back to back, so the frame is never empty for more than a couple of frames)
-  // the outgoing scene finishes leaving just as the incoming one settles (a few frames of overlap, never an empty frame)
-  // series A ↔ ladder: they sit side by side, so the camera flight carries one out of frame and the other in;
-  // each fades only while it is off screen
-  const seriesA = f < mechIn ? 1 - ramp(f, liqIn + 4, 8) : ramp(f, mechIn - 18, 10) * (1 - ramp(f, checkIn - 10, 10));
-  const ladder = f < mechIn ? ramp(f, liqIn - 14, 10) : 1 - ramp(f, mechIn + 4, 8);
-  const seriesB = ramp(f, checkIn - 7, 10);
-  const dimEnd = 1 - 0.62 * ramp(f, endIn, 30);
-  return { seriesA, ladder, seriesB, dimEnd };
+  const coreIn = E("coreIn");
+  // A and the ladder stand side by side, A and B far apart: the camera move carries one out and the other in,
+  // and each fades only while it is off screen
+  const A = f < mechIn ? 1 - ramp(f, liqIn + 14, 10) : ramp(f, mechIn, 8) * (1 - ramp(f, checkIn + 22, 10));
+  const ladder = f < mechIn ? ramp(f, liqIn, 10) : 1 - ramp(f, mechIn + 16, 10);
+  const B = ramp(f, checkIn, 6) * (1 - ramp(f, E("goodIn") + 22, 10));
+  const C = ramp(f, E("goodIn"), 6);
+  /** in the summary only the level, the stack and your stop remain */
+  const bars = 1 - 0.88 * ramp(f, coreIn, 30);
+  const dimEnd = 1 - 0.55 * ramp(f, E("endIn"), 30);
+  return { A, ladder, B, C, bars, dimEnd };
 };
 
-/** price → frame of crossing for the hunt (used to fire cubes as price passes them) */
-export const huntCross = (price: number, o: number, h: number) => {
+/** the sweep bar: up to the level by 被触发, through the stacks to its high, held, then sold back by 对手盘 */
+export const huntPath = (f: number, o: number, level: number, h: number, c: number) => {
   const a = E("hunt");
-  const top = E("fire") + 16;
-  const k = clamp01((price - o) / (h - o));
-  // invert the in-out cubic numerically
+  const b = E("fire");
+  const top = b + 36;
+  const back = E("counter") + 6;
+  const end = back + 30;
+  if (f < a) return { p: o, hi: o };
+  if (f < b) {
+    const p = o + (level - o) * ease((f - a) / Math.max(1, b - a));
+    return { p, hi: p };
+  }
+  if (f < top) {
+    const p = level + (h - level) * ease((f - b) / (top - b));
+    return { p, hi: p };
+  }
+  if (f < back) return { p: h, hi: h };
+  return { p: h + (c - h) * ease((f - back) / (end - back)), hi: h };
+};
+/** frame at which the sweep reaches price p (p above the level) */
+export const huntCross = (p: number, level: number, h: number) => {
+  const b = E("fire");
+  const k = clamp01((p - level) / (h - level));
   let lo = 0;
   let hi = 1;
   for (let i = 0; i < 24; i++) {
@@ -126,9 +148,7 @@ export const huntCross = (price: number, o: number, h: number) => {
     if (ease(m) < k) lo = m;
     else hi = m;
   }
-  return a + lo * (top - a);
+  return b + lo * 36;
 };
 
-export const TOTAL = FRAMES;
-export const HUNT_X = px(HUNT);
-export const PRICE = (y: number) => y / 2 + BASE;
+export { SA, SB, SC };

@@ -5,8 +5,15 @@ export type Bar = { o: number; h: number; l: number; c: number; v: number };
 export const XS = 0.5;
 export const YS = 2.0;
 export const BASE = 98.3;
-export const px = (i: number, i0 = 24) => (i - i0) * XS;
-export const py = (p: number) => (p - BASE) * YS;
+/** each chart stands on its own spot of one long stage; the camera travels between them */
+export type Stage = { ox: number; oy: number };
+export const SA: Stage = { ox: 0, oy: 0 }; // the range and the sweep
+export const SB: Stage = { ox: -40, oy: -2.6 }; // the three checks / the test / the stop hugging the level
+export const SC: Stage = { ox: -70, oy: -2.6 }; // same market, stop outside the structure (lateral comparison)
+export const LADDER_X = 22; // order-book ladder
+export const FLOOR_Y = -6.2;
+export const px = (i: number, st: Stage = SA) => st.ox + (i - 24) * XS;
+export const py = (p: number, st: Stage = SA) => st.oy + (p - BASE) * YS;
 
 const rng = (seed: number) => () => {
   seed |= 0;
@@ -126,32 +133,41 @@ export const mixBars = (a: Bar[], b: Bar[], t: number): Bar[] => {
   });
 };
 
-// ---------------------------------------------------------------- resting stop orders (cubes) around the levels
-export const CUBE = 0.17;
-export type Cube = { x: number; y: number; z: number; t: number; k: number };
-/** a pile of cubes on the far side of a level: dir +1 above, -1 below; t = 0..1 order of appearance */
-export const pile = (seed: number, level: number, dir: 1 | -1, i0: number, i1: number, count: number, xi0 = 24): Cube[] => {
-  const r = rng(seed);
-  const cols = Math.floor(((i1 - i0) * XS) / (CUBE * 1.18));
-  const deep = 9;
-  const used = new Set<string>();
-  const out: Cube[] = [];
-  let guard = 0;
-  while (out.length < count && guard++ < count * 40) {
-    const layer = Math.floor(Math.pow(r(), 2.2) * 3); // denser right at the level
-    const zc = Math.floor(Math.pow(r(), 1.3) * deep);
-    const xc = Math.floor(Math.pow(r(), 0.75) * cols); // denser toward the recent bars
-    const key = `${layer}:${zc}:${xc}`;
-    if (used.has(key)) continue;
-    used.add(key);
-    const xx = px(i1, xi0) - xc * CUBE * 1.18;
-    out.push({
-      x: xx,
-      y: py(level) + dir * (0.05 + CUBE / 2 + layer * CUBE * 1.12),
-      z: -0.45 - zc * CUBE * 1.22,
-      t: Math.min(0.999, (1 - xc / cols) * 0.7 + r() * 0.3),
-      k: r(),
-    });
-  }
-  return out.sort((a, b) => a.t - b.t);
+/** one more probe after the test: sweeps the stops hugging the level, stays below the structure high */
+export const SPIKE: Bar = { o: 98.82, h: 99.88, l: 98.76, c: 98.9, v: 1.6 };
+export const SERIES_STOP: Bar[] = [...SERIES_TEST, SPIKE];
+export const SPIKE_I = SERIES_TEST.length;
+export const BAD_STOP = B_HIGH + 0.06;
+export const GOOD_STOP = (span: number) => TEST_WICK + span;
+
+// ---------------------------------------------------------------- resting stop orders: a few large, readable bricks
+export type Brick = { x: number; y: number; z: number; w: number; h: number; d: number; layer: number; k: number; t: number; price: number };
+export const BRICK_H = 0.15;
+const GAP_Y = 0.05;
+const GAP_X = 0.07;
+/**
+ * A stack of order bricks on the far side of a level (dir +1 above, -1 below), right-aligned to the latest bars.
+ * layers = bricks per layer, nearest the level first. t = order of appearance (bottom layer, oldest first).
+ */
+export const stack = (st: Stage, level: number, dir: 1 | -1, i0: number, i1: number, layers: number[]): Brick[] => {
+  const x0 = px(i0, st);
+  const x1 = px(i1, st) + 0.25;
+  const w = (x1 - x0) / layers[0] - GAP_X;
+  const out: Brick[] = [];
+  const total = layers.reduce((a, b) => a + b, 0);
+  let n = 0;
+  layers.forEach((count, layer) => {
+    for (let k = count - 1; k >= 0; k--) {
+      const y = py(level, st) + dir * (0.06 + BRICK_H / 2 + layer * (BRICK_H + GAP_Y));
+      out.push({ x: x1 - (k + 0.5) * (w + GAP_X), y, z: -0.78, w, h: BRICK_H, d: 0.95, layer, k, t: n++ / total, price: (y - st.oy) / YS + BASE });
+    }
+  });
+  return out;
 };
+export const STACK_HI = stack(SA, A_HIGH, 1, 28, 41, [6, 5, 4]);
+export const STACK_LO = stack(SA, A_LOW, -1, 26, 41, [6, 5, 4]);
+export const STACK_RD = stack(SA, ROUND, 1, 31, 41, [4, 3]);
+export const STACK_B = stack(SB, B_HIGH, 1, 14, 27, [6, 5, 4]);
+export const STACK_C = stack(SC, B_HIGH, 1, 14, 27, [6, 5, 4]);
+/** your stop in the opening: one brick of the stack above the high */
+export const YOU_BRICK = STACK_HI.find((b) => b.layer === 0 && b.k === 1)!;

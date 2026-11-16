@@ -1,6 +1,6 @@
 // Spot-check stills for the stop-hunt film from one bundle (no full render on machines without a GPU).
 // Usage: node scripts/stophunt-stills.mjs <outDir> <scale> <frame|event[+-off]>...   e.g.  out/sh 0.5 0 reveal+30 fire+18
-// Events resolve exactly like src/stophunt/cue.ts (line + word → frame inside the phrase).
+// Events resolve exactly like src/stophunt/cue.ts (line + word → the frame that character is spoken).
 import { bundle } from "@remotion/bundler";
 import { renderStill, selectComposition } from "@remotion/renderer";
 import fs from "node:fs";
@@ -10,15 +10,14 @@ const [outDir, scaleArg, ...picks] = process.argv.slice(2);
 const tl = JSON.parse(fs.readFileSync("src/stophunt/timeline.json", "utf8"));
 const ev = JSON.parse(fs.readFileSync("src/stophunt/events.json", "utf8"));
 const lines = Object.fromEntries(tl.lines.map((l) => [l.id, l]));
-const charFrame = (l, ch) => {
-  for (const [c0, c1, a, b] of l.ph) if (ch < c1) return a + ((b - a) * Math.max(0, ch - c0)) / Math.max(1, c1 - c0);
-  return l.to;
-};
 const E = (name) => {
   const e = ev[name];
   if (!e) throw new Error(`no event ${name}`);
+  if (e.after) return lines[e.after].to + (e.off ?? 0);
   const l = lines[e.line];
-  return (e.end ? l.to : e.word ? charFrame(l, l.text.indexOf(e.word)) : l.from) + (e.off ?? 0);
+  if (!e.word) return l.from + (e.off ?? 0);
+  const i = l.text.indexOf(e.word);
+  return (e.at === "end" ? l.ch[i + e.word.length - 1][1] : l.ch[i][0]) + (e.off ?? 0);
 };
 const resolve = (s) => {
   if (/^\d+$/.test(s)) return Number(s);

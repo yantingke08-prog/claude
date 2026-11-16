@@ -1,6 +1,9 @@
 // Every string the picture shows (fonts.ts loads exactly these glyphs).
 export const T = {
   tag: "教学示意",
+  risk: "理财有风险，投资需谨慎",
+  gain: "三连涨",
+  dare: "追？",
   title: "红三兵",
   sub1: "三根阳线，",
   sub2: "不一定是机会",

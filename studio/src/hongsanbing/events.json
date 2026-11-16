@@ -1,64 +1,240 @@
 {
-  "title": { "frame": 4 },
-  "s1": { "line": "h1", "char": 0 },
-  "s2": { "line": "h1", "char": 5 },
-  "s3": { "line": "h1", "char": 8 },
-  "hope": { "line": "h2", "char": 4 },
-  "spike": { "line": "h3", "char": 5 },
-  "fall": { "line": "h3", "char": 7, "off": 4 },
-
-  "def": { "line": "h3", "end": true, "off": 16 },
-  "closes": { "line": "d1", "char": 12 },
-  "tick1": { "line": "d1", "char": 12, "off": 10 },
-  "opens": { "line": "d2", "char": 7 },
-  "tick2": { "line": "d2", "char": 7, "off": 20 },
-  "body": { "line": "d3", "char": 0 },
-  "wick": { "line": "d3", "char": 5 },
-  "tick3": { "line": "d3", "char": 5, "off": 12 },
-  "vol": { "line": "d4", "char": 0 },
-  "volUp": { "line": "d4", "char": 5 },
-  "tick4": { "line": "d4", "char": 5, "off": 8 },
-
-  "weak": { "line": "w1", "char": 0, "off": -4 },
-  "shrink": { "line": "w2", "char": 0 },
-  "wicks": { "line": "w2", "char": 7 },
-  "volDown": { "line": "w3", "char": 0 },
-  "spikeW": { "line": "w3", "char": 13 },
-  "fallW": { "line": "w3", "char": 15 },
-  "quality": { "line": "w4", "char": 0 },
-  "notBull": { "line": "w4", "char": 9 },
-
-  "pos": { "line": "w4", "end": true, "off": 14 },
-  "posA": { "line": "p2", "char": 0 },
-  "range": { "line": "p2", "char": 5 },
-  "worthA": { "line": "p2", "char": 17 },
-  "posB": { "line": "p3", "char": 4 },
-  "farSup": { "line": "p3", "char": 9 },
-  "resist": { "line": "p3", "char": 18 },
-  "trap": { "line": "p4", "char": 4 },
-  "cashout": { "line": "p4", "char": 7 },
-  "posBack": { "line": "p4", "end": true, "off": -6 },
-
-  "conf": { "line": "p4", "end": true, "off": 14 },
-  "chase3": { "line": "c1", "char": 6 },
-  "chase": { "line": "c1", "char": 15 },
-  "resLine": { "line": "c2", "char": 0, "off": 4 },
-  "brk": { "line": "c2", "char": 6 },
-  "pull": { "line": "c3", "char": 0 },
-  "hold": { "line": "c3", "char": 5 },
-  "volC": { "line": "c4", "char": 0 },
-  "volOk": { "line": "c4", "char": 3 },
-
-  "risk": { "line": "r1", "char": 0, "off": -6 },
-  "stopLow": { "line": "r1", "char": 7 },
-  "stopBody": { "line": "r2", "char": 8 },
-  "prob": { "line": "r3", "char": 0 },
-  "probWord": { "line": "r3", "char": 7 },
-  "notFormula": { "line": "r4", "char": 0 },
-  "formula": { "line": "r4", "char": 4 },
-
-  "end": { "line": "r4", "end": true, "off": 16 },
-  "e1": { "line": "e1", "char": 0 },
-  "e2": { "line": "e2", "char": 0 },
-  "disc": { "line": "e2", "end": true, "off": 10 }
+ "title": {
+  "frame": -10
+ },
+ "s1": {
+  "frame": -3
+ },
+ "s2": {
+  "frame": 6
+ },
+ "s3": {
+  "frame": 15
+ },
+ "dare": {
+  "line": "h1",
+  "char": 9
+ },
+ "hope": {
+  "line": "h2",
+  "char": 4
+ },
+ "spike": {
+  "line": "h3",
+  "char": 5
+ },
+ "fall": {
+  "line": "h3",
+  "char": 7,
+  "off": 4
+ },
+ "def": {
+  "line": "h3",
+  "end": true,
+  "off": 16
+ },
+ "closes": {
+  "line": "d1",
+  "char": 12
+ },
+ "tick1": {
+  "line": "d1",
+  "char": 12,
+  "off": 10
+ },
+ "opens": {
+  "line": "d2",
+  "char": 7
+ },
+ "tick2": {
+  "line": "d2",
+  "char": 7,
+  "off": 20
+ },
+ "body": {
+  "line": "d3",
+  "char": 0
+ },
+ "wick": {
+  "line": "d3",
+  "char": 5
+ },
+ "tick3": {
+  "line": "d3",
+  "char": 5,
+  "off": 12
+ },
+ "vol": {
+  "line": "d4",
+  "char": 0
+ },
+ "volUp": {
+  "line": "d4",
+  "char": 5
+ },
+ "tick4": {
+  "line": "d4",
+  "char": 5,
+  "off": 8
+ },
+ "weak": {
+  "line": "w1",
+  "char": 0,
+  "off": -4
+ },
+ "shrink": {
+  "line": "w2",
+  "char": 0
+ },
+ "wicks": {
+  "line": "w2",
+  "char": 7
+ },
+ "volDown": {
+  "line": "w3",
+  "char": 0
+ },
+ "spikeW": {
+  "line": "w3",
+  "char": 13
+ },
+ "fallW": {
+  "line": "w3",
+  "char": 15
+ },
+ "quality": {
+  "line": "w4",
+  "char": 0
+ },
+ "notBull": {
+  "line": "w4",
+  "char": 9
+ },
+ "pos": {
+  "line": "w4",
+  "end": true,
+  "off": 14
+ },
+ "posA": {
+  "line": "p2",
+  "char": 0
+ },
+ "range": {
+  "line": "p2",
+  "char": 5
+ },
+ "worthA": {
+  "line": "p2",
+  "char": 17
+ },
+ "posB": {
+  "line": "p3",
+  "char": 4
+ },
+ "farSup": {
+  "line": "p3",
+  "char": 9
+ },
+ "resist": {
+  "line": "p3",
+  "char": 18
+ },
+ "trap": {
+  "line": "p4",
+  "char": 4
+ },
+ "cashout": {
+  "line": "p4",
+  "char": 7
+ },
+ "posBack": {
+  "line": "p4",
+  "end": true,
+  "off": -6
+ },
+ "conf": {
+  "line": "p4",
+  "end": true,
+  "off": 14
+ },
+ "chase3": {
+  "line": "c1",
+  "char": 6
+ },
+ "chase": {
+  "line": "c1",
+  "char": 15
+ },
+ "resLine": {
+  "line": "c2",
+  "char": 0,
+  "off": 4
+ },
+ "brk": {
+  "line": "c2",
+  "char": 6
+ },
+ "pull": {
+  "line": "c3",
+  "char": 0
+ },
+ "hold": {
+  "line": "c3",
+  "char": 5
+ },
+ "volC": {
+  "line": "c4",
+  "char": 0
+ },
+ "volOk": {
+  "line": "c4",
+  "char": 3
+ },
+ "risk": {
+  "line": "r1",
+  "char": 0,
+  "off": -6
+ },
+ "stopLow": {
+  "line": "r1",
+  "char": 7
+ },
+ "stopBody": {
+  "line": "r2",
+  "char": 8
+ },
+ "prob": {
+  "line": "r3",
+  "char": 0
+ },
+ "probWord": {
+  "line": "r3",
+  "char": 7
+ },
+ "notFormula": {
+  "line": "r4",
+  "char": 0
+ },
+ "formula": {
+  "line": "r4",
+  "char": 4
+ },
+ "end": {
+  "line": "r4",
+  "end": true,
+  "off": 16
+ },
+ "e1": {
+  "line": "e1",
+  "char": 0
+ },
+ "e2": {
+  "line": "e2",
+  "char": 0
+ },
+ "disc": {
+  "line": "e2",
+  "end": true,
+  "off": 10
+ }
 }

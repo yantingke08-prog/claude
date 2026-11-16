@@ -233,9 +233,12 @@ export const Captions: React.FC<{ f: number }> = ({ f }) => {
   );
 };
 
-export const Corner: React.FC<{ text: string }> = ({ text }) => (
-  <div style={{ position: "absolute", left: 60, top: 104, display: "flex", alignItems: "center", gap: 10, ...sans(700), fontSize: 28, color: PAL.soft, letterSpacing: 4 }}>
-    <div style={{ width: 10, height: 10, borderRadius: 5, background: PAL.gold }} />
-    {text}
-  </div>
+export const Corner: React.FC<{ text: string; risk?: string }> = ({ text, risk }) => (
+  <>
+    <div style={{ position: "absolute", left: 60, top: 104, display: "flex", alignItems: "center", gap: 10, ...sans(700), fontSize: 28, color: PAL.soft, letterSpacing: 4 }}>
+      <div style={{ width: 10, height: 10, borderRadius: 5, background: PAL.gold }} />
+      {text}
+    </div>
+    {risk && <div style={{ position: "absolute", right: 60, top: 104, ...sans(700), fontSize: 28, color: PAL.soft, letterSpacing: 2 }}>{risk}</div>}
+  </>
 );

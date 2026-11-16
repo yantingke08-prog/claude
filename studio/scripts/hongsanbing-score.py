@@ -340,6 +340,8 @@ def sfx():
     for k, n in enumerate(("s1", "s2", "s3")):
         place(out, boom(1.6, 58 + 8 * k, 0.55), ev(n))
         place(out, tick(0.3, 1500 + 300 * k), ev(n))
+    place(out, boom(1.2, 66, 0.4), ev("dare"))  # "你敢追吗？": the question lands with a hit
+    place(out, tick(0.45, 2200), ev("dare"))
     place(out, shimmer(1.2, 0.2), ev("hope"))
     place(out, riser(0.9, 0.35), ev("spike") - 0.9)
     place(out, crack(0.55), ev("fall"))

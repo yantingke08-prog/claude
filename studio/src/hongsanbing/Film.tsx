@@ -3,7 +3,7 @@ import React from "react";
 import { AbsoluteFill, Audio, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { E, FRAMES, Lc } from "./cue";
 import { CONF, CONF_SOL, DEF_STAGES, HOOK, POS_A, POS_B, POS_BARS, POS_RANGE, POS_RES, POS_SUP, RES, SOL, STRONG, type Bar, lerp, lerpBar } from "./data";
-import { fontsReady, sans, serif } from "./fonts";
+import { fontsReady, num, sans, serif } from "./fonts";
 import { type Chart, Candles, Captions, Chip, ClipRect, Corner, Header, Label, Leader, PAL, Panel, Volume, bodyW, camera, clamp01, cx, cy, ease, out3, ramp, slot, win } from "./kit";
 import { T } from "./text";
 
@@ -49,33 +49,70 @@ const DUST = Array.from({ length: 46 }, (_, k) => {
   return { x: r(1) * 1080, y: 420 + r(2) * 1000, s: 1.4 + r(3) * 2.4, o: 0.1 + r(4) * 0.28, v: 0.15 + r(5) * 0.5 };
 });
 
+const HOOK_Z: Chart = { ...HOOK_C, i0: 7.6, i1: 10.7, plo: 102.2, phi: 114.6 }; // opening close-up
+const BASE_P = 102.9; // first soldier's open: the gain counter starts here
+
 const Hook: React.FC<{ f: number }> = ({ f }) => {
-  const c = camera(f, [[0, HOOK_C], [E("fall") - 8, HOOK_W]], 34);
+  // v3: the film opens mid-action — three soldiers slam in within 0.6 s on a close-up, the camera kicks back,
+  // a gain counter races up, then the voice asks "你敢追吗？" and the move is shown failing
   const sol = [E("s1"), E("s2"), E("s3")];
+  const c = camera(f, [[0, HOOK_Z], [sol[2] + 8, HOOK_C], [E("fall") - 8, HOOK_W]], 26);
   const spike = ramp(f, E("spike"), 9);
   const bars: Bar[] = HOOK.map((b, i) => (i === 10 ? { ...b, h: lerp(113.1, 115.6, spike) } : b));
   const fall = E("fall");
-  const g = (i: number) => (i < 8 ? clamp01(f / 10) : i <= 10 ? out3((f - sol[i - 8]) / 9) : out3((f - fall - (i - 11) * 5) / 7));
+  const g = (i: number) => (i < 8 ? 1 : i <= 10 ? out3((f - sol[i - 8]) / 6) : out3((f - fall - (i - 11) * 5) / 7));
   const op = (i: number) => (i < 8 ? 0.4 : 1);
   const glow = (i: number) => (i >= 8 && i <= 10 ? 1 - ramp(f, fall, 10) : 0);
-  // 3D stage: the chart stands on a tilted floor that slowly settles
+  // impacts: a decaying shake and an expanding ring on each soldier, and on the fall
+  const hits = [...sol.map((t, k) => [t + 5, 1 + 0.3 * k] as [number, number]), [fall, 1.3] as [number, number]];
+  let shx = 0;
+  let shy = 0;
+  for (const [t, amp] of hits)
+    if (f >= t) {
+      const d = Math.exp(-(f - t) / 3.2) * 10 * amp;
+      shx += d * Math.sin((f - t) * 2.3);
+      shy += d * Math.cos((f - t) * 2.9) * 0.7;
+    }
+  // 3D stage: tilted hard at first, settling
   const t = clamp01(f / CUT.def);
-  const rx = lerp(24, 9, ease(t));
-  const ry = lerp(-16, -5, ease(t));
+  const rx = lerp(26, 9, ease(t));
+  const ry = lerp(-18, -5, ease(t));
   const base = c.y + c.h;
+  // gain counter: follows the latest drawn close
+  let px = BASE_P;
+  let rising = true;
+  for (let i = 8; i < HOOK.length; i++) {
+    const gi = g(i);
+    if (gi <= 0) break;
+    const b = HOOK[i];
+    const prev = px;
+    px = b.o + (b.c - b.o) * Math.min(1, gi);
+    rising = px >= prev - 0.001 && b.c >= b.o;
+  }
+  const pct = (px / BASE_P - 1) * 100;
+  const cA = 1;
+  const dare = E("dare");
+  const dk = win(f, dare, E("hope") - 2, 6, 8);
+  const pulse = 1 + 0.08 * Math.sin(Math.PI * clamp01((f - dare) / 10));
   // projection "看起来像机会" and its collapse
   const hope = E("hope");
-  const pk = ramp(f, hope, 16) * (1 - ramp(f, fall, 10));
+  const pk = ramp(f, hope, 16) * (1 - ramp(f, E("spike") - 4, 6)); // the projection is gone before the push
   const p0 = P(c, 10, 112.6);
   const p1: [number, number] = [cx(c, 10.75), cy(c, 116.0)];
   const last = win(f, E("spike") + 2, CUT.def + 4);
   const top = P(c, 10, bars[10].h);
+  const ring = (i: number, t0: number, color: string, key: string) => {
+    const k = (f - t0) / 12;
+    if (k <= 0 || k >= 1) return null;
+    const [x, y] = P(c, i, Math.max(bars[i].o, bars[i].c));
+    return <circle key={key} cx={x} cy={y} r={24 + 120 * out3(k)} fill="none" stroke={color} strokeOpacity={0.75 * (1 - k)} strokeWidth={4 * (1 - k) + 1} />;
+  };
   return (
     <>
-      <div style={{ position: "absolute", inset: 0, transform: `perspective(1900px) rotateX(${rx}deg) rotateY(${ry}deg)`, transformOrigin: "540px 1000px" }}>
+      <div style={{ position: "absolute", inset: 0, transform: `translate(${shx}px, ${shy}px) perspective(1900px) rotateX(${rx}deg) rotateY(${ry}deg)`, transformOrigin: "540px 1000px" }}>
         <Svg>
           {DUST.map((d, k) => (
-            <circle key={k} cx={d.x} cy={d.y - f * d.v} r={d.s} fill="#cfe0ff" fillOpacity={d.o * clamp01(f / 20)} />
+            <circle key={k} cx={d.x} cy={d.y - f * d.v} r={d.s} fill="#cfe0ff" fillOpacity={d.o} />
           ))}
           {/* floor line and reflection */}
           <line x1={40} x2={1040} y1={base + 4} y2={base + 4} stroke="#cfe0ff" strokeOpacity={0.16} strokeWidth={2} />
@@ -84,16 +121,28 @@ const Hook: React.FC<{ f: number }> = ({ f }) => {
             <Candles c={c} bars={bars} g={g} op={(i) => op(i) * 0.13} />
           </g>
           <Candles c={c} bars={bars} g={g} op={op} glow={glow} />
+          {sol.map((t0, k) => ring(8 + k, t0 + 4, PAL.up, `r${k}`))}
+          {ring(11, fall + 2, PAL.down, "rf")}
+          {dk > 0 && <circle cx={top[0]} cy={top[1]} r={34 * pulse} fill="none" stroke={PAL.gold} strokeOpacity={dk} strokeWidth={4} />}
           {pk > 0 && (
             <g>
               <line x1={p0[0]} y1={p0[1]} x2={lerp(p0[0], p1[0], pk)} y2={lerp(p0[1], p1[1], pk)} stroke={PAL.gold} strokeWidth={4} strokeDasharray="14 10" strokeOpacity={0.95} />
               <circle cx={lerp(p0[0], p1[0], pk)} cy={lerp(p0[1], p1[1], pk)} r={9} fill={PAL.gold} fillOpacity={pk} />
             </g>
           )}
-          {last > 0 && <Leader p={top} q={[top[0] - 110, top[1] - 50]} k={last} color={PAL.warn} />}
+          {last > 0 && <Leader p={top} q={[top[0] + 70, top[1] - 56]} k={last} color={PAL.warn} />}
         </Svg>
         <Label x={p1[0]} y={p1[1] - 18} ax={0.75} ay={1} lines={[{ t: T.hope, size: 44, color: "gold" }]} tone="gold" a={pk * ramp(f, hope + 6, 8)} f={f} />
-        <Label x={top[0] - 110} y={top[1] - 50} ax={1} ay={0.5} lines={[{ t: T.last, size: 44, color: "warn" }]} tone="warn" a={last} f={f} />
+        <Label x={top[0] + 70} y={top[1] - 56} ax={0} ay={0.5} lines={[{ t: T.last, size: 44, color: "warn" }]} tone="warn" a={last} f={f} />
+      </div>
+      {/* gain counter (screen space, upper-left of the stage) */}
+      <div style={{ position: "absolute", left: 70, top: 560, opacity: cA * (1 - ramp(f, CUT.def - 4, 8)) }}>
+        <div style={{ ...sans(700), fontSize: 32, color: PAL.soft, letterSpacing: 4 }}>{T.gain}</div>
+        <div style={{ ...num(700), fontSize: 132, lineHeight: 1.05, color: rising ? PAL.up : PAL.down, transform: `translate(${shx * 0.4}px, ${shy * 0.4}px)` }}>
+          {pct >= 0 ? "+" : "−"}
+          {Math.abs(pct).toFixed(1)}%
+        </div>
+        <div style={{ display: "inline-block", marginTop: 14, opacity: dk, transform: `scale(${pulse})`, transformOrigin: "0 50%", ...sans(900), fontSize: 64, color: "#10141c", background: PAL.gold, padding: "2px 26px 6px", borderRadius: 18 }}>{T.dare}</div>
       </div>
       <HookTitle f={f} />
     </>
@@ -489,7 +538,10 @@ const End: React.FC<{ f: number }> = ({ f }) => {
         <div style={{ ...serif(900), fontSize: 120, color: PAL.gold, opacity: k2, transform: `translateY(${(1 - k2) * 26}px)`, letterSpacing: 4, marginTop: 18 }}>{T.end2}</div>
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 1420, display: "flex", justifyContent: "center", opacity: kd }}>
-        <div style={{ ...sans(700), fontSize: 34, color: PAL.soft, padding: "12px 30px", border: "2px solid rgba(185,196,211,0.35)", borderRadius: 40, letterSpacing: 2 }}>{T.disc}</div>
+        <div style={{ ...sans(700), fontSize: 34, lineHeight: 1.5, color: PAL.soft, padding: "14px 36px", border: "2px solid rgba(185,196,211,0.35)", borderRadius: 32, letterSpacing: 2, textAlign: "center" }}>
+          <div>{T.disc}</div>
+          <div style={{ color: PAL.gold }}>{T.risk}</div>
+        </div>
       </div>
     </>
   );
@@ -514,9 +566,10 @@ const Headers: React.FC<{ f: number }> = ({ f }) => (
 );
 
 const Scene: React.FC<{ f: number; a: number; b: number; children: (f: number) => React.ReactNode }> = ({ f, a, b, children }) => {
-  const o = Math.min(clamp01((f - a) / XF), clamp01((b + XF - f) / XF));
+  // the first scene is fully visible from frame 0 (no fade-in)
+  const o = Math.min(a === 0 ? 1 : clamp01((f - a) / XF), clamp01((b + XF - f) / XF));
   if (o <= 0) return null;
-  return <div style={{ position: "absolute", inset: 0, opacity: a === 0 ? clamp01((b + XF - f) / XF) : o }}>{children(f)}</div>;
+  return <div style={{ position: "absolute", inset: 0, opacity: o }}>{children(f)}</div>;
 };
 
 export const HongSanBingFilm: React.FC<{ muted?: boolean }> = ({ muted = false }) => {
@@ -532,7 +585,7 @@ export const HongSanBingFilm: React.FC<{ muted?: boolean }> = ({ muted = false }
         <Scene f={f} a={CUT.end} b={FRAMES + 99}>{(x) => <End f={x} />}</Scene>
         <Headers f={f} />
         <Captions f={f} />
-        <Corner text={T.tag} />
+        <Corner text={T.tag} risk={T.risk} />
       </Page>
       {!muted && <Audio src={staticFile("hongsanbing/mix.wav")} />}
     </AbsoluteFill>
@@ -550,7 +603,7 @@ export const HongSanBingCover: React.FC = () => {
         <div style={{ position: "absolute", left: 0, right: 0, top: 1330, textAlign: "center" }}>
           <div style={{ ...sans(700), fontSize: 34, color: PAL.gold, letterSpacing: 8 }}>{T.coverTag}</div>
         </div>
-        <Corner text={T.tag} />
+        <Corner text={T.tag} risk={T.risk} />
       </Page>
     </AbsoluteFill>
   );

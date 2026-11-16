@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TL = json.loads((ROOT / "src/hongsanbing/timeline.json").read_text(encoding="utf-8"))
-out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT.parent / "outputs-hongsanbing-v1/subtitles.srt"
+out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT.parent / "outputs-hongsanbing-v2/subtitles.srt"
 fps = TL["fps"]
 
 

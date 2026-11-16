@@ -42,7 +42,7 @@ const Svg: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 // ================================================================= 0 · hook
-const HOOK_C: Chart = { x: 90, y: 560, w: 900, h: 700, i0: 6.9, i1: 10.9, plo: 101, phi: 116.2 };
+const HOOK_C: Chart = { x: 80, y: 540, w: 920, h: 860, i0: 6.9, i1: 10.9, plo: 101, phi: 116.2 };
 const HOOK_W: Chart = { ...HOOK_C, i0: 2.6, i1: 15.2, plo: 101, phi: 117.2 };
 const DUST = Array.from({ length: 46 }, (_, k) => {
   const r = (n: number) => ((Math.sin(k * 127.1 + n * 311.7) * 43758.5453) % 1 + 1) % 1;
@@ -124,10 +124,10 @@ const HookTitle: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ================================================================= 1–2 · definition, then the weak version on the same chart
-const DEF_FULL: Chart = { x: 90, y: 410, w: 900, h: 500, i0: 0, i1: 10, plo: 99, phi: 116.5 };
-const DEF_PUSH: Chart = { ...DEF_FULL, i0: 4.6, i1: 11.2 };
-const VOL = { y: 950, h: 170, vmax: 130 };
-const CHIP = { x: [60, 552], y: [1176, 1268], w: 468 };
+const DEF_FULL: Chart = { x: 90, y: 400, w: 900, h: 600, i0: 0, i1: 10, plo: 99, phi: 116.5 };
+const DEF_PUSH: Chart = { ...DEF_FULL, i0: 4.6, i1: 11.2, plo: 100.4, phi: 115.2 };
+const VOL = { y: 1060, h: 190, vmax: 125 };
+const CHIP = { x: [60, 552], y: [1306, 1398], w: 468 };
 
 const defBars = (f: number): Bar[] => {
   const st: [Bar[], number, number][] = [
@@ -146,7 +146,7 @@ const defBars = (f: number): Bar[] => {
 };
 
 const DefWeak: React.FC<{ f: number }> = ({ f }) => {
-  const c = camera(f, [[0, DEF_FULL], [CUT.def + 18, DEF_PUSH]], 30);
+  const c = camera(f, [[0, DEF_FULL], [CUT.def + 6, DEF_PUSH]], 24);
   const bars = defBars(f);
   const weak = f >= CUT.weak;
   const bw = bodyW(c);
@@ -250,9 +250,9 @@ const DefWeak: React.FC<{ f: number }> = ({ f }) => {
   return (
     <>
       <Svg>
-        <Panel x={60} y={380} w={960} h={760} grid={c} />
+        <Panel x={60} y={370} w={960} h={905} grid={c} />
         <line x1={84} x2={996} y1={VOL.y - 18} y2={VOL.y - 18} stroke={PAL.line} strokeOpacity={0.12} strokeWidth={1.5} />
-        <ClipRect id="dfC" x={72} y={392} w={936} h={540} />
+        <ClipRect id="dfC" x={72} y={382} w={936} h={640} />
         <ClipRect id="dfV" x={72} y={VOL.y - 10} w={936} h={VOL.h + 12} />
         <Candles c={c} bars={bars} op={(i) => (soldier(i) ? 1 : 0.42)} glow={(i) => (soldier(i) && !weak ? 1 : 0)} clip="dfC" />
         <Volume c={c} y={VOL.y} h={VOL.h} vmax={VOL.vmax} bars={bars} g={volG} op={(i) => (soldier(i) ? 1 : 0.5)} hl={(i) => (soldier(i) ? ramp(f, S("volUp"), 10) * (1 - ramp(f, S("quality"), 10)) : 0)} clip="dfV" />
@@ -298,7 +298,7 @@ const qualityCard = (f: number) => {
 };
 
 // ================================================================= 3 · position
-const POS_FULL: Chart = { x: 90, y: 400, w: 900, h: 740, i0: 0, i1: 65, plo: 94, phi: 168 };
+const POS_FULL: Chart = { x: 90, y: 400, w: 900, h: 1050, i0: 0, i1: 65, plo: 94, phi: 168 };
 const POS_AV: Chart = { ...POS_FULL, i0: 20, i1: 44, plo: 95, phi: 125 };
 const POS_BV: Chart = { ...POS_FULL, i0: 44, i1: 65, plo: 128, phi: 168 };
 
@@ -331,8 +331,8 @@ const Pos: React.FC<{ f: number }> = ({ f }) => {
   return (
     <>
       <Svg>
-        <Panel x={60} y={370} w={960} h={800} grid={c} step={10} />
-        <ClipRect id="psC" x={72} y={382} w={936} h={776} />
+        <Panel x={60} y={370} w={960} h={1110} grid={c} step={10} />
+        <ClipRect id="psC" x={72} y={382} w={936} h={1086} />
         <g clipPath="url(#psC)">
           {kRes > 0 && (
             <g>
@@ -358,20 +358,20 @@ const Pos: React.FC<{ f: number }> = ({ f }) => {
         {kSup > 0 && labB > 0 && <Leader p={[xb, (yb0 + yb1) / 2]} q={[770, (yb0 + yb1) / 2]} k={win(f, S("farSup"), S("trap") - 2)} color={PAL.cyan} />}
       </Svg>
       <Label x={110} y={430} lines={[...T.aLines.map((t, k) => ({ t, at: [S("posA"), S("range"), Lc("p2", 10)][k] })), { t: T.aWorth, size: 42, color: "cyan", at: S("worthA") }]} tone="cyan" a={labA} f={f} />
-      <Label x={xb - 20} y={640} ax={1} ay={0.5} lines={[{ t: T.bHigh, color: "warn" }]} tone="warn" a={labB} f={f} />
+      <Label x={xb - 20} y={cy(c, POS_RES.lo) + 70} ax={1} ay={0.5} lines={[{ t: T.bHigh, color: "warn" }]} tone="warn" a={labB} f={f} />
       <Label x={110} y={cy(c, POS_RES.hi) - 12} ay={1} lines={[{ t: T.bRes, color: "warn" }]} tone="warn" a={win(f, S("resist") + 4, S("cashout") + 8)} f={f} />
       <Label x={110} y={yb1 - 10} ay={1} lines={[{ t: T.supTag, size: 30, color: "cyan" }]} plain a={win(f, S("farSup") + 6, S("cashout") + 8)} f={f} />
       <Label x={770} y={(yb0 + yb1) / 2} ay={0.5} lines={[{ t: T.bSup, color: "cyan" }]} tone="cyan" a={win(f, S("farSup") + 6, S("trap") - 2)} f={f} />
-      <Label x={770} y={1020} ay={0.5} lines={[{ t: T.bTrap, color: "warn" }, { t: T.bCash, color: "warn", at: S("cashout") }]} tone="warn" a={win(f, S("trap"), S("cashout") + 8)} f={f} />
+      <Label x={770} y={cy(c, 137.5)} ay={0.5} lines={[{ t: T.bTrap, color: "warn" }, { t: T.bCash, color: "warn", at: S("cashout") }]} tone="warn" a={win(f, S("trap"), S("cashout") + 8)} f={f} />
     </>
   );
 };
 
 // ================================================================= 4–5 · confirmation, then risk on the same chart
-const CF_FULL: Chart = { x: 90, y: 400, w: 900, h: 540, i0: 0, i1: 19, plo: 104, phi: 132 };
-const CF_RISK: Chart = { x: 90, y: 400, w: 900, h: 740, i0: 6, i1: 15, plo: 104, phi: 124.5 };
-const CVOL = { y: 975, h: 165, vmax: 115 };
-const CCHIP = { x: [60, 384, 708], y: 1196, w: 312 };
+const CF_FULL: Chart = { x: 90, y: 400, w: 900, h: 680, i0: 0, i1: 19, plo: 104, phi: 132 };
+const CF_RISK: Chart = { x: 90, y: 400, w: 900, h: 900, i0: 6, i1: 15, plo: 104, phi: 124.5 };
+const CVOL = { y: 1120, h: 190, vmax: 112 };
+const CCHIP = { x: [60, 384, 708], y: 1366, w: 312 };
 
 const ConfRisk: React.FC<{ f: number }> = ({ f }) => {
   const S = (n: string) => E(n);
@@ -418,9 +418,9 @@ const ConfRisk: React.FC<{ f: number }> = ({ f }) => {
     <>
       <div style={{ position: "absolute", inset: 0, opacity: dim }}>
         <Svg>
-          <Panel x={60} y={370} w={960} h={795} grid={c} />
+          <Panel x={60} y={370} w={960} h={965} grid={c} />
           <line x1={84} x2={996} y1={CVOL.y - 18} y2={CVOL.y - 18} stroke={PAL.line} strokeOpacity={0.12 * (1 - rk)} strokeWidth={1.5} />
-          <ClipRect id="cfC" x={72} y={382} w={936} h={lerp(575, 772, rk)} />
+          <ClipRect id="cfC" x={72} y={382} w={936} h={lerp(715, 932, rk)} />
           <ClipRect id="cfV" x={72} y={CVOL.y - 10} w={936} h={CVOL.h + 12} />
           {kl > 0 && (
             <g clipPath="url(#cfC)">
@@ -457,9 +457,9 @@ const Statement: React.FC<{ f: number }> = ({ f }) => {
   const k3 = out3((f - E("notFormula")) / 12);
   const ks = ramp(f, E("formula") + 4, 12);
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, top: 560, textAlign: "center", opacity: a }}>
+    <div style={{ position: "absolute", left: 0, right: 0, top: 640, textAlign: "center", opacity: a }}>
       <div style={{ ...sans(700), fontSize: 48, color: PAL.soft }}>{T.probPre}</div>
-      <div style={{ ...sans(900), fontSize: 150, color: PAL.gold, lineHeight: 1.2, opacity: k2, transform: `scale(${0.9 + 0.1 * k2})` }}>{T.prob}</div>
+      <div style={{ ...sans(900), fontSize: 176, color: PAL.gold, lineHeight: 1.2, opacity: k2, transform: `scale(${0.9 + 0.1 * k2})` }}>{T.prob}</div>
       <div style={{ display: "inline-flex", alignItems: "baseline", gap: 14, marginTop: 34, opacity: k3, transform: `translateY(${(1 - k3) * 20}px)` }}>
         <span style={{ ...sans(700), fontSize: 50, color: PAL.soft }}>{T.notPre}</span>
         <span style={{ position: "relative", ...sans(900), fontSize: 66, color: PAL.ink }}>
@@ -472,7 +472,7 @@ const Statement: React.FC<{ f: number }> = ({ f }) => {
 };
 
 // ================================================================= end
-const END_C: Chart = { x: 380, y: 470, w: 320, h: 300, i0: 8, i1: 10, plo: 102, phi: 113.6 };
+const END_C: Chart = { x: 300, y: 420, w: 480, h: 470, i0: 8, i1: 10, plo: 102, phi: 113.6 };
 const End: React.FC<{ f: number }> = ({ f }) => {
   const e0 = CUT.end;
   const k1 = out3((f - E("e1")) / 16);
@@ -481,14 +481,14 @@ const End: React.FC<{ f: number }> = ({ f }) => {
   return (
     <>
       <Svg>
-        <line x1={300} x2={780} y1={END_C.y + END_C.h + 10} y2={END_C.y + END_C.h + 10} stroke="#cfe0ff" strokeOpacity={0.14} strokeWidth={2} />
+        <line x1={220} x2={860} y1={END_C.y + END_C.h + 10} y2={END_C.y + END_C.h + 10} stroke="#cfe0ff" strokeOpacity={0.14} strokeWidth={2} />
         <Candles c={END_C} bars={STRONG} g={(i) => out3((f - e0 - 2 - (i - 8) * 6) / 10)} glow={() => 1} />
       </Svg>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 870, textAlign: "center" }}>
-        <div style={{ ...serif(900), fontSize: 108, color: PAL.ink, opacity: k1, transform: `translateY(${(1 - k1) * 26}px)`, letterSpacing: 4 }}>{T.end1}</div>
-        <div style={{ ...serif(900), fontSize: 108, color: PAL.gold, opacity: k2, transform: `translateY(${(1 - k2) * 26}px)`, letterSpacing: 4, marginTop: 18 }}>{T.end2}</div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1000, textAlign: "center" }}>
+        <div style={{ ...serif(900), fontSize: 120, color: PAL.ink, opacity: k1, transform: `translateY(${(1 - k1) * 26}px)`, letterSpacing: 4 }}>{T.end1}</div>
+        <div style={{ ...serif(900), fontSize: 120, color: PAL.gold, opacity: k2, transform: `translateY(${(1 - k2) * 26}px)`, letterSpacing: 4, marginTop: 18 }}>{T.end2}</div>
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 1300, display: "flex", justifyContent: "center", opacity: kd }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 1420, display: "flex", justifyContent: "center", opacity: kd }}>
         <div style={{ ...sans(700), fontSize: 34, color: PAL.soft, padding: "12px 30px", border: "2px solid rgba(185,196,211,0.35)", borderRadius: 40, letterSpacing: 2 }}>{T.disc}</div>
       </div>
     </>

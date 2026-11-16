@@ -227,7 +227,7 @@ export const Captions: React.FC<{ f: number }> = ({ f }) => {
   if (!c) return null;
   const a = Math.min(clamp01((f - c.from) / 4), clamp01((c.to - f) / 3));
   return (
-    <div style={{ position: "absolute", left: 0, right: 0, top: 1392, display: "flex", justifyContent: "center", opacity: a }}>
+    <div style={{ position: "absolute", left: 0, right: 0, top: 1516, display: "flex", justifyContent: "center", opacity: a }}>
       <div style={{ ...sans(700), fontSize: 56, lineHeight: "76px", color: PAL.ink, padding: "4px 30px 8px", background: "rgba(5,8,14,0.82)", borderRadius: 16, whiteSpace: "nowrap" }}>{c.text}</div>
     </div>
   );

@@ -28,8 +28,8 @@ CACHE.mkdir(parents=True, exist_ok=True)
 MAX_CHUNK = 14  # hanzi per caption line on a vertical frame (56 px → 784 px)
 
 
-async def tts(text: str, path: Path, marks: Path):
-    com = edge_tts.Communicate(text, SCRIPT["voice"], rate=SCRIPT["rate"], pitch=SCRIPT["pitch"], boundary="WordBoundary")
+async def tts(text: str, path: Path, marks: Path, rate: str):
+    com = edge_tts.Communicate(text, SCRIPT["voice"], rate=rate, pitch=SCRIPT["pitch"], boundary="WordBoundary")
     words = []
     with open(path, "wb") as f:
         async for chunk in com.stream():
@@ -86,11 +86,12 @@ async def main():
     lines, sections, captions = [], [], []
     for sec in SCRIPT["sections"]:
         s0 = t
+        rate = sec.get("rate", SCRIPT["rate"])  # per-section pace (v2: brisker opening chapters)
         for ln in sec["lines"]:
-            key = hashlib.sha1(f'{ln["text"]}|{SCRIPT["voice"]}|{SCRIPT["rate"]}|{SCRIPT["pitch"]}'.encode()).hexdigest()[:12]
+            key = hashlib.sha1(f'{ln["text"]}|{SCRIPT["voice"]}|{rate}|{SCRIPT["pitch"]}'.encode()).hexdigest()[:12]
             mp3, marks = CACHE / f"{ln['id']}-{key}.mp3", CACHE / f"{ln['id']}-{key}.json"
             if not mp3.exists():
-                await tts(ln["text"], mp3, marks)
+                await tts(ln["text"], mp3, marks, rate)
             audio, cut = trim(decode(mp3))
             words = json.loads(marks.read_text(encoding="utf-8"))
             dur = len(audio) / SR

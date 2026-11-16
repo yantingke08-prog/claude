@@ -24,6 +24,8 @@ import { FRAMES as SC3_FRAMES, FPS as SC3_FPS } from "./samecandle3/cue";
 import { SameCandle4Cover, SameCandle4Film, SameCandle4Phone } from "./samecandle4/Film";
 import { FRAMES as SC4_FRAMES, FPS as SC4_FPS } from "./samecandle4/cue";
 import { HongSanBingCover, HongSanBingFilm } from "./hongsanbing/Film";
+import { OrderFlowCover, OrderFlowFilm } from "./orderflow/Film";
+import { FRAMES as OF_FRAMES, FPS as OF_FPS } from "./orderflow/cue";
 import { FRAMES as HSB_FRAMES, FPS as HSB_FPS } from "./hongsanbing/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
@@ -73,6 +75,10 @@ export const RemotionRoot: React.FC = () => (
       <Still id="SameCandle4Cover2K" component={SameCandle4Cover} width={1440} height={2560} />
       <Composition id="SameCandle4Phone" component={SameCandle4Phone} durationInFrames={SC4_FRAMES} fps={SC4_FPS} width={1080} height={1920} />
       <Composition id="SameCandle3Phone" component={SameCandle3Phone} durationInFrames={SC3_FRAMES} fps={SC3_FPS} width={1080} height={1920} />
+    </Folder>
+    <Folder name="OrderFlow">
+      <Composition id="OrderFlow" component={OrderFlowFilm} durationInFrames={OF_FRAMES} fps={OF_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />
+      <Still id="OrderFlowCover" component={OrderFlowCover} width={1080} height={1920} />
     </Folder>
     <Folder name="HongSanBing">
       <Composition id="HongSanBing" component={HongSanBingFilm} durationInFrames={HSB_FRAMES} fps={HSB_FPS} width={1080} height={1920} defaultProps={{ muted: false }} />

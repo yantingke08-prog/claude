@@ -109,7 +109,19 @@
     "hsb:render:2k": "remotion render HongSanBing2K \"D:/claude视频/hong-san-bing-v3-2k.mp4\" --gl=angle --image-format=jpeg --jpeg-quality=95 --concurrency=1 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
     "hsb:cover:2k": "remotion still HongSanBingCover2K \"D:/claude视频/hong-san-bing-v3-2k-cover.png\" --gl=angle",
     "hsb:verify:2k": "node scripts/samecandle-verify.mjs \"D:/claude视频/hong-san-bing-v3-2k.mp4\" \"D:/claude视频/hong-san-bing-v3-2k-cover.png\" 60 90 1440",
-    "hsb:make:2k": "npm run hsb:prep && npm run hsb:render:2k && npm run hsb:cover:2k && npm run hsb:verify:2k"
+    "hsb:make:2k": "npm run hsb:prep && npm run hsb:render:2k && npm run hsb:cover:2k && npm run hsb:verify:2k",
+    "of:typecheck": "tsc --noEmit -p .",
+    "of:vo": "python scripts/orderflow-vo.py",
+    "of:audio": "python scripts/orderflow-score.py",
+    "of:srt": "python scripts/orderflow-srt.py",
+    "of:stills": "node scripts/breakout-stills.mjs OrderFlow out/orderflow 0 45 100 200 470 650 975 1060 1180 1405 1540 1700 1985 2255",
+    "of:prep": "node -e \"const fs=require('fs');fs.mkdirSync('D:/责苏/codex保存',{recursive:true});fs.copyFileSync('../outputs-orderflow-v1/subtitles.srt','D:/责苏/codex保存/order-flow-v1.srt')\"",
+    "of:render": "remotion render OrderFlow \"D:/责苏/codex保存/order-flow-v1.mp4\" --gl=angle --concurrency=1 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "of:render:cpu": "remotion render OrderFlow \"D:/责苏/codex保存/order-flow-v1.mp4\" --gl=swangle --concurrency=1 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "of:cover": "remotion still OrderFlowCover \"D:/责苏/codex保存/order-flow-v1-cover.png\" --gl=angle",
+    "of:verify": "node scripts/samecandle-verify.mjs \"D:/责苏/codex保存/order-flow-v1.mp4\" \"D:/责苏/codex保存/order-flow-v1-cover.png\" 60 80 1080",
+    "of:make": "npm run of:typecheck && npm run of:prep && npm run of:render && npm run of:cover && npm run of:verify",
+    "of:make:cpu": "npm run of:typecheck && npm run of:prep && npm run of:render:cpu && npm run of:cover && npm run of:verify"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

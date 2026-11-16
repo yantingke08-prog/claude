@@ -1,0 +1,239 @@
+1
+00:00:01,733 --> 00:00:02,667
+三根阳线
+Three big green candles. Would you chase?
+
+2
+00:00:02,667 --> 00:00:03,633
+你会追吗？
+Three big green candles. Would you chase?
+
+3
+00:00:03,667 --> 00:00:04,833
+给你五秒决定
+You have 5 seconds.
+
+4
+00:00:10,033 --> 00:00:11,100
+只看K线
+Candles alone are not enough.
+
+5
+00:00:11,100 --> 00:00:11,700
+不够
+Candles alone are not enough.
+
+6
+00:00:11,700 --> 00:00:12,500
+接下来
+Now, read the order flow.
+
+7
+00:00:12,500 --> 00:00:13,533
+看订单流
+Now, read the order flow.
+
+8
+00:00:13,733 --> 00:00:14,633
+三根阳线
+Three green candles only show that price is rising,
+
+9
+00:00:14,633 --> 00:00:16,267
+只能说明价格在涨
+Three green candles only show that price is rising,
+
+10
+00:00:16,267 --> 00:00:17,800
+不能证明买方一定
+not that buyers will stay in control.
+
+11
+00:00:17,800 --> 00:00:19,300
+还会继续控制市场
+not that buyers will stay in control.
+
+12
+00:00:19,500 --> 00:00:20,367
+第一根阳线
+Candle 1: as price rises, does Delta grow with it?
+
+13
+00:00:20,367 --> 00:00:21,500
+价格向上时
+Candle 1: as price rises, does Delta grow with it?
+
+14
+00:00:21,500 --> 00:00:23,367
+Delta有没有同步变强
+Candle 1: as price rises, does Delta grow with it?
+
+15
+00:00:23,367 --> 00:00:25,433
+主动买盘是不是真的出现了
+Are aggressive buyers really there?
+
+16
+00:00:25,633 --> 00:00:26,467
+回踩时
+On the pullback, sellers hit the bid, yet price stops falling.
+
+17
+00:00:26,467 --> 00:00:28,333
+主动卖单打到买价
+On the pullback, sellers hit the bid, yet price stops falling.
+
+18
+00:00:28,333 --> 00:00:29,467
+价格却不再下跌
+On the pullback, sellers hit the bid, yet price stops falling.
+
+19
+00:00:29,467 --> 00:00:31,233
+Footprint在同一区域堆量
+Footprint volume stacks at the same levels:
+
+20
+00:00:31,233 --> 00:00:32,833
+说明可能有买方在吸收
+buyers may be absorbing.
+
+21
+00:00:33,033 --> 00:00:33,733
+确认
+Confirmation: price turns up after absorption, Delta flips positive,
+
+22
+00:00:33,733 --> 00:00:35,667
+吸收后价格重新向上
+Confirmation: price turns up after absorption, Delta flips positive,
+
+23
+00:00:35,667 --> 00:00:36,667
+Delta转强
+Confirmation: price turns up after absorption, Delta flips positive,
+
+24
+00:00:36,667 --> 00:00:38,067
+CVD同步抬高
+and CVD rises with it. Only then are buyers still in control.
+
+25
+00:00:38,067 --> 00:00:40,000
+才说明买方还在控盘
+and CVD rises with it. Only then are buyers still in control.
+
+26
+00:00:40,267 --> 00:00:40,933
+反例
+Counter-example: candle 3 has big volume and big Delta, yet price won't rise,
+
+27
+00:00:40,933 --> 00:00:42,900
+第三根放量、Delta很大
+Counter-example: candle 3 has big volume and big Delta, yet price won't rise,
+
+28
+00:00:42,900 --> 00:00:43,700
+价格却不涨
+Counter-example: candle 3 has big volume and big Delta, yet price won't rise,
+
+29
+00:00:43,700 --> 00:00:44,767
+或者上影线很长
+or it leaves a long upper wick:
+
+30
+00:00:44,767 --> 00:00:46,533
+警惕高位吸收和衰竭
+beware absorption at the top and exhaustion. Don't chase.
+
+31
+00:00:46,533 --> 00:00:47,267
+不要追
+beware absorption at the top and exhaustion. Don't chase.
+
+32
+00:00:47,467 --> 00:00:48,967
+跳空、涨得太快
+Gapping up, running too fast?
+
+33
+00:00:48,967 --> 00:00:50,600
+先等回踩或修复
+Wait for a pullback or repair. Don't buy high on a green streak.
+
+34
+00:00:50,600 --> 00:00:52,700
+别因为连续阳线就在高位追
+Wait for a pullback or repair. Don't buy high on a green streak.
+
+35
+00:00:52,900 --> 00:00:53,600
+入场
+Entry: wait for price to return to candle 1's open or the absorption zone,
+
+36
+00:00:53,600 --> 00:00:55,800
+等价格回到第一根阳线开盘价
+Entry: wait for price to return to candle 1's open or the absorption zone,
+
+37
+00:00:55,800 --> 00:00:56,667
+或吸收区
+Entry: wait for price to return to candle 1's open or the absorption zone,
+
+38
+00:00:56,667 --> 00:00:58,400
+看到止跌和Delta转强
+then look for a stall and Delta turning positive.
+
+39
+00:00:58,400 --> 00:00:59,100
+再考虑
+then look for a stall and Delta turning positive.
+
+40
+00:00:59,300 --> 00:01:02,000
+止损放在吸收区或结构低点下方
+Stop below the absorption zone or the structure low.
+
+41
+00:01:02,000 --> 00:01:05,000
+目标参考前高、POC、Value Area
+Targets: prior high, POC, Value Area, or the next liquidity level.
+
+42
+00:01:05,000 --> 00:01:06,467
+或下一个流动性位置
+Targets: prior high, POC, Value Area, or the next liquidity level.
+
+43
+00:01:06,767 --> 00:01:07,433
+记住
+Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.
+
+44
+00:01:07,433 --> 00:01:08,333
+Delta跟随
+Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.
+
+45
+00:01:08,333 --> 00:01:09,233
+回踩有吸收
+Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.
+
+46
+00:01:09,233 --> 00:01:11,167
+CVD或价值迁移确认
+Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.
+
+47
+00:01:11,333 --> 00:01:12,067
+不是追阳线
+Don't chase green candles,
+
+48
+00:01:12,067 --> 00:01:13,267
+是等订单流确认
+wait for order flow to confirm.

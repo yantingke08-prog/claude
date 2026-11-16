@@ -1,0 +1,1407 @@
+{
+ "fps": 30,
+ "frames": 2261,
+ "seconds": 75.37,
+ "sections": [
+  {
+   "id": "hook",
+   "from": 52,
+   "to": 412
+  },
+  {
+   "id": "thesis",
+   "from": 412,
+   "to": 585
+  },
+  {
+   "id": "delta",
+   "from": 585,
+   "to": 769
+  },
+  {
+   "id": "absorb",
+   "from": 769,
+   "to": 991
+  },
+  {
+   "id": "confirm",
+   "from": 991,
+   "to": 1208
+  },
+  {
+   "id": "counter",
+   "from": 1208,
+   "to": 1424
+  },
+  {
+   "id": "gap",
+   "from": 1424,
+   "to": 1587
+  },
+  {
+   "id": "entry",
+   "from": 1587,
+   "to": 1779
+  },
+  {
+   "id": "risk",
+   "from": 1779,
+   "to": 2003
+  },
+  {
+   "id": "end",
+   "from": 2003,
+   "to": 2198
+  }
+ ],
+ "lines": [
+  {
+   "id": "h1",
+   "section": "hook",
+   "text": "三根阳线，你会追吗？",
+   "en": "Three big green candles. Would you chase?",
+   "from": 52,
+   "to": 103,
+   "marks": [
+    [
+     0,
+     52
+    ],
+    [
+     5,
+     80
+    ],
+    [
+     6,
+     88
+    ],
+    [
+     7,
+     92
+    ],
+    [
+     8,
+     96
+    ]
+   ]
+  },
+  {
+   "id": "h2",
+   "section": "hook",
+   "text": "给你五秒决定。",
+   "en": "You have 5 seconds.",
+   "from": 110,
+   "to": 139,
+   "marks": [
+    [
+     0,
+     110
+    ],
+    [
+     1,
+     113
+    ],
+    [
+     2,
+     116
+    ],
+    [
+     3,
+     120
+    ],
+    [
+     4,
+     125
+    ]
+   ]
+  },
+  {
+   "id": "h3",
+   "section": "hook",
+   "text": "只看K线，不够。",
+   "en": "Candles alone are not enough.",
+   "from": 301,
+   "to": 345,
+   "marks": [
+    [
+     0,
+     301
+    ],
+    [
+     1,
+     305
+    ],
+    [
+     2,
+     309
+    ],
+    [
+     3,
+     315
+    ],
+    [
+     5,
+     333
+    ]
+   ]
+  },
+  {
+   "id": "h4",
+   "section": "hook",
+   "text": "接下来，看订单流。",
+   "en": "Now, read the order flow.",
+   "from": 351,
+   "to": 400,
+   "marks": [
+    [
+     0,
+     351
+    ],
+    [
+     4,
+     375
+    ],
+    [
+     5,
+     382
+    ],
+    [
+     6,
+     387
+    ]
+   ]
+  },
+  {
+   "id": "t1",
+   "section": "thesis",
+   "text": "三根阳线，只能说明价格在涨，",
+   "en": "Three green candles only show that price is rising,",
+   "from": 412,
+   "to": 485,
+   "marks": [
+    [
+     0,
+     412
+    ],
+    [
+     2,
+     420
+    ],
+    [
+     5,
+     439
+    ],
+    [
+     7,
+     447
+    ],
+    [
+     9,
+     462
+    ],
+    [
+     11,
+     474
+    ],
+    [
+     12,
+     478
+    ]
+   ]
+  },
+  {
+   "id": "t2",
+   "section": "thesis",
+   "text": "不能证明买方一定还会继续控制市场。",
+   "en": "not that buyers will stay in control.",
+   "from": 488,
+   "to": 573,
+   "marks": [
+    [
+     0,
+     488
+    ],
+    [
+     2,
+     493
+    ],
+    [
+     4,
+     510
+    ],
+    [
+     6,
+     520
+    ],
+    [
+     8,
+     534
+    ],
+    [
+     9,
+     539
+    ],
+    [
+     10,
+     544
+    ],
+    [
+     12,
+     552
+    ],
+    [
+     14,
+     560
+    ]
+   ]
+  },
+  {
+   "id": "d1",
+   "section": "delta",
+   "text": "第一根阳线：价格向上时，Delta有没有同步变强，",
+   "en": "Candle 1: as price rises, does Delta grow with it?",
+   "from": 585,
+   "to": 698,
+   "marks": [
+    [
+     0,
+     585
+    ],
+    [
+     2,
+     588
+    ],
+    [
+     3,
+     591
+    ],
+    [
+     6,
+     611
+    ],
+    [
+     8,
+     621
+    ],
+    [
+     10,
+     629
+    ],
+    [
+     12,
+     645
+    ],
+    [
+     17,
+     663
+    ],
+    [
+     20,
+     674
+    ],
+    [
+     22,
+     684
+    ],
+    [
+     23,
+     688
+    ]
+   ]
+  },
+  {
+   "id": "d2",
+   "section": "delta",
+   "text": "主动买盘是不是真的出现了。",
+   "en": "Are aggressive buyers really there?",
+   "from": 701,
+   "to": 757,
+   "marks": [
+    [
+     0,
+     701
+    ],
+    [
+     2,
+     709
+    ],
+    [
+     4,
+     727
+    ],
+    [
+     7,
+     738
+    ],
+    [
+     9,
+     743
+    ],
+    [
+     11,
+     752
+    ]
+   ]
+  },
+  {
+   "id": "a1",
+   "section": "absorb",
+   "text": "回踩时，主动卖单打到买价，价格却不再下跌，",
+   "en": "On the pullback, sellers hit the bid, yet price stops falling.",
+   "from": 769,
+   "to": 881,
+   "marks": [
+    [
+     0,
+     769
+    ],
+    [
+     2,
+     777
+    ],
+    [
+     4,
+     794
+    ],
+    [
+     6,
+     804
+    ],
+    [
+     7,
+     809
+    ],
+    [
+     9,
+     825
+    ],
+    [
+     10,
+     829
+    ],
+    [
+     13,
+     850
+    ],
+    [
+     15,
+     861
+    ],
+    [
+     16,
+     864
+    ],
+    [
+     18,
+     869
+    ]
+   ]
+  },
+  {
+   "id": "a2",
+   "section": "absorb",
+   "text": "Footprint在同一区域堆量，",
+   "en": "Footprint volume stacks at the same levels:",
+   "from": 884,
+   "to": 935,
+   "marks": [
+    [
+     0,
+     884
+    ],
+    [
+     9,
+     904
+    ],
+    [
+     10,
+     909
+    ],
+    [
+     11,
+     915
+    ],
+    [
+     12,
+     918
+    ],
+    [
+     14,
+     924
+    ]
+   ]
+  },
+  {
+   "id": "a3",
+   "section": "absorb",
+   "text": "说明可能有买方在吸收。",
+   "en": "buyers may be absorbing.",
+   "from": 937,
+   "to": 979,
+   "marks": [
+    [
+     0,
+     937
+    ],
+    [
+     2,
+     946
+    ],
+    [
+     4,
+     951
+    ],
+    [
+     5,
+     954
+    ],
+    [
+     7,
+     964
+    ],
+    [
+     8,
+     966
+    ]
+   ]
+  },
+  {
+   "id": "c1",
+   "section": "confirm",
+   "text": "确认：吸收后价格重新向上，Delta转强，",
+   "en": "Confirmation: price turns up after absorption, Delta flips positive,",
+   "from": 991,
+   "to": 1097,
+   "marks": [
+    [
+     0,
+     991
+    ],
+    [
+     3,
+     1012
+    ],
+    [
+     5,
+     1022
+    ],
+    [
+     6,
+     1034
+    ],
+    [
+     8,
+     1045
+    ],
+    [
+     10,
+     1054
+    ],
+    [
+     13,
+     1070
+    ],
+    [
+     18,
+     1081
+    ]
+   ]
+  },
+  {
+   "id": "c2",
+   "section": "confirm",
+   "text": "CVD同步抬高，才说明买方还在控盘。",
+   "en": "and CVD rises with it. Only then are buyers still in control.",
+   "from": 1100,
+   "to": 1194,
+   "marks": [
+    [
+     0,
+     1100
+    ],
+    [
+     3,
+     1115
+    ],
+    [
+     5,
+     1123
+    ],
+    [
+     8,
+     1142
+    ],
+    [
+     9,
+     1146
+    ],
+    [
+     11,
+     1162
+    ],
+    [
+     13,
+     1174
+    ],
+    [
+     14,
+     1178
+    ],
+    [
+     15,
+     1180
+    ]
+   ]
+  },
+  {
+   "id": "x1",
+   "section": "counter",
+   "text": "反例：第三根放量、Delta很大，价格却不涨，",
+   "en": "Counter-example: candle 3 has big volume and big Delta, yet price won't rise,",
+   "from": 1208,
+   "to": 1308,
+   "marks": [
+    [
+     0,
+     1208
+    ],
+    [
+     3,
+     1228
+    ],
+    [
+     5,
+     1237
+    ],
+    [
+     6,
+     1241
+    ],
+    [
+     9,
+     1257
+    ],
+    [
+     14,
+     1268
+    ],
+    [
+     15,
+     1273
+    ],
+    [
+     17,
+     1287
+    ],
+    [
+     19,
+     1296
+    ],
+    [
+     20,
+     1299
+    ],
+    [
+     21,
+     1301
+    ]
+   ]
+  },
+  {
+   "id": "x2",
+   "section": "counter",
+   "text": "或者上影线很长，",
+   "en": "or it leaves a long upper wick:",
+   "from": 1311,
+   "to": 1342,
+   "marks": [
+    [
+     0,
+     1311
+    ],
+    [
+     2,
+     1315
+    ],
+    [
+     3,
+     1319
+    ],
+    [
+     5,
+     1327
+    ],
+    [
+     6,
+     1331
+    ]
+   ]
+  },
+  {
+   "id": "x3",
+   "section": "counter",
+   "text": "警惕高位吸收和衰竭，不要追。",
+   "en": "beware absorption at the top and exhaustion. Don't chase.",
+   "from": 1343,
+   "to": 1412,
+   "marks": [
+    [
+     0,
+     1343
+    ],
+    [
+     2,
+     1355
+    ],
+    [
+     4,
+     1363
+    ],
+    [
+     6,
+     1374
+    ],
+    [
+     7,
+     1376
+    ],
+    [
+     10,
+     1396
+    ],
+    [
+     12,
+     1403
+    ]
+   ]
+  },
+  {
+   "id": "g1",
+   "section": "gap",
+   "text": "跳空、涨得太快，",
+   "en": "Gapping up, running too fast?",
+   "from": 1424,
+   "to": 1467,
+   "marks": [
+    [
+     0,
+     1424
+    ],
+    [
+     3,
+     1447
+    ],
+    [
+     4,
+     1452
+    ],
+    [
+     5,
+     1454
+    ],
+    [
+     6,
+     1458
+    ]
+   ]
+  },
+  {
+   "id": "g2",
+   "section": "gap",
+   "text": "先等回踩或修复，别因为连续阳线就在高位追。",
+   "en": "Wait for a pullback or repair. Don't buy high on a green streak.",
+   "from": 1469,
+   "to": 1575,
+   "marks": [
+    [
+     0,
+     1469
+    ],
+    [
+     1,
+     1475
+    ],
+    [
+     2,
+     1480
+    ],
+    [
+     4,
+     1492
+    ],
+    [
+     5,
+     1495
+    ],
+    [
+     8,
+     1518
+    ],
+    [
+     9,
+     1522
+    ],
+    [
+     11,
+     1528
+    ],
+    [
+     13,
+     1536
+    ],
+    [
+     15,
+     1552
+    ],
+    [
+     16,
+     1555
+    ],
+    [
+     17,
+     1558
+    ],
+    [
+     19,
+     1566
+    ]
+   ]
+  },
+  {
+   "id": "n1",
+   "section": "entry",
+   "text": "入场：等价格回到第一根阳线开盘价，或吸收区，",
+   "en": "Entry: wait for price to return to candle 1's open or the absorption zone,",
+   "from": 1587,
+   "to": 1699,
+   "marks": [
+    [
+     0,
+     1587
+    ],
+    [
+     3,
+     1608
+    ],
+    [
+     4,
+     1613
+    ],
+    [
+     6,
+     1625
+    ],
+    [
+     8,
+     1633
+    ],
+    [
+     10,
+     1640
+    ],
+    [
+     11,
+     1644
+    ],
+    [
+     13,
+     1655
+    ],
+    [
+     17,
+     1674
+    ],
+    [
+     18,
+     1680
+    ],
+    [
+     20,
+     1689
+    ]
+   ]
+  },
+  {
+   "id": "n2",
+   "section": "entry",
+   "text": "看到止跌和Delta转强，再考虑。",
+   "en": "then look for a stall and Delta turning positive.",
+   "from": 1700,
+   "to": 1767,
+   "marks": [
+    [
+     0,
+     1700
+    ],
+    [
+     2,
+     1707
+    ],
+    [
+     4,
+     1719
+    ],
+    [
+     5,
+     1722
+    ],
+    [
+     10,
+     1732
+    ],
+    [
+     13,
+     1752
+    ],
+    [
+     14,
+     1756
+    ]
+   ]
+  },
+  {
+   "id": "k1",
+   "section": "risk",
+   "text": "止损放在吸收区或结构低点下方，",
+   "en": "Stop below the absorption zone or the structure low.",
+   "from": 1779,
+   "to": 1857,
+   "marks": [
+    [
+     0,
+     1779
+    ],
+    [
+     1,
+     1783
+    ],
+    [
+     3,
+     1792
+    ],
+    [
+     4,
+     1798
+    ],
+    [
+     6,
+     1807
+    ],
+    [
+     7,
+     1819
+    ],
+    [
+     8,
+     1825
+    ],
+    [
+     10,
+     1835
+    ],
+    [
+     12,
+     1843
+    ]
+   ]
+  },
+  {
+   "id": "k2",
+   "section": "risk",
+   "text": "目标参考前高、POC、Value Area，或下一个流动性位置。",
+   "en": "Targets: prior high, POC, Value Area, or the next liquidity level.",
+   "from": 1860,
+   "to": 1988,
+   "marks": [
+    [
+     0,
+     1860
+    ],
+    [
+     2,
+     1868
+    ],
+    [
+     4,
+     1878
+    ],
+    [
+     5,
+     1883
+    ],
+    [
+     7,
+     1895
+    ],
+    [
+     11,
+     1920
+    ],
+    [
+     17,
+     1930
+    ],
+    [
+     22,
+     1950
+    ],
+    [
+     23,
+     1955
+    ],
+    [
+     24,
+     1961
+    ],
+    [
+     26,
+     1966
+    ],
+    [
+     29,
+     1977
+    ]
+   ]
+  },
+  {
+   "id": "e0",
+   "section": "end",
+   "text": "记住：Delta跟随，回踩有吸收，CVD或价值迁移确认。",
+   "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+   "from": 2003,
+   "to": 2129,
+   "marks": [
+    [
+     0,
+     2003
+    ],
+    [
+     3,
+     2023
+    ],
+    [
+     8,
+     2033
+    ],
+    [
+     11,
+     2050
+    ],
+    [
+     13,
+     2058
+    ],
+    [
+     14,
+     2061
+    ],
+    [
+     17,
+     2077
+    ],
+    [
+     20,
+     2097
+    ],
+    [
+     21,
+     2102
+    ],
+    [
+     23,
+     2111
+    ],
+    [
+     25,
+     2119
+    ]
+   ]
+  },
+  {
+   "id": "e1",
+   "section": "end",
+   "text": "不是追阳线，",
+   "en": "Don't chase green candles,",
+   "from": 2140,
+   "to": 2161,
+   "marks": [
+    [
+     0,
+     2140
+    ],
+    [
+     2,
+     2145
+    ]
+   ]
+  },
+  {
+   "id": "e2",
+   "section": "end",
+   "text": "是等订单流确认。",
+   "en": "wait for order flow to confirm.",
+   "from": 2162,
+   "to": 2192,
+   "marks": [
+    [
+     0,
+     2162
+    ],
+    [
+     1,
+     2166
+    ],
+    [
+     2,
+     2171
+    ],
+    [
+     4,
+     2178
+    ],
+    [
+     5,
+     2181
+    ]
+   ]
+  }
+ ],
+ "captions": [
+  {
+   "line": "h1",
+   "text": "三根阳线",
+   "en": "Three big green candles. Would you chase?",
+   "from": 52,
+   "to": 80
+  },
+  {
+   "line": "h1",
+   "text": "你会追吗？",
+   "en": "Three big green candles. Would you chase?",
+   "from": 80,
+   "to": 109
+  },
+  {
+   "line": "h2",
+   "text": "给你五秒决定",
+   "en": "You have 5 seconds.",
+   "from": 110,
+   "to": 145
+  },
+  {
+   "line": "h3",
+   "text": "只看K线",
+   "en": "Candles alone are not enough.",
+   "from": 301,
+   "to": 333
+  },
+  {
+   "line": "h3",
+   "text": "不够",
+   "en": "Candles alone are not enough.",
+   "from": 333,
+   "to": 351
+  },
+  {
+   "line": "h4",
+   "text": "接下来",
+   "en": "Now, read the order flow.",
+   "from": 351,
+   "to": 375
+  },
+  {
+   "line": "h4",
+   "text": "看订单流",
+   "en": "Now, read the order flow.",
+   "from": 375,
+   "to": 406
+  },
+  {
+   "line": "t1",
+   "text": "三根阳线",
+   "en": "Three green candles only show that price is rising,",
+   "from": 412,
+   "to": 439
+  },
+  {
+   "line": "t1",
+   "text": "只能说明价格在涨",
+   "en": "Three green candles only show that price is rising,",
+   "from": 439,
+   "to": 488
+  },
+  {
+   "line": "t2",
+   "text": "不能证明买方一定",
+   "en": "not that buyers will stay in control.",
+   "from": 488,
+   "to": 534
+  },
+  {
+   "line": "t2",
+   "text": "还会继续控制市场",
+   "en": "not that buyers will stay in control.",
+   "from": 534,
+   "to": 579
+  },
+  {
+   "line": "d1",
+   "text": "第一根阳线",
+   "en": "Candle 1: as price rises, does Delta grow with it?",
+   "from": 585,
+   "to": 611
+  },
+  {
+   "line": "d1",
+   "text": "价格向上时",
+   "en": "Candle 1: as price rises, does Delta grow with it?",
+   "from": 611,
+   "to": 645
+  },
+  {
+   "line": "d1",
+   "text": "Delta有没有同步变强",
+   "en": "Candle 1: as price rises, does Delta grow with it?",
+   "from": 645,
+   "to": 701
+  },
+  {
+   "line": "d2",
+   "text": "主动买盘是不是真的出现了",
+   "en": "Are aggressive buyers really there?",
+   "from": 701,
+   "to": 763
+  },
+  {
+   "line": "a1",
+   "text": "回踩时",
+   "en": "On the pullback, sellers hit the bid, yet price stops falling.",
+   "from": 769,
+   "to": 794
+  },
+  {
+   "line": "a1",
+   "text": "主动卖单打到买价",
+   "en": "On the pullback, sellers hit the bid, yet price stops falling.",
+   "from": 794,
+   "to": 850
+  },
+  {
+   "line": "a1",
+   "text": "价格却不再下跌",
+   "en": "On the pullback, sellers hit the bid, yet price stops falling.",
+   "from": 850,
+   "to": 884
+  },
+  {
+   "line": "a2",
+   "text": "Footprint在同一区域堆量",
+   "en": "Footprint volume stacks at the same levels:",
+   "from": 884,
+   "to": 937
+  },
+  {
+   "line": "a3",
+   "text": "说明可能有买方在吸收",
+   "en": "buyers may be absorbing.",
+   "from": 937,
+   "to": 985
+  },
+  {
+   "line": "c1",
+   "text": "确认",
+   "en": "Confirmation: price turns up after absorption, Delta flips positive,",
+   "from": 991,
+   "to": 1012
+  },
+  {
+   "line": "c1",
+   "text": "吸收后价格重新向上",
+   "en": "Confirmation: price turns up after absorption, Delta flips positive,",
+   "from": 1012,
+   "to": 1070
+  },
+  {
+   "line": "c1",
+   "text": "Delta转强",
+   "en": "Confirmation: price turns up after absorption, Delta flips positive,",
+   "from": 1070,
+   "to": 1100
+  },
+  {
+   "line": "c2",
+   "text": "CVD同步抬高",
+   "en": "and CVD rises with it. Only then are buyers still in control.",
+   "from": 1100,
+   "to": 1142
+  },
+  {
+   "line": "c2",
+   "text": "才说明买方还在控盘",
+   "en": "and CVD rises with it. Only then are buyers still in control.",
+   "from": 1142,
+   "to": 1200
+  },
+  {
+   "line": "x1",
+   "text": "反例",
+   "en": "Counter-example: candle 3 has big volume and big Delta, yet price won't rise,",
+   "from": 1208,
+   "to": 1228
+  },
+  {
+   "line": "x1",
+   "text": "第三根放量、Delta很大",
+   "en": "Counter-example: candle 3 has big volume and big Delta, yet price won't rise,",
+   "from": 1228,
+   "to": 1287
+  },
+  {
+   "line": "x1",
+   "text": "价格却不涨",
+   "en": "Counter-example: candle 3 has big volume and big Delta, yet price won't rise,",
+   "from": 1287,
+   "to": 1311
+  },
+  {
+   "line": "x2",
+   "text": "或者上影线很长",
+   "en": "or it leaves a long upper wick:",
+   "from": 1311,
+   "to": 1343
+  },
+  {
+   "line": "x3",
+   "text": "警惕高位吸收和衰竭",
+   "en": "beware absorption at the top and exhaustion. Don't chase.",
+   "from": 1343,
+   "to": 1396
+  },
+  {
+   "line": "x3",
+   "text": "不要追",
+   "en": "beware absorption at the top and exhaustion. Don't chase.",
+   "from": 1396,
+   "to": 1418
+  },
+  {
+   "line": "g1",
+   "text": "跳空、涨得太快",
+   "en": "Gapping up, running too fast?",
+   "from": 1424,
+   "to": 1469
+  },
+  {
+   "line": "g2",
+   "text": "先等回踩或修复",
+   "en": "Wait for a pullback or repair. Don't buy high on a green streak.",
+   "from": 1469,
+   "to": 1518
+  },
+  {
+   "line": "g2",
+   "text": "别因为连续阳线就在高位追",
+   "en": "Wait for a pullback or repair. Don't buy high on a green streak.",
+   "from": 1518,
+   "to": 1581
+  },
+  {
+   "line": "n1",
+   "text": "入场",
+   "en": "Entry: wait for price to return to candle 1's open or the absorption zone,",
+   "from": 1587,
+   "to": 1608
+  },
+  {
+   "line": "n1",
+   "text": "等价格回到第一根阳线开盘价",
+   "en": "Entry: wait for price to return to candle 1's open or the absorption zone,",
+   "from": 1608,
+   "to": 1674
+  },
+  {
+   "line": "n1",
+   "text": "或吸收区",
+   "en": "Entry: wait for price to return to candle 1's open or the absorption zone,",
+   "from": 1674,
+   "to": 1700
+  },
+  {
+   "line": "n2",
+   "text": "看到止跌和Delta转强",
+   "en": "then look for a stall and Delta turning positive.",
+   "from": 1700,
+   "to": 1752
+  },
+  {
+   "line": "n2",
+   "text": "再考虑",
+   "en": "then look for a stall and Delta turning positive.",
+   "from": 1752,
+   "to": 1773
+  },
+  {
+   "line": "k1",
+   "text": "止损放在吸收区或结构低点下方",
+   "en": "Stop below the absorption zone or the structure low.",
+   "from": 1779,
+   "to": 1860
+  },
+  {
+   "line": "k2",
+   "text": "目标参考前高、POC、Value Area",
+   "en": "Targets: prior high, POC, Value Area, or the next liquidity level.",
+   "from": 1860,
+   "to": 1950
+  },
+  {
+   "line": "k2",
+   "text": "或下一个流动性位置",
+   "en": "Targets: prior high, POC, Value Area, or the next liquidity level.",
+   "from": 1950,
+   "to": 1994
+  },
+  {
+   "line": "e0",
+   "text": "记住",
+   "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+   "from": 2003,
+   "to": 2023
+  },
+  {
+   "line": "e0",
+   "text": "Delta跟随",
+   "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+   "from": 2023,
+   "to": 2050
+  },
+  {
+   "line": "e0",
+   "text": "回踩有吸收",
+   "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+   "from": 2050,
+   "to": 2077
+  },
+  {
+   "line": "e0",
+   "text": "CVD或价值迁移确认",
+   "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+   "from": 2077,
+   "to": 2135
+  },
+  {
+   "line": "e1",
+   "text": "不是追阳线",
+   "en": "Don't chase green candles,",
+   "from": 2140,
+   "to": 2162
+  },
+  {
+   "line": "e2",
+   "text": "是等订单流确认",
+   "en": "wait for order flow to confirm.",
+   "from": 2162,
+   "to": 2198
+  }
+ ]
+}

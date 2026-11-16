@@ -1,0 +1,212 @@
+{
+  "title": "三根阳线，你会追吗？订单流确认",
+  "voice": "zh-CN-YunxiNeural",
+  "rate": "+20%",
+  "pitch": "-1Hz",
+  "fps": 30,
+  "lead": 1.75,
+  "tail": 2.1,
+  "sections": [
+    {
+      "id": "hook",
+      "lines": [
+        {
+          "id": "h1",
+          "text": "三根阳线，你会追吗？",
+          "en": "Three big green candles. Would you chase?",
+          "gap": 0.25
+        },
+        {
+          "id": "h2",
+          "text": "给你五秒决定。",
+          "en": "You have 5 seconds.",
+          "gap": 5.4
+        },
+        {
+          "id": "h3",
+          "text": "只看K线，不够。",
+          "en": "Candles alone are not enough.",
+          "gap": 0.2
+        },
+        {
+          "id": "h4",
+          "text": "接下来，看订单流。",
+          "en": "Now, read the order flow.",
+          "gap": 0.4
+        }
+      ],
+      "rate": "+8%"
+    },
+    {
+      "id": "thesis",
+      "lines": [
+        {
+          "id": "t1",
+          "text": "三根阳线，只能说明价格在涨，",
+          "en": "Three green candles only show that price is rising,",
+          "gap": 0.1
+        },
+        {
+          "id": "t2",
+          "text": "不能证明买方一定还会继续控制市场。",
+          "en": "not that buyers will stay in control.",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "delta",
+      "lines": [
+        {
+          "id": "d1",
+          "text": "第一根阳线：价格向上时，Delta有没有同步变强，",
+          "en": "Candle 1: as price rises, does Delta grow with it?",
+          "gap": 0.1
+        },
+        {
+          "id": "d2",
+          "text": "主动买盘是不是真的出现了。",
+          "en": "Are aggressive buyers really there?",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "absorb",
+      "lines": [
+        {
+          "id": "a1",
+          "text": "回踩时，主动卖单打到买价，价格却不再下跌，",
+          "en": "On the pullback, sellers hit the bid, yet price stops falling.",
+          "gap": 0.1
+        },
+        {
+          "id": "a2",
+          "text": "Footprint在同一区域堆量，",
+          "en": "Footprint volume stacks at the same levels:",
+          "gap": 0.05
+        },
+        {
+          "id": "a3",
+          "text": "说明可能有买方在吸收。",
+          "en": "buyers may be absorbing.",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "confirm",
+      "lines": [
+        {
+          "id": "c1",
+          "text": "确认：吸收后价格重新向上，Delta转强，",
+          "en": "Confirmation: price turns up after absorption, Delta flips positive,",
+          "gap": 0.1
+        },
+        {
+          "id": "c2",
+          "text": "CVD同步抬高，才说明买方还在控盘。",
+          "en": "and CVD rises with it. Only then are buyers still in control.",
+          "gap": 0.45
+        }
+      ]
+    },
+    {
+      "id": "counter",
+      "lines": [
+        {
+          "id": "x1",
+          "text": "反例：第三根放量、Delta很大，价格却不涨，",
+          "en": "Counter-example: candle 3 has big volume and big Delta, yet price won't rise,",
+          "gap": 0.1
+        },
+        {
+          "id": "x2",
+          "text": "或者上影线很长，",
+          "en": "or it leaves a long upper wick:",
+          "gap": 0.05
+        },
+        {
+          "id": "x3",
+          "text": "警惕高位吸收和衰竭，不要追。",
+          "en": "beware absorption at the top and exhaustion. Don't chase.",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "gap",
+      "lines": [
+        {
+          "id": "g1",
+          "text": "跳空、涨得太快，",
+          "en": "Gapping up, running too fast?",
+          "gap": 0.05
+        },
+        {
+          "id": "g2",
+          "text": "先等回踩或修复，别因为连续阳线就在高位追。",
+          "en": "Wait for a pullback or repair. Don't buy high on a green streak.",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "entry",
+      "lines": [
+        {
+          "id": "n1",
+          "text": "入场：等价格回到第一根阳线开盘价，或吸收区，",
+          "en": "Entry: wait for price to return to candle 1's open or the absorption zone,",
+          "gap": 0.05
+        },
+        {
+          "id": "n2",
+          "text": "看到止跌和Delta转强，再考虑。",
+          "en": "then look for a stall and Delta turning positive.",
+          "gap": 0.4
+        }
+      ]
+    },
+    {
+      "id": "risk",
+      "lines": [
+        {
+          "id": "k1",
+          "text": "止损放在吸收区或结构低点下方，",
+          "en": "Stop below the absorption zone or the structure low.",
+          "gap": 0.1
+        },
+        {
+          "id": "k2",
+          "text": "目标参考前高、POC、Value Area，或下一个流动性位置。",
+          "en": "Targets: prior high, POC, Value Area, or the next liquidity level.",
+          "gap": 0.5
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "lines": [
+        {
+          "id": "e0",
+          "text": "记住：Delta跟随，回踩有吸收，CVD或价值迁移确认。",
+          "en": "Remember: Delta follows, the pullback shows absorption, CVD or value migration confirms.",
+          "gap": 0.35
+        },
+        {
+          "id": "e1",
+          "text": "不是追阳线，",
+          "en": "Don't chase green candles,",
+          "gap": 0.05
+        },
+        {
+          "id": "e2",
+          "text": "是等订单流确认。",
+          "en": "wait for order flow to confirm.",
+          "gap": 0.2
+        }
+      ]
+    }
+  ]
+}

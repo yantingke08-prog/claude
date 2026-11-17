@@ -324,6 +324,14 @@ export const barsC = (f: number): Live[] =>
 /** buffer above the structure high on stage C; it widens / narrows with the volatility the voice names */
 export const bufferSpan = (f: number) => 0.2 + (0.1 - 0.2) * ramp(f, E("tune"), 16) + (0.36 - 0.1) * ramp(f, E("vol"), 16);
 
+/** one row of the order-book ladder at frame f (shared with the HUD's quantity labels) */
+export const LADDER_ROWS = [1.1, 0.7, 1.4, 0.8, 1.0, 0.6, 1.2, 0.9, 0.7];
+export const ladderRow = (f: number, r: number) => {
+  const thick = r === 4;
+  let len = LADDER_ROWS[r] * (thick ? 1 + 4.2 * ramp(f, E("liqMany"), 18) : 1);
+  if (thick) len *= 1 - 0.85 * ramp(f, E("liqDone"), 26);
+  return { y: (r - 4) * 0.62, len, rowIn: ramp(f, E("liqIn") + 6 + r * 2, 12), thick };
+};
 export const VB_TRAY = py(97.55, SB);
 export const GOLD_SLAB = { x: px(43.6), y: py(99.94), w: 0.9, h: py(100.22) - py(99.66), d: 1.0, z: -0.25 };
 
@@ -368,7 +376,7 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
     if (f >= E("gather")) return b.t < refill ? { s: out3((refill - b.t) * 6), glow: 0.25 * win(f, E("visible"), E("checkIn"), 10, 10) } : null;
     if (b.t >= buildHi) return null;
     const grow = out3((buildHi - b.t) * 6);
-    const demo = b.layer === 0 && b.k === 0 ? win(f, E("buyTag"), E("loLevel"), 4, 10) : 0;
+    const demo = b.layer === 0 && b.k === 3 ? win(f, E("buyTag"), E("loLevel"), 4, 10) : 0;
     if (f < fire) return { s: grow, ghost: ghostK, glow: demo };
     const t0 = ignite(b);
     if (f < t0) return { s: 1 };
@@ -400,7 +408,7 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
     if (!inMech) return null;
     if (f >= E("gather")) return b.t < refill ? { s: out3((refill - b.t) * 6) } : { s: 1 };
     if (b.t >= buildLo) return null;
-    const demo = b.layer === 0 && b.k === 0 ? win(f, E("sellTag"), E("hidden"), 4, 10) : 0;
+    const demo = b.layer === 0 && b.k === 3 ? win(f, E("sellTag"), E("hidden"), 4, 10) : 0;
     return { s: out3((buildLo - b.t) * 6), ghost: ghostK, glow: demo };
   };
   const buildR = ramp(f, E("round"), 24);
@@ -480,7 +488,7 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
 
       {/* ================= stage A: the range and the sweep ================= */}
       <Candles bars={A} st={SA} op={st.A * (inMech ? 1 : ramp(f, reveal, 20))} from={22} />
-      <Volume bars={A} st={SA} op={st.A * win(f, mechIn, pollIn + 20, 14, 12)} from={26} vol={(i) => (i === HUNT ? huntVol : SERIES_A[i].v)} hot={(i) => (i === HUNT ? out3((f - volume - 10) / 10) * (1 - ramp(f, E("wickIn") + 20, 20)) : 0)} />
+      <Volume bars={A} st={SA} op={st.A * win(f, volume - 4, pollIn + 20, 10, 12)} from={26} vol={(i) => (i === HUNT ? huntVol : SERIES_A[i].v)} hot={(i) => (i === HUNT ? out3((f - volume - 10) / 10) * (1 - ramp(f, E("wickIn") + 20, 20)) : 0)} />
       <Level y={py(A_HIGH)} x0={px(A_HI) - 0.3} x1={xA1} k={inMech ? ramp(f, E("hiLevel"), 16) : 1} op={st.A} glow={same + 0.6 * win(f, E("look"), pollIn, 8, 12)} />
       <Level y={py(A_LOW)} x0={px(A_LO) - 0.3} x1={xA1} k={ramp(f, E("loLevel"), 16)} op={st.A * (inMech ? 1 : 0)} glow={same} />
       <Level y={py(ROUND)} x0={px(28)} x1={xA1} k={ramp(f, E("round"), 16)} op={st.A * (f >= pollIn ? 1 : 0)} glow={same} />
@@ -496,8 +504,8 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
         </mesh>
       )}
       {/* "触发 → 买入 / 卖出": one brick turns into a market order */}
-      <Arrow p={[STACK_HI.find((b) => b.layer === 0 && b.k === 0)!.x, STACK_HI[0].y + 0.2, -0.78]} dir={1} len={1.1 * out3((f - E("buyTag")) / 12)} color={COL.up} op={win(f, E("buyTag"), E("loLevel"), 4, 10) * st.A} />
-      <Arrow p={[STACK_LO.find((b) => b.layer === 0 && b.k === 0)!.x, STACK_LO[0].y - 0.2, -0.78]} dir={-1} len={1.1 * out3((f - E("sellTag")) / 12)} color={COL.down} op={win(f, E("sellTag"), E("hidden"), 4, 10) * st.A} />
+      <Arrow p={[STACK_HI.find((b) => b.layer === 0 && b.k === 3)!.x, STACK_HI[0].y + 0.2, -0.78]} dir={1} len={1.1 * out3((f - E("buyTag")) / 12)} color={COL.up} op={win(f, E("buyTag"), E("loLevel"), 4, 10) * st.A} />
+      <Arrow p={[STACK_LO.find((b) => b.layer === 0 && b.k === 3)!.x, STACK_LO[0].y - 0.2, -0.78]} dir={-1} len={0.55 * out3((f - E("sellTag")) / 12)} color={COL.down} op={win(f, E("sellTag"), E("hidden"), 4, 10) * st.A} />
       {beads}
       <Bead p={tip()} r={0.22 * out3(knot * 1.4)} color={COL.up} op={knot * st.A} />
       {drop > 0 && drop < 1 && <Bead p={[px(HUNT), tip()[1] + (FLOOR_Y + 0.4 - tip()[1]) * ease(drop), 0.05]} r={0.2} color={COL.up} op={st.A} />}

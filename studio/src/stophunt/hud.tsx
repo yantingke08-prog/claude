@@ -6,6 +6,7 @@ import { E, backOut, captions, clamp01, out3, ramp, win } from "./cue";
 import { A_HIGH, A_LOW, BAD_STOP, B_HIGH, GOOD_STOP, HUNT, LADDER_X, ROUND, SA, SB, SC, SERIES_A, SERIES_REAL, SPIKE_I, STACK_B, STACK_HI, STACK_LO, TEST_WICK, TOUCH, XS, YOU_BRICK, avgVol, px, py, FLOOR_Y } from "./data";
 import { projector, type Proj } from "./director";
 import { num, sans, serif } from "./fonts";
+import { ChartMarks, LadderMarks, Stickers } from "./marks";
 import { Strip } from "./strip";
 import { T } from "./text";
 import { COL, GOLD_SLAB, VB_TRAY, barsA, barsB, barsC, bufferSpan } from "./world";
@@ -150,8 +151,8 @@ const Liq: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
 
 const Mech: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
   // anchors on bricks of the bottom layer, which exist from the first moment the stack starts to build
-  const hi = STACK_HI.find((b) => b.layer === 0 && b.k === 3)!;
-  const lo = STACK_LO.find((b) => b.layer === 0 && b.k === 3)!;
+  const hi = STACK_HI.find((b) => b.layer === 0 && b.k === 1)!;
+  const lo = STACK_LO.find((b) => b.layer === 0 && b.k === 4)!;
   const A = barsA(f)[HUNT];
   const tip = pr(px(HUNT), py(Math.max(A.h, A.c)), 0);
   const vTop = pr(px(HUNT), FLOOR_Y + SERIES_A[HUNT].v * 0.32 + 0.1, 0);
@@ -164,7 +165,7 @@ const Mech: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
         end={E("wickIn") + 4}
         items={[
           { at: E("shortStops"), draw: (a) => <Callout a={a} at={pr(hi.x, hi.y + 0.1, hi.z)} dx={-60} dy={-230} zh={T.short} sub={T.shortSub} accent={COL.up} /> },
-          { at: E("longStops"), draw: (a) => <Callout a={a} at={pr(lo.x, lo.y - 0.1, lo.z)} dx={-60} dy={190} zh={T.long} sub={T.longSub} accent={COL.down} /> },
+          { at: E("longStops"), draw: (a) => <Callout a={a} at={pr(lo.x, lo.y - 0.1, lo.z)} dx={-60} dy={-210} zh={T.long} sub={T.longSub} accent={COL.down} /> },
           { at: E("hidden") + 4, draw: (a) => <Callout a={a} at={pr(hi.x, hi.y + 0.1, hi.z)} dx={-80} dy={-240} zh={T.hidden} accent={INK} /> },
           { at: E("fire") + 6, draw: (a) => <Callout a={a} at={tip} dx={-120} dy={-200} zh={T.fire} accent={COL.up} /> },
           { at: E("volume") + 14, draw: (a) => <Callout a={a} at={vTop} dx={-140} dy={-220} zh={T.volume} sub={T.volumeSub} accent={COL.up} /> },
@@ -259,16 +260,6 @@ const Checks: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
         </div>
       )}
       <Headline f={f} id="test" from={E("testTag") + 2} to={E("stopIn")} color={COL.gold} />
-      <Sequence
-        f={f}
-        end={E("stopIn")}
-        items={[
-          { at: E("c1vol") + 4, draw: (a) => <Callout a={a} at={vTop} dx={60} dy={-200} zh={T.c1} sub={`${T.avg} ${avg.toFixed(1)} → ${SERIES_REAL[TOUCH].v.toFixed(1)}`} accent={COL.up} /> },
-          { at: E("c2hold"), draw: (a) => <Callout a={a} at={hold} dx={80} dy={-170} zh={T.c2} accent={COL.gold} /> },
-          { at: E("c3catch") + 4, until: testIn, draw: (a) => <Callout a={a} at={catchP} dx={90} dy={150} zh={T.c3} accent={COL.up} /> },
-          { at: E("pierce") + 10, until: E("testTag"), draw: (a) => <Callout a={a} at={tip} dx={80} dy={-170} zh={T.pierce} accent={COL.down} /> },
-        ]}
-      />
     </>
   );
 };
@@ -300,7 +291,7 @@ const Stop: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
         </div>
       )}
       {tuneA > 0.002 && (
-        <div style={{ position: "absolute", left: SAFE.l, right: SAFE.l, top: 330, opacity: tuneA, display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ position: "absolute", left: SAFE.l, right: SAFE.l, top: 330, opacity: tuneA, display: "flex", justifyContent: "flex-start" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 22, background: PLATE, borderRadius: 14, padding: "12px 26px" }}>
             <div style={{ position: "relative", width: 260, height: 14, borderRadius: 7, background: "rgba(243,234,217,0.16)" }}>
               <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${25 + 70 * hiVol}%`, borderRadius: 7, background: COL.gold }} />
@@ -429,8 +420,11 @@ export const Hud: React.FC<{ f: number }> = ({ f }) => {
       {S("stopIn", "coreIn") && <Stop f={f} pr={pr} />}
       {S("coreIn", "endIn") && <Core f={f} pr={pr} />}
       {f >= E("endIn") - 1 && <End f={f} />}
+      <LadderMarks f={f} pr={pr} />
+      <ChartMarks f={f} pr={pr} />
       <Strip f={f} />
       <Tickers f={f} pr={pr} />
+      <Stickers f={f} />
       <Captions f={f} />
     </div>
   );

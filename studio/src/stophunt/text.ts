@@ -68,6 +68,28 @@ export const T = {
   nextUp: "有人能把价格推上去",
   nextAbs: "有人只是在接货",
   tagB: "示意数据",
+  // pins on the charts (v4)
+  marks: {
+    youAt: "你的止损",
+    stackHi: "15 张空头止损",
+    stackLo: "15 张多头止损",
+    stackRd: "整数位也扎堆",
+    high: "最高",
+    reach: "冲到",
+    closeBack: "收回",
+    touch: "首次碰位",
+    hold: "收在前高上方",
+    retest: "回踩有人接",
+    goOn: "继续走高",
+    pierceTo: "穿到",
+    backTo: "收回",
+    noVol: "量没放大",
+    noOne: "没人跟",
+    badAt: "贴脸止损",
+    probe: "试探高点",
+    crowd: "这一层都是止损",
+    lots: "手",
+  },
   // the explanation strip under the 3D image
   strip: {
     hook: ["你的止损", "同一价位", "流动性"],
@@ -86,6 +108,7 @@ export const T = {
     testItems: ["量没放大", "马上收回", "没人跟"],
     bad: ["贴脸止损", "试探高点", "被扫掉", "在人堆里"],
     f: ["结构高点", "缓冲（按波动）", "你的止损", "试探最高"],
+    core: ["止损扎堆", "形成流动性", "价格去拿流动性", "你：避开人堆"],
   },
 };
 

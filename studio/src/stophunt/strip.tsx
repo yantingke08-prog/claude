@@ -134,6 +134,9 @@ export const Strip: React.FC<{ f: number }> = ({ f }) => {
           ]}
         />
       </Band>
+      <Band a={win(f, coreIn + 6, E("endIn"), 10, 8)}>
+        <Chain f={f} nodes={[{ at: coreIn + 6, zh: S.core[0], color: COL.up }, { at: E("notYou"), zh: S.core[1] }, { at: E("step"), zh: S.core[2], color: COL.up }, { at: E("away"), zh: S.core[3], color: INK }]} />
+      </Band>
       <Band a={win(f, E("buffer"), coreIn, 10, 8)}>
         <div style={{ position: "absolute", left: 60, right: 60, top: TOP + 6, display: "flex", alignItems: "center", justifyContent: "center", gap: 18, background: "rgba(5,8,14,0.72)", borderRadius: 16, padding: "18px 10px", border: "2px solid rgba(233,180,76,0.45)" }}>
           <Term label={S.f[0]} v={TEST_WICK.toFixed(2)} k={ramp(f, E("buffer"), 8)} />

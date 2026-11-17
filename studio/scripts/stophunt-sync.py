@@ -7,7 +7,7 @@ This script decides those times; the animation code never contains a frame numbe
   python scripts/stophunt-sync.py estimate          placeholder timeline from character counts (no audio; committed)
   python scripts/stophunt-sync.py align             word-level timeline from the real voice public/voiceover/vo.wav
         [--model small|medium|large-v3] [--words words.json]
-  python scripts/stophunt-sync.py srt [out.srt]     subtitles from the timeline (default ../outputs-stophunt-v2/stop-hunt-v2.srt)
+  python scripts/stophunt-sync.py srt [out.srt]     subtitles from the timeline (default ../outputs-stophunt-v3/stop-hunt-v3.srt)
   python scripts/stophunt-sync.py mix               public/stophunt/mix.wav = voice + quiet bed + sparse cues, -14 LUFS
   python scripts/stophunt-sync.py all [...]         align + srt + mix  (what `npm run sh:sync` runs after replacing vo.wav)
 
@@ -36,7 +36,7 @@ TIMELINE = SRC / "timeline.json"
 EVENTS = SRC / "events.json"
 VO = ROOT / "public" / "voiceover" / "vo.wav"
 MIX = ROOT / "public" / "stophunt" / "mix.wav"
-SRT_DEFAULT = ROOT.parent / "outputs-stophunt-v2" / "stop-hunt-v2.srt"
+SRT_DEFAULT = ROOT.parent / "outputs-stophunt-v3" / "stop-hunt-v3.srt"
 
 SKIP = set("，。？！；：、“”\"'（）() ")
 SENT = "。？！；"

@@ -57,4 +57,4 @@ npm run sh:make
 
 没有独显时用 `npm run sh:make:cpu`。
 
-输出：`D:/claude视频/stop-hunt-v2.mp4`、`stop-hunt-v2-cover.png`、`stop-hunt-v2.srt`。渲染时需要联网，因为字体子集从 Google Fonts 获取。
+输出：`D:/claude视频/stop-hunt-v3.mp4`、`stop-hunt-v3-cover.png`、`stop-hunt-v3.srt`。渲染时需要联网，因为字体子集从 Google Fonts 获取。

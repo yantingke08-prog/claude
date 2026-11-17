@@ -13,6 +13,8 @@ import { LvpV1Seeing } from "./lvp/V1Seeing";
 import { LvpV2Footprint } from "./lvp/V2Footprint";
 import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
+import { VolNoRise, VolNoRiseCover } from "./volnorise/Film";
+import { FPS as VNR_FPS, FRAMES as VNR_FRAMES, HEIGHT as VNR_H, WIDTH as VNR_W } from "./volnorise/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -43,6 +45,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+    </Folder>
+    <Folder name="VolNoRise">
+      <Composition id="VolNoRise" component={VolNoRise} durationInFrames={VNR_FRAMES} fps={VNR_FPS} width={VNR_W} height={VNR_H} defaultProps={{ muted: false }} />
+      <Still id="VolNoRiseCover" component={VolNoRiseCover} width={VNR_W} height={VNR_H} />
     </Folder>
   </>
 );

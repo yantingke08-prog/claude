@@ -1,0 +1,53 @@
+{
+  "title": "放量不涨，是洗盘还是出货？",
+  "slug": "vol-no-rise-v1",
+  "fps": 30,
+  "tts": {
+    "voice": "zh-CN-YunyangNeural",
+    "rate": "+4%",
+    "pitch": "+0Hz",
+    "lead": 0.6,
+    "tail": 2.8,
+    "lineGap": 0.28,
+    "sectionGap": 0.55
+  },
+  "estimate": {
+    "cps": 4.9,
+    "latin": 0.6,
+    "lead": 0.6,
+    "tail": 2.8,
+    "lineGap": 0.28,
+    "sectionGap": 0.55,
+    "pause": {
+      "，": 0.14,
+      "、": 0.08,
+      "：": 0.2,
+      "；": 0.24,
+      "。": 0.28,
+      "？": 0.3,
+      "！": 0.28
+    }
+  },
+  "notes": "text = what the voice reads and what the captions show; the picture keys every action to words of these lines (events.json), so edit a word here and in events.json together. gapAfter = seconds of silence after a line (L02: the 5-second countdown runs in that silence).",
+  "lines": [
+    { "id": "L01", "section": "hook", "text": "放量不涨，你会追吗？" },
+    { "id": "L02", "section": "hook", "text": "给你五秒决定。", "gapAfter": 5.5 },
+    { "id": "L03", "section": "hook", "text": "只看成交量，不够。" },
+    { "id": "L04", "section": "what", "text": "放量不涨，说明有人在大量卖，也有人在大量接。" },
+    { "id": "L05", "section": "what", "text": "它可能是洗盘，也可能是出货，区别不在这一根，而在位置和后面的走势。" },
+    { "id": "L06", "section": "pos", "text": "第一，看位置。A刚从底部平台涨起来；B已经连续大涨，远离起涨点。" },
+    { "id": "L07", "section": "pos", "text": "同样放量滞涨，低位更可能是换手，高位就要警惕出货。" },
+    { "id": "L08", "section": "vol", "text": "第二，看量价配合。A之后回调，成交量一天比一天小，抛压在减轻。" },
+    { "id": "L09", "section": "vol", "text": "B一跌就放量，反弹却缩量，卖的人比买的人急。" },
+    { "id": "L10", "section": "catch", "text": "第三，看承接。A回到放量那根的低点，下影线拉长，有人在接。" },
+    { "id": "L11", "section": "catch", "text": "B到这里一碰就破，下影很短，接的人不够。" },
+    { "id": "L12", "section": "back", "text": "第四，看能不能收回、站稳。A很快回到这条线上方，低点一个比一个高。" },
+    { "id": "L13", "section": "back", "text": "B反弹到这里收不回，原来的支撑，变成了压力。" },
+    { "id": "L14", "section": "sum", "text": "低位、缩量回调、有承接、能收回，更像洗盘。" },
+    { "id": "L15", "section": "sum", "text": "高位、放量下跌、没承接、收不回，更要防出货。" },
+    { "id": "L16", "section": "logic", "text": "所以放量不涨的当天，不用急着下结论，等后面几根K线给答案。" },
+    { "id": "L17", "section": "logic", "text": "收回站稳再考虑，跌破收不回先回避，止损提前设好。" },
+    { "id": "L18", "section": "end", "text": "遇到放量不涨，你最先看哪一点？评论区聊聊。" },
+    { "id": "L19", "section": "end", "text": "教学示意，不构成投资建议。" }
+  ]
+}

@@ -2,3 +2,7 @@ node_modules/
 studio/out/
 studio/.remotion/
 *.log
+# 主动/被动 film: the voice is injected locally and never committed; the mix and subtitles are rebuilt from it
+studio/public/voiceover/
+studio/public/activepassive/mix.wav
+outputs-activepassive-v1/

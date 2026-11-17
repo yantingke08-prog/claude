@@ -1,0 +1,120 @@
+{
+  "title": "一买就追高，不是手慢，是没分清主动和被动",
+  "slug": "active-passive-v1",
+  "fps": 30,
+  "estimate": {
+    "cps": 5.6,
+    "latin": 0.4,
+    "lead": 0.5,
+    "tail": 2.6,
+    "lineGap": 0.22,
+    "sectionGap": 0.45,
+    "pause": {
+      "，": 0.12,
+      "、": 0.06,
+      "：": 0.18,
+      "；": 0.22,
+      "。": 0.26,
+      "？": 0.3,
+      "！": 0.26
+    }
+  },
+  "notes": "text = what the voice reads and what the captions show. The picture keys every action to words of these lines (events.json), so edit a word here and in events.json together.",
+  "lines": [
+    {
+      "id": "L01",
+      "section": "hook",
+      "text": "一买就追高，不是手慢，是没分清主动和被动。"
+    },
+    {
+      "id": "L02",
+      "section": "buy",
+      "text": "主动买，用市价单、止损单直接吃掉卖盘，跨过价差、拿走流动性，容易推涨。"
+    },
+    {
+      "id": "L03",
+      "section": "buy",
+      "text": "被动买，在下方挂限价单等成交，提供流动性，价格更好，但不保证成交。"
+    },
+    {
+      "id": "L04",
+      "section": "buy",
+      "text": "同样一笔买单，含义完全不同。"
+    },
+    {
+      "id": "L05",
+      "section": "sell",
+      "text": "卖也一样：主动卖砸向买盘，推动下跌；被动卖在上方挂限价卖单，等主动买来成交。"
+    },
+    {
+      "id": "L06",
+      "section": "sell",
+      "text": "关键不在买卖，在有没有主动跨价、推动价格。"
+    },
+    {
+      "id": "L07",
+      "section": "chase",
+      "text": "看到大阳线、突破、放量才追，主动买盘可能已经完成主要推动。"
+    },
+    {
+      "id": "L08",
+      "section": "chase",
+      "text": "如果主动买衰竭、Delta不随价格创新高，或大单主动买却推不动，可能是上方被动卖盘在吸收。"
+    },
+    {
+      "id": "L09",
+      "section": "chase",
+      "text": "这时追进去，可能是在给别人提供退出流动性。"
+    },
+    {
+      "id": "L10",
+      "section": "three",
+      "text": "别只看K线颜色，看三件事。"
+    },
+    {
+      "id": "L11",
+      "section": "three",
+      "text": "一看主动成交方向：主动买是否持续，Delta是否扩张。"
+    },
+    {
+      "id": "L12",
+      "section": "three",
+      "text": "二看价格响应：主动买很大，价格有没有真的推进。"
+    },
+    {
+      "id": "L13",
+      "section": "three",
+      "text": "三看位置和后续：突破初期、回踩确认，还是连续加速、远离结构。"
+    },
+    {
+      "id": "L14",
+      "section": "three",
+      "text": "主动买强，不等于哪都能追；被动挂单多，也不等于一定不破。"
+    },
+    {
+      "id": "L15",
+      "section": "absorb",
+      "text": "吸收：主动买不断打向卖盘，价格不动，是被动卖在吸收；主动卖不断砸向买盘，跌不下去，是被动买在吸收。"
+    },
+    {
+      "id": "L16",
+      "section": "absorb",
+      "text": "吸收之后，看价格往哪走，别一见大单就下结论。"
+    },
+    {
+      "id": "L17",
+      "section": "logic",
+      "text": "不因阳线追高，不因大单盲跟：先分清成交是拿走还是提供流动性，再看价格响应、突破跟随、回踩承接。"
+    },
+    {
+      "id": "L18",
+      "section": "end",
+      "text": "你追高时，是看到大阳线才进，还是看到主动买盘持续才进？评论区打'阳线'或者'主动'。"
+    },
+    {
+      "id": "L19",
+      "section": "end",
+      "text": "下集：同样是大单，为什么有人是在吸筹，有人是在出货？"
+    }
+  ]
+}

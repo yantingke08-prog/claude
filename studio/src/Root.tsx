@@ -13,6 +13,8 @@ import { LvpV1Seeing } from "./lvp/V1Seeing";
 import { LvpV2Footprint } from "./lvp/V2Footprint";
 import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
+import { ActivePassive, ActivePassiveCover } from "./activepassive/Film";
+import { FPS as AP_FPS, FRAMES as AP_FRAMES, HEIGHT as AP_H, WIDTH as AP_W } from "./activepassive/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -43,6 +45,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+    </Folder>
+    <Folder name="ActivePassive">
+      <Composition id="ActivePassive" component={ActivePassive} durationInFrames={AP_FRAMES} fps={AP_FPS} width={AP_W} height={AP_H} defaultProps={{ muted: false }} />
+      <Still id="ActivePassiveCover" component={ActivePassiveCover} width={AP_W} height={AP_H} />
     </Folder>
   </>
 );

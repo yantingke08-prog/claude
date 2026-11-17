@@ -1,15 +1,16 @@
 // 2D layer over the 3D stage. Rules: one main message per section (top band), at most one callout at a time,
 // every element appears on the word that names it (events), and captions show a whole sentence or meaning unit.
-// Safe area: x 60..1380; callouts y 400..1880; captions y >= 1960; nothing below ~2200.
+// Safe area: x 60..1380; callouts y 400..1610; explanation strip y 1600..1890; captions y >= 1960.
 import React from "react";
 import { E, backOut, captions, clamp01, out3, ramp, win } from "./cue";
 import { A_HIGH, A_LOW, BAD_STOP, B_HIGH, GOOD_STOP, HUNT, LADDER_X, ROUND, SA, SB, SC, SERIES_A, SERIES_REAL, SPIKE_I, STACK_B, STACK_HI, STACK_LO, TEST_WICK, TOUCH, XS, YOU_BRICK, avgVol, px, py, FLOOR_Y } from "./data";
 import { projector, type Proj } from "./director";
 import { num, sans, serif } from "./fonts";
+import { Strip } from "./strip";
 import { T } from "./text";
-import { COL, GOLD_SLAB, VB_TRAY, barsA, barsB, bufferSpan } from "./world";
+import { COL, GOLD_SLAB, VB_TRAY, barsA, barsB, barsC, bufferSpan } from "./world";
 
-export const SAFE = { l: 60, r: 1380, top: 400, bottom: 1880, cap: 1962 };
+export const SAFE = { l: 60, r: 1380, top: 400, bottom: 1610, cap: 1962 };
 const INK = "#f3ead9";
 const SOFT = "rgba(243,234,217,0.66)";
 const PLATE = "rgba(5,8,14,0.84)";
@@ -115,6 +116,7 @@ const Hook: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
           <div style={{ ...sans(900), fontSize: 84, lineHeight: 1.35, color: COL.gold }}>{T.hook2}</div>
         </div>
       )}
+      <Headline f={f} id="hook" from={E("reveal") + 8} to={E("liqIn")} />
       <Sequence
         f={f}
         end={E("liqIn") + 6}
@@ -293,7 +295,7 @@ const Stop: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
         ]}
       />
       {win(f, E("buffer") + 12, end, 10, 10) > 0.002 && (
-        <div style={{ position: "absolute", right: 1440 - SAFE.r, top: struct.y + 14, opacity: win(f, E("buffer") + 12, end, 10, 10), ...sans(700), fontSize: 32, color: SOFT }}>
+        <div style={{ position: "absolute", left: 520, top: struct.y + 14, opacity: win(f, E("buffer") + 12, end, 10, 10), ...sans(700), fontSize: 32, color: SOFT }}>
           {T.structure} {TEST_WICK.toFixed(2)}
         </div>
       )}
@@ -387,6 +389,30 @@ const NextRow: React.FC<{ f: number; at: number; up?: boolean; text: string }> =
   );
 };
 
+/** live price tag riding on the candle that is printing right now */
+const Ticker: React.FC<{ at: Pt; price: number; a: number; color: string }> = ({ at, price, a, color }) =>
+  a <= 0.002 ? null : (
+    <div style={{ position: "absolute", left: Math.min(SAFE.r - 170, at.x + 34), top: Math.max(300, at.y - 26), opacity: a, ...num(700), fontSize: 38, color: "#06080d", background: color, borderRadius: 8, padding: "0 12px" }}>
+      {price.toFixed(2)}
+    </div>
+  );
+const Tickers: React.FC<{ f: number; pr: Proj }> = ({ f, pr }) => {
+  const A = barsA(f)[HUNT];
+  const B = barsB(f);
+  const C = barsC(f)[SPIKE_I];
+  const tipA = pr(px(HUNT), py(A.c), 0);
+  const tB = B[TOUCH];
+  const sB = B[SPIKE_I] as (typeof B)[number] | undefined; // the probe bar exists only after the test
+  return (
+    <>
+      <Ticker at={tipA} price={A.c} a={win(f, E("hunt"), E("wickIn"), 6, 10)} color={A.c >= A.o ? COL.up : COL.down} />
+      <Ticker at={pr(px(TOUCH, SB), py(tB.c, SB), 0)} price={tB.c} a={win(f, E("pierce"), E("noFollow"), 6, 10)} color={tB.c >= tB.o ? COL.up : COL.down} />
+      {sB && <Ticker at={pr(px(SPIKE_I, SB), py(sB.c, SB), 0)} price={sB.c} a={win(f, E("badStop") + 14, E("goodIn"), 6, 10) * (sB.g > 0 ? 1 : 0)} color={sB.c >= sB.o ? COL.up : COL.down} />}
+      <Ticker at={pr(px(SPIKE_I, SC), py(C.c, SC), 0)} price={C.c} a={win(f, E("goodHold"), E("tune") + 10, 6, 10) * (C.g > 0 ? 1 : 0)} color={C.c >= C.o ? COL.up : COL.down} />
+    </>
+  );
+};
+
 // ================================================================= the HUD
 export const Hud: React.FC<{ f: number }> = ({ f }) => {
   const pr = projector(f);
@@ -403,6 +429,8 @@ export const Hud: React.FC<{ f: number }> = ({ f }) => {
       {S("stopIn", "coreIn") && <Stop f={f} pr={pr} />}
       {S("coreIn", "endIn") && <Core f={f} pr={pr} />}
       {f >= E("endIn") - 1 && <End f={f} />}
+      <Strip f={f} />
+      <Tickers f={f} pr={pr} />
       <Captions f={f} />
     </div>
   );

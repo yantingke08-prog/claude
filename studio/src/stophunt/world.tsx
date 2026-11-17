@@ -7,13 +7,13 @@ import { useThree } from "@react-three/fiber";
 import React, { useMemo } from "react";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { E, clamp01, ease, out3, ramp, win } from "./cue";
+import { E, HEIGHT, WIDTH, clamp01, ease, out3, ramp, win } from "./cue";
 import {
   A_HIGH, A_HI, A_LO, A_LOW, A_N, BAD_STOP, B_HI, B_HIGH, Brick, FLOOR_Y, GOOD_STOP, HUNT, LADDER_X, ROUND, SA, SB, SC,
   SERIES_A, SERIES_REAL, SERIES_STOP, SPIKE_I, STACK_B, STACK_C, STACK_HI, STACK_LO, STACK_RD, Stage, TEST_WICK, TOUCH, XS, YOU_BRICK,
   YS, avgVol, px, py, type Bar,
 } from "./data";
-import { cam, huntCross, huntPath, stage } from "./director";
+import { LIFT, cam, huntCross, huntPath, stage } from "./director";
 
 export const COL = {
   bg: "#04070d",
@@ -50,6 +50,8 @@ const Rig: React.FC<{ f: number }> = ({ f }) => {
   camera.updateProjectionMatrix();
   camera.position.set(...c.p);
   camera.lookAt(...c.t);
+  camera.setViewOffset(WIDTH, HEIGHT, 0, LIFT, WIDTH, HEIGHT);
+  camera.updateProjectionMatrix();
   camera.updateMatrixWorld();
   return null;
 };

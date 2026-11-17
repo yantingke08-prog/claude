@@ -17,20 +17,23 @@ const POSES = () => {
     hookClose: P([YOU_BRICK.x - 0.2, YOU_BRICK.y + 0.05, YOU_BRICK.z], [1.7, 1.5, 4.6], 32, [-0.04, 0, -0.1]),
     hookWide: P([6.2, 1.0, -0.6], [5.4, 4.6, 19], 30, [-0.05, 0, -0.08]),
     ladder: P([LADDER_X + 2.4, -0.2, -0.3], [3.4, 3.0, 19], 30, [-0.05, 0, -0.06]),
+    ladderThick: P([LADDER_X + 2.8, -0.2, -0.3], [2.6, 2.2, 15], 30, [-0.06, 0, -0.08]),
+    check3: P([px(30, SB), -1.4, -0.5], [4.0, 3.6, 23], 30, [-0.05, 0, -0.06]),
+    stopTune: P([px(30, SC), py(B_HIGH, SC) - 1.1, -0.5], [3.6, 2.6, 15.5], 30, [-0.05, 0, -0.05]),
     mechHigh: P([6.6, hy - 1.0, -0.6], [4.6, 3.0, 15], 30, [-0.04, 0, -0.06]),
     mechLow: P([6.6, ly + 0.3, -0.6], [4.6, 3.0, 15], 30, [-0.04, 0, -0.06]),
-    mechWide: P([6.2, -1.2, -0.6], [5.6, 4.4, 28], 30, [-0.04, 0, -0.08]),
+    mechWide: P([6.2, -0.9, -0.6], [5.6, 4.6, 33], 30, [-0.04, 0, -0.08]),
     hunt: P([hx - 0.6, hy - 0.4, -0.5], [3.6, 2.2, 12], 30, [-0.03, 0, -0.05]),
-    volume: P([hx - 0.6, -1.4, -0.4], [4.0, 3.2, 25], 30, [-0.03, 0, -0.05]),
+    volume: P([hx - 1.0, -2.4, -0.4], [4.6, 3.6, 35], 30, [-0.03, 0, -0.05]),
     counter: P([hx + 0.2, hy - 0.5, -0.5], [3.6, 2.2, 13], 30, [-0.03, 0, -0.05]),
     wick: P([hx, hy + 0.2, -0.2], [2.8, 1.6, 9.5], 30, [-0.03, 0, -0.04]),
     wick2: P([7.4, hy - 0.6, -0.6], [4.2, 2.8, 14.5], 30, [-0.04, 0, -0.05]),
-    poll: P([5.8, -1.0, -0.6], [5.6, 4.2, 30], 30, [-0.05, 0, -0.06]),
+    poll: P([5.8, -0.4, -0.6], [5.6, 4.2, 30], 30, [-0.05, 0, -0.06]),
     check: P([px(25, SB), -2.5, -0.5], [4.8, 4.2, 25], 30, [-0.04, 0, -0.06]),
-    check2: P([px(28, SB), -2.3, -0.5], [4.4, 4.0, 24], 30, [-0.03, 0, -0.05]),
-    stopBad: P([px(29, SB), bl - 0.7, -0.5], [3.2, 2.2, 11.5], 30, [-0.03, 0, -0.04]),
-    stopGood: P([px(29, SC), bl - 0.55, -0.5], [3.2, 2.2, 11.5], 30, [-0.03, 0, -0.04]),
-    core: P([px(26, SC), bl - 0.4, -0.6], [4.0, 3.4, 21], 30, [-0.03, 0, -0.06]),
+    check2: P([px(28, SB), -1.5, -0.5], [4.4, 4.0, 25], 30, [-0.03, 0, -0.05]),
+    stopBad: P([px(31, SB), bl - 1.1, -0.5], [3.4, 2.4, 13.5], 30, [-0.03, 0, -0.04]),
+    stopGood: P([px(31, SC), bl - 1.0, -0.5], [3.4, 2.4, 13.5], 30, [-0.03, 0, -0.04]),
+    core: P([px(27, SC), bl + 0.9, -0.6], [3.6, 3.0, 17], 30, [-0.04, 0, -0.07]),
     end: P([px(26, SC), bl + 0.6, -0.6], [3.0, 3.6, 27], 30, [-0.02, 0, -0.05]),
   };
 };
@@ -42,23 +45,27 @@ const keys = (): [number, Pose, number][] => {
   const q = poses();
   return [
     [0, q.hookClose, 1],
-    [E("reveal"), q.hookWide, 40],
-    [E("liqIn"), q.ladder, 30],
-    [E("mechIn"), q.mechHigh, 30],
-    [E("loLevel"), q.mechLow, 24],
-    [E("hidden"), q.mechWide, 26],
-    [E("hunt"), q.hunt, 24],
-    [E("volume"), q.volume, 18],
-    [E("counter"), q.counter, 18],
-    [E("wickTag"), q.wick, 22],
-    [E("look"), q.wick2, 26],
-    [E("pollIn"), q.poll, 30],
-    [E("checkIn"), q.check, 34],
-    [E("c2"), q.check2, 26],
-    [E("stopIn"), q.stopBad, 28],
-    [E("goodIn"), q.stopGood, 26],
-    [E("coreIn"), q.core, 40],
-    [E("endIn"), q.end, 50],
+    [E("reveal"), q.hookWide, 26],
+    [E("liqIn"), q.ladder, 22],
+    [E("liqMany"), q.ladderThick, 18],
+    [E("mechIn"), q.mechHigh, 22],
+    [E("loLevel"), q.mechLow, 16],
+    [E("hidden"), q.mechWide, 18],
+    [E("hunt"), q.hunt, 16],
+    [E("volume"), q.volume, 14],
+    [E("counter"), q.counter, 14],
+    [E("wickTag"), q.wick, 16],
+    [E("look"), q.wick2, 18],
+    [E("pollIn"), q.poll, 22],
+    [E("checkIn"), q.check, 24],
+    [E("c2"), q.check2, 18],
+    [E("c3"), q.check3, 16],
+    [E("testIn"), q.check2, 16],
+    [E("stopIn"), q.stopBad, 20],
+    [E("goodIn"), q.stopGood, 18],
+    [E("tune"), q.stopTune, 18],
+    [E("coreIn"), q.core, 28],
+    [E("endIn"), q.end, 34],
   ];
 };
 
@@ -75,17 +82,21 @@ export const cam = (f: number): Pose => {
     const [a, q, d] = ks[k];
     if (f < a) break;
     const t = ease((f - a) / d);
-    const nxt = drifted(q, Math.max(0, f - a - d) / FPS);
+    const nxt = drifted(q, (1.6 * Math.max(0, f - a - d)) / FPS);
     cur = { p: lerp3(cur.p, nxt.p, t), t: lerp3(cur.t, nxt.t, t), fov: cur.fov + (nxt.fov - cur.fov) * t };
   }
   return cur;
 };
+
+/** the 3D image sits this many px higher than the camera centre, leaving the lower band for the explanation strip */
+export const LIFT = 170;
 
 export const threeCam = (f: number) => {
   const c = cam(f);
   const k = new THREE.PerspectiveCamera(c.fov, WIDTH / HEIGHT, 0.1, 400);
   k.position.set(...c.p);
   k.lookAt(new THREE.Vector3(...c.t));
+  k.setViewOffset(WIDTH, HEIGHT, 0, LIFT, WIDTH, HEIGHT);
   k.updateMatrixWorld();
   k.updateProjectionMatrix();
   return k;

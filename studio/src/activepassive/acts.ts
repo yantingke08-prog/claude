@@ -190,7 +190,8 @@ export const bookAbsorb = (f: number): BookState => {
 };
 
 // ---------------------------------------------------------------- charts
-export type LiveBar = Bar & { g: number; hot: number; grey: number };
+/** g = printed (0 = not yet), op = focus opacity (bars outside a close-up step back), hot = lit, grey = desaturated */
+export type LiveBar = Bar & { g: number; hot: number; grey: number; op?: number };
 /** a bar that prints live: to its extreme first, then back to its close */
 const live = (f: number, b: Bar, a: number, d = 20): LiveBar => {
   if (f < a) return { ...b, g: 0, hot: 0, grey: 0 };
@@ -215,10 +216,16 @@ export const hookBars = (f: number): LiveBar[] =>
     return { ...L, hot: 0.4 * ramp(f, E("hookYang") + 16, 10) };
   });
 
+/** in the close-up on the wall the range bars step back so nothing is cut by the frame edge */
+export const chaseFocus = (f: number) => 1 - ramp(f, E("cBig"), 12);
+/** in the close-up on the price response only bars 3..6 stay */
+export const threeFocus = (f: number) => 1 - win(f, E("t2"), E("t3") + 20, 10, 14);
+/** the second book of a pair only appears when the camera turns to it, so it never sits cut at the edge of the first one's shot */
+export const secondBook = (f: number, which: "buy" | "sell") => ramp(f, which === "buy" ? E("pBuy") + 10 : E("sPas") + 10, 12);
 export const chaseBars = (f: number): LiveBar[] => {
   const cIn = E("chaseIn");
   return CHASE.bars.map((b, i) => {
-    if (i < CH_YANG) return shown(b, clamp01((f - cIn - 4 - i * 2) / 8));
+    if (i < CH_YANG) return { ...shown(b, clamp01((f - cIn - 4 - i * 2) / 8)), op: chaseFocus(f) };
     if (i === CH_YANG) return { ...live(f, b, E("cYang"), 20), hot: 0.5 * win(f, E("cVol"), E("cFade"), 8, 12) };
     if (i < CH_WALL_I) return live(f, b, E("cFade") + (i - CH_YANG - 1) * 14, 16);
     return { ...live(f, b, E("cBig") - 4, 22), hot: 0.4 * win(f, E("cStuck"), E("cYou"), 6, 12) };
@@ -228,7 +235,8 @@ export const chaseBars = (f: number): LiveBar[] => {
 export const threeBars = (f: number): LiveBar[] => {
   const tIn = E("threeIn");
   const grey = ramp(f, E("tColor"), 14) * (1 - ramp(f, E("t1"), 14));
-  return THREE.bars.map((b, i) => ({ ...shown(b, clamp01((f - tIn - 2 - i * 1.5) / 8)), grey, hot: i === 5 ? 0.6 * win(f, E("t2go"), E("t3"), 6, 12) : 0 }));
+  const foc = threeFocus(f);
+  return THREE.bars.map((b, i) => ({ ...shown(b, clamp01((f - tIn - 2 - i * 1.5) / 8)), grey, hot: i === 5 ? 0.6 * win(f, E("t2go"), E("t3"), 6, 12) : 0, op: i >= 3 && i <= 6 ? 1 : foc }));
 };
 
 export const logicBars = (f: number): LiveBar[] => {

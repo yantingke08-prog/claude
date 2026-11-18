@@ -29,6 +29,10 @@ export const DEPTH = 3;
 /** the candle that shows the book's price response stands this far left of the tower */
 export const BOOK_CANDLE_DX = -1.85;
 export const ly = (level: number) => BOOK_Y + level * LV;
+/** a resting-order slab's height and depth, half the width of a price shelf */
+export const SLAB_H = 0.3;
+export const SLAB_D = 0.8;
+export const TOWER_W = 1.2;
 
 export type BookCfg = { x: number; asks: number[]; bids: number[] };
 /** sizes at levels 1..3 above (asks) and below (bids) the mid */

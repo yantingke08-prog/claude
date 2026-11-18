@@ -23,7 +23,7 @@ const chunks: string[][] = [];
 for (let i = 0; i < glyphs.length; i += CHUNK) chunks.push(glyphs.slice(i, i + CHUNK));
 const sample = glyphs.join("");
 const ASCII = Array.from({ length: 95 }, (_, k) => String.fromCharCode(32 + k)).filter((c) => c.trim());
-const serifText = Array.from(new Set(Array.from(T.hook1 + T.hook2 + T.hook3 + T.act + T.pas + T.cmpLine + T.key1)));
+const serifText = Array.from(new Set(Array.from(T.titleA + T.titleB + T.V.hook0.flat().map((s) => s[0]).join(""))));
 export const fontsReady = Promise.all([
   ...chunks.map((c) => load(SANS, ":wght@500;700;900", c)),
   load(SERIF, ":wght@700;900", serifText),

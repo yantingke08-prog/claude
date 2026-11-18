@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Timeline, subtitles and mix for 《一买就追高，不是手慢，是没分清主动和被动》 (src/activepassive).
+"""Timeline, subtitles and mix for 《主动还是被动：谁拿走了流动性？》 (voiceover: 一买就追高…) (src/activepassive).
 
 Every caption, animation and camera move is keyed to line IDs and to the moment individual words are spoken.
 This script decides those moments; the animation code never contains a frame number or a total length.
@@ -7,7 +7,7 @@ This script decides those moments; the animation code never contains a frame num
   python scripts/activepassive-sync.py estimate        placeholder timeline from character counts (no audio; committed)
   python scripts/activepassive-sync.py align           timeline from the real voice public/voiceover/vo.wav
         [--model small|medium|large-v3] [--words words.json] [--pauses]
-  python scripts/activepassive-sync.py srt [out.srt]   subtitles (default ../outputs-activepassive-v1/active-passive-v1.srt)
+  python scripts/activepassive-sync.py srt [out.srt]   subtitles (default ../outputs-activepassive-v2/active-passive-v2.srt)
   python scripts/activepassive-sync.py mix             public/activepassive/mix.wav = voice + quiet bed + sparse cues, -14 LUFS
   python scripts/activepassive-sync.py all [...]       align + srt + mix   (= npm run ap:sync)
   python scripts/activepassive-sync.py check           print every event's time and the line around it (for a quick read-through)
@@ -40,7 +40,7 @@ EVENTS = SRC / "events.json"
 # AP_VO / AP_MIX only exist for testing the pipeline on other files; normal use needs neither
 VO = Path(os.environ.get("AP_VO", ROOT / "public" / "voiceover" / "vo.wav"))
 MIX = Path(os.environ.get("AP_MIX", ROOT / "public" / "activepassive" / "mix.wav"))
-SRT_DEFAULT = ROOT.parent / "outputs-activepassive-v1" / "active-passive-v1.srt"
+SRT_DEFAULT = ROOT.parent / "outputs-activepassive-v2" / "active-passive-v2.srt"
 
 SKIP = set("，。？！；：、“”\"'‘’（）() ")
 SENT = "。？！；"

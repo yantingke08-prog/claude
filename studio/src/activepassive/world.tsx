@@ -8,13 +8,14 @@ import { useThree } from "@react-three/fiber";
 import React, { useMemo } from "react";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { bookAbsorb, bookBuyA, bookBuyB, bookSellA, bookSellB, chaseBars, hookBars, logicBars, threeBars, volumeOn, type BookState, type LiveBar } from "./acts";
+import { bookAbsorb, bookBuyA, bookBuyB, bookSellA, bookSellB, chaseBars, chaseFocus, secondBook, threeFocus, hookBars, logicBars, threeBars, volumeOn, type BookState, type LiveBar } from "./acts";
 import { E, clamp01, ease, out3, ramp, win } from "./cue";
 import {
   BOOK_CANDLE_DX, BOOK_Y, CHASE, CHASE_LEVEL, CH_DIV, CH_WALL, CH_WALL_I, CH_YANG, END_BOOK_X, END_CANDLE, FLOOR_Y, HOOK, LG_BREAK, LG_RETEST, LOGIC,
-  LOGIC_LEVEL, LV, SIZE_W, THREE as TH, THREE_LEVEL, TH_EXPAND, TH_FAR, TH_NEAR, TH_PUSH, VOL_K, X, cx, cy, ly, type Chart,
+  LOGIC_LEVEL, LV, SIZE_W, SLAB_D, SLAB_H, TOWER_W, THREE as TH, THREE_LEVEL, TH_EXPAND, TH_FAR, TH_NEAR, TH_PUSH, VOL_K, X, cx, cy, ly, type Chart,
 } from "./data";
 import { cam, presence } from "./director";
+import { LAYOUT } from "./layout";
 
 export const COL = {
   bg: "#04070d",
@@ -61,6 +62,8 @@ const Rig: React.FC<{ f: number }> = ({ f }) => {
   camera.fov = c.fov;
   camera.near = 0.1;
   camera.far = 400;
+  // centre the stage on the data zone, not on the frame (LAYOUT.viewShift)
+  camera.setViewOffset(LAYOUT.W, LAYOUT.H, 0, LAYOUT.viewShift, LAYOUT.W, LAYOUT.H);
   camera.updateProjectionMatrix();
   camera.position.set(...c.p);
   camera.lookAt(...c.t);
@@ -297,9 +300,6 @@ const Floor: React.FC = () => (
 );
 
 // ---------------------------------------------------------------- an order book tower
-const SLAB_H = 0.3;
-const SLAB_D = 0.8;
-const TOWER_W = 1.2;
 /** glass shelves, resting orders, the active pulses, the last-trade plate, the spread and the price-response candle */
 const Book: React.FC<{ s: BookState; op: number }> = ({ s, op }) => {
   if (op <= 0.002) return null;
@@ -359,8 +359,8 @@ const ChartBars: React.FC<{ ch: Chart; bars: LiveBar[]; op: number; vol?: number
     <group>
       {bars.map((b, i) => (
         <React.Fragment key={i}>
-          <Candle x={cx(ch, i)} y={(p) => cy(ch, p)} b={b} g={b.g} op={op} hot={b.hot} grey={b.grey} />
-          {vol > 0.002 && b.g > 0.01 && <VolCol x={cx(ch, i)} base={ch.vb} v={b.v} d={b.d} k={Math.min(vol, b.g)} op={op} glow={volGlow(i)} />}
+          <Candle x={cx(ch, i)} y={(p) => cy(ch, p)} b={b} g={b.g} op={op * (b.op ?? 1)} hot={b.hot} grey={b.grey} />
+          {vol > 0.002 && b.g > 0.01 && <VolCol x={cx(ch, i)} base={ch.vb} v={b.v} d={b.d} k={Math.min(vol, b.g)} op={op * (b.op ?? 1)} glow={volGlow(i)} />}
         </React.Fragment>
       ))}
     </group>
@@ -429,15 +429,15 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
 
       {/* ================= 01 buy ================= */}
       <Book s={bookBuyA(f)} op={pr.buy} />
-      <Book s={bookBuyB(f)} op={pr.buy} />
+      <Book s={bookBuyB(f)} op={pr.buy * secondBook(f, "buy")} />
 
       {/* ================= 02 sell ================= */}
       <Book s={bookSellA(f)} op={pr.sell} />
-      <Book s={bookSellB(f)} op={pr.sell} />
+      <Book s={bookSellB(f)} op={pr.sell * secondBook(f, "sell")} />
 
       {/* ================= 03 chase ================= */}
       <ChartBars ch={CHASE} bars={CB} op={pr.chase} vol={chVol} volGlow={(i) => (i === CH_YANG ? win(f, E("cVol"), E("cFade"), 8, 10) : CH_DIV.includes(i) ? 0.8 * win(f, E("cDelta"), E("cBig"), 8, 10) : i === CH_WALL_I ? 0.8 * win(f, E("cBig"), E("cYou"), 8, 10) : 0)} />
-      <Level y={cy(CHASE, CHASE_LEVEL)} x0={cx(CHASE, 0) - 0.4} x1={cx(CHASE, CH_WALL_I) + 0.6} k={ramp(f, E("chaseIn") + 6, 16)} op={pr.chase} glow={win(f, E("cBreak"), E("cFade"), 6, 12)} />
+      <Level y={cy(CHASE, CHASE_LEVEL)} x0={cx(CHASE, 0) - 0.4} x1={cx(CHASE, CH_WALL_I) + 0.6} k={ramp(f, E("chaseIn") + 6, 16)} op={pr.chase * chaseFocus(f)} glow={win(f, E("cBreak"), E("cFade"), 6, 12)} />
       {/* divergence: highs rise (warm), delta peaks fall (gold) */}
       {divK > 0.002 &&
         CH_DIV.slice(0, -1).map((i, k) => {
@@ -456,14 +456,14 @@ export const World: React.FC<{ f: number }> = ({ f }) => {
       {chPulse > 0 && <PulseMesh x={wx} z={0.55} y0={cy(CHASE, 102.6)} y1={cy(CHASE, 102.6) + (wBot - cy(CHASE, 102.6)) * ease(chPulse)} dir={1} color={COL.up} op={pr.chase * (1 - clamp01((f - E("cBig") - 18) / 12))} r={0.09} />}
       {/* your order going into the wall */}
       {f >= E("cYou") && (
-        <mesh geometry={rbox(0.3, 0.2, 0.3, 0.04)} position={[wx + 1.6 - 1.4 * youK, wBot - 0.6 + 0.5 * youK, 0.55]} castShadow>
+        <mesh geometry={rbox(0.3, 0.2, 0.3, 0.04)} position={[wx + 1.35 - 1.15 * youK, wBot - 0.6 + 0.5 * youK, 0.55]} castShadow>
           <meshPhysicalMaterial color={COL.warm} emissive={COL.warm} emissiveIntensity={0.4 + 0.8 * win(f, E("cYou") + 12, E("threeIn"), 4, 10)} roughness={0.2} clearcoat={1} transparent opacity={pr.chase * (1 - 0.7 * clamp01((f - E("cYou") - 18) / 10))} />
         </mesh>
       )}
 
       {/* ================= 04 three things ================= */}
       <ChartBars ch={TH} bars={TB} op={pr.three} vol={thVol} volGlow={expand} />
-      <Level y={cy(TH, THREE_LEVEL)} x0={cx(TH, 0) - 0.4} x1={cx(TH, TH.bars.length - 1) + 0.5} k={ramp(f, E("threeIn") + 6, 16)} op={pr.three} glow={0.5 * nearZ} />
+      <Level y={cy(TH, THREE_LEVEL)} x0={cx(TH, 0) - 0.4} x1={cx(TH, TH.bars.length - 1) + 0.5} k={ramp(f, E("threeIn") + 6, 16)} op={pr.three * threeFocus(f)} glow={0.5 * nearZ} />
       {thPulse > 0 && <PulseMesh x={cx(TH, TH_PUSH) + 0.3} z={0.3} y0={cy(TH, 101.1)} y1={cy(TH, 101.1) + 0.9 * ease((f - E("t2big")) / 10)} dir={1} color={COL.up} op={pr.three * (1 - clamp01((f - E("t2big") - 16) / 12))} r={0.07} />}
       {/* the advance that the buying actually bought: a gold bracket from open to close */}
       {(() => {

@@ -1,4 +1,4 @@
-// 《一买就追高，不是手慢，是没分清主动和被动》 v1 — vertical 1440×2560. One 3D trading stage (bevelled candles,
+// 《主动还是被动：谁拿走了流动性？》 v2 — vertical 1440×2560. One 3D trading stage (bevelled candles,
 // glass price shelves, order books with glass resting orders, active orders as single pulses, volume glass with a
 // delta core, reflective floor, light shafts, fog, depth of field) under a HUD that follows the voice.
 // Length, timing and captions all come from timeline.json.
@@ -12,7 +12,8 @@ import * as THREE from "three";
 import { E } from "./cue";
 import { cam } from "./director";
 import { fontsReady, sans, serif } from "./fonts";
-import { Hud, SAFE } from "./hud";
+import { Hud } from "./hud";
+import { LAYOUT } from "./layout";
 import { T } from "./text";
 import { COL, World } from "./world";
 
@@ -84,22 +85,25 @@ export const ActivePassive: React.FC<{ muted?: boolean }> = ({ muted = false }) 
   );
 };
 
-/** cover: the active buy that crossed the spread and ate the ask, title above */
+/** cover: the active buy that crossed the spread and ate the ask, the question above, the notice below */
 export const ActivePassiveCover: React.FC = () => {
   const f = Math.round(E("aPush") + 14);
+  const M = LAYOUT.margin;
   return (
     <AbsoluteFill style={{ background: COL.bg }}>
-      <Cinema f={f} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,7,13,0.95) 0%, rgba(4,7,13,0.6) 28%, rgba(4,7,13,0) 44%, rgba(4,7,13,0) 72%, rgba(4,7,13,0.9) 100%)" }} />
-      <div style={{ position: "absolute", left: SAFE.l, right: SAFE.l, top: 210, textAlign: "center" }}>
-        <div style={{ ...serif(900), fontSize: 196, lineHeight: 1.1, color: "#f3ead9" }}>{T.hook1}</div>
-        <div style={{ ...sans(900), fontSize: 88, lineHeight: 1.35, color: "rgba(243,234,217,0.7)", marginTop: 18 }}>{T.hook2}</div>
-        <div style={{ ...sans(900), fontSize: 100, lineHeight: 1.35, color: COL.gold }}>
-          {T.hook3}
-          <span style={{ color: COL.up }}>{T.act}</span>和<span style={{ color: "#f3ead9" }}>{T.pas}</span>
-        </div>
+      {/* the stage drops below the title block */}
+      <div style={{ position: "absolute", inset: 0, transform: "translateY(420px)" }}>
+        <Cinema f={f} />
       </div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 2200, textAlign: "center", ...sans(700), fontSize: 40, color: COL.gold }}>{T.risk}</div>
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(4,7,13,0.95) 0%, rgba(4,7,13,0.7) 24%, rgba(4,7,13,0) 40%, rgba(4,7,13,0) 74%, rgba(4,7,13,0.9) 100%)" }} />
+      <div style={{ position: "absolute", left: M, right: M, top: 190, textAlign: "center" }}>
+        <div style={{ ...serif(900), fontSize: 170, lineHeight: 1.12, color: "#f3ead9" }}>
+          <span style={{ color: COL.up }}>主动</span>还是<span style={{ color: COL.gold }}>被动</span>
+        </div>
+        <div style={{ ...serif(900), fontSize: 120, lineHeight: 1.3, color: "#f3ead9", marginTop: 10 }}>{T.titleB}</div>
+        <div style={{ ...sans(700), fontSize: 50, lineHeight: 1.4, color: "rgba(243,234,217,0.7)", marginTop: 22 }}>{T.V.hook1.flat().map((s) => s[0]).join("")}</div>
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 2240, textAlign: "center", ...sans(700), fontSize: 40, color: COL.gold }}>{T.risk}</div>
     </AbsoluteFill>
   );
 };

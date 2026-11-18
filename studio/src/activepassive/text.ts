@@ -1,15 +1,21 @@
-// Every on-screen string except captions (those come from timeline.json). fonts.ts subsets the fonts to exactly these glyphs.
+// Every on-screen string except captions (those come from timeline.json). fonts.ts subsets the fonts to exactly these
+// glyphs, so a label string that is not in here would fall back to a system font: keep them all in T.
+// The voiceover (script.json / 口播文案.md) is fixed and is not touched by anything here.
+export type Accent = "up" | "down" | "gold" | "ink";
+/** one row of the conclusion band: [text, colour] segments */
+export type Row = [string, Accent?][];
+/** a data label: muted key + bright value; alt values for live states; s = short fallback when space is tight */
+export type Lbl = { k: string; v: string; alt?: string[]; s?: [string, string] };
+
 export const T = {
-  series: "交易认知",
-  seriesSub: "订单流入门",
+  title: "主动还是被动：谁拿走了流动性？",
+  titleA: "主动还是被动",
+  titleB: "谁拿走了流动性？",
+  series: "交易认知 · 订单流",
   risk: "教学示意，不构成投资建议",
   tagData: "示意数据",
-  hook1: "一买就追高",
-  hook2: "不是手慢",
-  hook3: "是没分清",
-  act: "主动",
-  pas: "被动",
-  // one main message per section (top band)
+  hookName: "开场",
+  endName: "互动 · 下集预告",
   head: {
     buy: ["01", "主动买 vs 被动买"],
     sell: ["02", "主动卖 vs 被动卖"],
@@ -18,87 +24,88 @@ export const T = {
     absorb: ["05", "吸收：打不动的那一边"],
     logic: ["06", "交易逻辑"],
   } as Record<string, [string, string]>,
-  // order book
-  asks: "卖盘 · 被动卖单",
-  bids: "买盘 · 被动买单",
-  last: "成交价",
-  // 01
-  mkt: "市价单 / 止损单",
-  mktSub: "主动买：直接吃卖盘",
-  spread: "价差",
-  take: "拿走流动性",
-  takeSub: "价格被推上去",
-  limit: "限价买单",
-  limitSub: "挂在下方，等成交",
-  provide: "提供流动性",
-  better: "价格更好",
-  betterSub: "挂在现价下方",
-  noFill: "价格走了，没成交",
-  cmpA: "主动买",
-  cmpASub: "跨价 · 拿走流动性",
-  cmpB: "被动买",
-  cmpBSub: "等待 · 提供流动性",
-  cmpLine: "同样一笔买单，含义完全不同",
-  // 02
-  sHit: "主动卖：砸向买盘",
-  sHitSub: "推动下跌",
-  sPlace: "限价卖单",
-  sPlaceSub: "挂在上方，等主动买",
-  sFill: "主动买来了，才成交",
-  key1: "关键不在买卖",
-  key2: "有没有主动跨价",
-  key3: "有没有推动价格",
-  // 03
-  yang: "大阳线 · 突破 · 放量",
-  done: "主要推动可能已完成",
-  divPrice: "价格新高",
-  divDelta: "Delta 没新高",
-  wall: "被动卖盘在吸收",
-  wallSub: "大单主动买，价格推不动",
-  you: "你追进",
-  exit: "你的买单",
-  exitSub: "= 别人的退出流动性",
-  // 04
-  checks: [
-    ["主动成交方向", "主动买持续？Delta 扩张？"],
-    ["价格响应", "买得多，价格推进了吗？"],
-    ["位置和后续", "初期 / 回踩，还是远离结构？"],
-  ],
-  noColor: "颜色只是结果",
-  dExp: "Delta 逐根扩张",
-  advance: "价格真的推进",
-  near: "突破初期 · 回踩确认",
-  far: "连续加速 · 远离结构",
-  structure: "结构",
-  cav1: "主动买强 ≠ 哪都能追",
-  cav2: "被动挂单多 ≠ 一定不破",
-  // 05
-  still: "价格不动",
-  absS: "被动卖盘吸收",
-  absB: "被动买盘吸收",
-  hold: "跌不下去",
-  where: "吸收之后，看价格往哪走",
-  noRush: "别一见大单就下结论",
-  // 06
-  noChase: "不因阳线追高",
-  noFollow: "不因大单盲跟",
-  steps: [
-    ["1", "主动还是被动", "拿走 or 提供流动性"],
-    ["2", "价格响应", "有没有推进"],
-    ["3", "突破跟随", "有没有人跟"],
-    ["4", "回踩承接", "有没有人接"],
-  ],
-  // end
-  q1: "你追高时，看的是？",
-  qA: "阳线",
-  qB: "主动",
-  qAsub: "看到大阳线才进",
-  qBsub: "看到主动买盘持续才进",
-  q2: "评论区打「阳线」或「主动」",
-  nextTag: "下集预告",
-  next1: "同样是大单",
-  next2: "为什么有人在吸筹",
-  next3: "有人在出货？",
+  steps3: ["主动方向", "价格响应", "位置后续"],
+  steps4: ["主动被动", "价格响应", "突破跟随", "回踩承接"],
+
+  // ------------------------------------------------ conclusion band (one at a time)
+  V: {
+    hook0: [[["一买就追高？", "ink"]]] as Row[],
+    hook1: [[["不是手慢，是没分清", "ink"], ["主动", "up"], ["和", "ink"], ["被动", "gold"]]] as Row[],
+    buy1: [[["主动买", "up"], ["：跨价，拿走流动性", "ink"]]] as Row[],
+    buy2: [[["被动买", "gold"], ["：挂单，提供流动性", "ink"]]] as Row[],
+    buy3: [[["同样一笔买单，含义完全不同", "ink"]]] as Row[],
+    sell1: [[["主动卖", "down"], ["：砸向买盘，推动下跌", "ink"]]] as Row[],
+    sell2: [[["被动卖", "gold"], ["：挂在上方，等主动买来成交", "ink"]]] as Row[],
+    sell3: [[["关键：有没有", "ink"], ["主动跨价、推动价格", "gold"]]] as Row[],
+    chase1: [[["大阳线出现时，", "ink"], ["主要推动可能已完成", "gold"]]] as Row[],
+    chase2: [[["大单主动买推不动 = ", "ink"], ["上方被动卖在吸收", "gold"]]] as Row[],
+    chase3: [[["追进去，可能是在给别人提供", "ink"], ["退出流动性", "up"]]] as Row[],
+    three0: [[["别只看K线颜色，看", "ink"], ["三件事", "gold"]]] as Row[],
+    three1: [[["① 主动买是否持续，", "ink"], ["Delta 是否扩张", "gold"]]] as Row[],
+    three2: [[["② 主动买很大，", "ink"], ["价格有没有真的推进", "gold"]]] as Row[],
+    three3: [[["③ 突破初期、回踩确认，", "gold"], ["还是远离结构", "ink"]]] as Row[],
+    three4: [[["主动买强 ≠ 哪都能追", "ink"]], [["被动挂单多 ≠ 一定不破", "gold"]]] as Row[],
+    abs1: [[["主动买打不动 = ", "ink"], ["被动卖在吸收", "up"]]] as Row[],
+    abs2: [[["主动卖砸不下 = ", "ink"], ["被动买在吸收", "down"]]] as Row[],
+    abs3: [[["吸收之后，看价格往哪走", "ink"]], [["别一见大单就下结论", "gold"]]] as Row[],
+    logic1: [[["✗ 不因阳线追高", "ink"]], [["✗ 不因大单盲跟", "ink"]]] as Row[],
+    logic2: [[["先分清：", "ink"], ["拿走", "up"], ["还是", "ink"], ["提供", "gold"], ["流动性", "ink"]]] as Row[],
+    end1: [[["你追高时，看的是？", "ink"]]] as Row[],
+    end2: [[["评论区打「", "ink"], ["阳线", "gold"], ["」或「", "ink"], ["主动", "up"], ["」", "ink"]]] as Row[],
+    end3: [[["下集：同样是大单", "ink"]], [["谁在吸筹，谁在出货？", "gold"]]] as Row[],
+  },
+
+  // ------------------------------------------------ data labels ({n} / {p} / {d} are filled live)
+  L: {
+    hYang: { k: "大阳线", v: "+2.2%", s: ["", "+2.2%"] },
+    hYou: { k: "你的买点", v: "102.70 · 接近最高", s: ["买点", "102.70"] },
+
+    bAsk: { k: "卖一 100.05", v: "{n} 手", alt: ["0 手 · 被吃光"], s: ["卖一", "{n}"] },
+    bSpread: { k: "价差", v: "0.10 · 99.95 / 100.05", s: ["价差", "0.10"] },
+    bPx: { k: "成交价", v: "{p} · {d}", s: ["成交", "{p}"] },
+    bMine: { k: "我的限价买 99.90", v: "排队 120 手", alt: ["比卖一低 0.15", "成交 0 / 120"], s: ["限价买", "0 / 120"] },
+    bPxB: { k: "成交价", v: "{p} · 价格走了", s: ["成交", "{p}"] },
+    bCmpA: { k: "主动买", v: "成交 258 手 · +0.10", s: ["主动买", "+0.10"] },
+    bCmpB: { k: "被动买", v: "成交 0 手 · 挂价更低", s: ["被动买", "成交 0"] },
+
+    sBid: { k: "买一 99.95", v: "{n} 手", alt: ["0 手 · 被砸穿"], s: ["买一", "{n}"] },
+    sPx: { k: "成交价", v: "{p} · {d}", s: ["成交", "{p}"] },
+    sMine: { k: "我的限价卖 100.10", v: "排队 120 手", alt: ["成交 120 / 120"], s: ["限价卖", "120"] },
+    sPxB: { k: "成交价", v: "{p} · 主动买推上来", s: ["成交", "{p}"] },
+    sCmpA: { k: "主动卖", v: "成交 258 手 · -0.10", s: ["主动卖", "-0.10"] },
+    sCmpB: { k: "被动卖", v: "等主动买 · 成交 120 手", s: ["被动卖", "等成交"] },
+
+    cYang: { k: "大阳线", v: "+1.6% · 突破 101.0", s: ["阳线", "+1.6%"] },
+    cVol: { k: "成交量", v: "3,300 手 · 3.4× 均量", s: ["量", "3.4×"] },
+    cDelta: { k: "Delta", v: "+1,900 → +900 → +450", s: ["Δ", "+450"] },
+    cHigh: { k: "高点", v: "102.60 → 102.90 → 103.05", s: ["高点", "103.05"] },
+    cBig: { k: "大单主动买", v: "+1,300 手", s: ["主动买", "+1,300"] },
+    cStuck: { k: "价格", v: "102.80 → 102.85 · 只涨 0.05", s: ["价格", "+0.05"] },
+    cWall: { k: "被动卖墙 103.12", v: "吸收 1,300 手 · 不退", s: ["卖墙", "吸收"] },
+    cYou: { k: "你的买单", v: "@103.10 → 成交给卖墙", s: ["你", "@103.10"] },
+
+    tDelta: { k: "Delta", v: "+500 → +900 → +1,400", s: ["Δ", "+1,400"] },
+    tBuy: { k: "主动买", v: "+1,400 手", s: ["主动买", "+1,400"] },
+    tPush: { k: "价格推进", v: "101.20 → 101.80 · +0.60", s: ["推进", "+0.60"] },
+    tNear: { k: "距结构 100.6", v: "+0.15 ~ +0.60", s: ["距结构", "+0.6"] },
+    tFar: { k: "距结构 100.6", v: "+3.70 · 连涨 3 根", s: ["距结构", "+3.7"] },
+    tCav: { k: "被动买单 100.6", v: "1,800 手", alt: ["1,800 → 270 手 · 被砸"], s: ["买单", "270"] },
+
+    aAsk: { k: "卖一 100.05", v: "成交 {n} 手 · 挂单仍 500", s: ["卖一", "仍 500"] },
+    aPx: { k: "成交价", v: "100.05 · 不动", s: ["成交", "100.05"] },
+    aBid: { k: "买一 99.95", v: "成交 {n} 手 · 挂单仍 500", s: ["买一", "仍 500"] },
+    aPx2: { k: "成交价", v: "99.95 · 跌不下去", s: ["成交", "99.95"] },
+    aUp: { k: "上破 100.10", v: "被动卖被吃完", s: ["上破", "100.10"] },
+    aDn: { k: "跌破 99.90", v: "被动买被打穿", s: ["跌破", "99.90"] },
+
+    lBreak: { k: "突破 · 主动买", v: "Delta +1,300", s: ["Δ", "+1,300"] },
+    lResp: { k: "价格响应", v: "100.60 → 101.50 · +0.90", s: ["响应", "+0.90"] },
+    lFollow: { k: "突破跟随", v: "新高 102.10 · Delta +900", s: ["跟随", "102.10"] },
+    lRetest: { k: "回踩承接", v: "低点 100.82 · 守住 100.8", s: ["承接", "100.82"] },
+
+    eYang: { k: "阳线", v: "看到大阳线才进" },
+    eAct: { k: "主动", v: "看到主动买盘持续才进" },
+  } as Record<string, Lbl>,
 };
 
-export const allText = () => JSON.stringify(T);
+export const allText = () => JSON.stringify(T) + "✗①②③≠→×·~@「」？";

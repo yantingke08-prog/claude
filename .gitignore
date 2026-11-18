@@ -4,5 +4,7 @@ studio/.remotion/
 *.log
 # 放量不涨 film: the voice (TTS or your own recording) and the mix are rebuilt locally and never committed
 studio/public/volnorise/*.wav
+studio/public/volnorise2/*.wav
 studio/.cache/
 outputs-volnorise-v1/
+outputs-volnorise-v2/

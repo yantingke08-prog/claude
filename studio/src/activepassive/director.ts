@@ -46,25 +46,25 @@ const keys = (): [number, Pose, number][] => {
   const q = poses();
   return [
     [0, q.hookWide, 1],
-    [E("hookYang"), q.hookClose, 30],
-    [E("buyIn"), q.buyA, 34],
-    [E("pBuy") + 14, q.buyB, 28],
-    [E("cmp"), q.buyPair, 30],
-    [E("sellIn"), q.sellA, 36],
-    [E("sPas") + 14, q.sellB, 26],
-    [E("keyIn") + 8, q.sellPair, 30],
-    [E("chaseIn"), q.chase, 38],
-    [E("cBig"), q.chaseWall, 24],
-    [E("threeIn"), q.three, 38],
-    [E("t2"), q.threePush, 24],
-    [E("t3"), q.threeWide, 26],
-    [E("absIn"), q.absorbTop, 38],
-    [E("abSell"), q.absorbLow, 22],
-    [E("abWhere"), q.absorbWide, 26],
-    [E("logicIn"), q.logic, 38],
-    [E("lg4"), q.logicWide, 40],
-    [E("endIn"), q.end, 38],
-    [E("next"), q.endFar, 40],
+    [E("hookYang"), q.hookClose, 24],
+    [E("buyIn"), q.buyA, 24],
+    [E("pBuy"), q.buyB, 20],
+    [E("cmp"), q.buyPair, 22],
+    [E("sellIn"), q.sellA, 24],
+    [E("sPas"), q.sellB, 20],
+    [E("keyIn"), q.sellPair, 22],
+    [E("chaseIn"), q.chase, 24],
+    [E("cBig"), q.chaseWall, 18],
+    [E("threeIn"), q.three, 24],
+    [E("t2"), q.threePush, 18],
+    [E("t3"), q.threeWide, 20],
+    [E("absIn"), q.absorbTop, 24],
+    [E("abSell"), q.absorbLow, 16],
+    [E("abWhere"), q.absorbWide, 20],
+    [E("logicIn"), q.logic, 24],
+    [E("lg4"), q.logicWide, 30],
+    [E("endIn"), q.end, 24],
+    [E("next"), q.endFar, 30],
   ];
 };
 
@@ -122,10 +122,10 @@ export const projector = (f: number): Proj => {
 // ---------------------------------------------------------------- set presence (0..1)
 /**
  * The camera flight carries the old set out of frame while the new one slides in; the old set also fades out
- * (frames +8..+18 of the cut) so it is fully gone once the new scene is on screen; the new one fades in as it arrives.
+ * (frames +2..+12 of the cut) so it is fully gone once the new scene is on screen; the new one fades in as it arrives.
  */
 export const presence = (f: number) => {
-  const seg = (a: string | null, b: string | null) => (a ? ramp(f, E(a) + 6, 14) : 1) * (b ? 1 - ramp(f, E(b) + 8, 10) : 1);
+  const seg = (a: string | null, b: string | null) => (a ? ramp(f, E(a) + 2, 12) : 1) * (b ? 1 - ramp(f, E(b) + 2, 10) : 1);
   return {
     hook: seg(null, "buyIn"),
     buy: seg("buyIn", "sellIn"),

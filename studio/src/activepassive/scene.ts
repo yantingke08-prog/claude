@@ -114,15 +114,13 @@ export const absorbMid = (pr: Proj, s: BookState) => pr(X.absorb + 1.45, ly(s.pr
 /** scene changes (the camera flies to the next set): nothing outlives them */
 let cuts: number[] | null = null;
 const cutAt = () => (cuts ??= ["buyIn", "sellIn", "chaseIn", "threeIn", "absIn", "logicIn", "endIn"].map(E));
-/** visible share of an element shown from `from` to `to` (keyword frames): it waits OUT frames (the old one leaving), fades in over IN */
-// an element whose end is a scene change is gone before the camera starts flying (it fades over the OUT frames before)
-const endOf = (to: number) => (cutAt().includes(to) ? to - LAYOUT.OUT : to);
-export const alphaOf = (f: number, from: number, to: number) => {
-  const start = from <= 0 ? 0 : from + LAYOUT.OUT;
-  const end = endOf(to);
-  return Math.min(clamp01((f - start) / LAYOUT.IN), clamp01(1 - (f - end) / LAYOUT.OUT));
-};
-const visibleSpan = (from: number, to: number): [number, number] => [from <= 0 ? 0 : from + LAYOUT.OUT, endOf(to) + LAYOUT.OUT];
+/**
+ * Visible share of an element that belongs to the span [from, to] (frames of spoken words): it starts fading in on
+ * its word (`from`) and has finished fading out at `to`, which is the next element's word or a scene change.
+ * So an element lands while its word is spoken, and the old one is gone before the new one begins.
+ */
+export const alphaOf = (f: number, from: number, to: number) => Math.min(from <= 0 ? 1 : clamp01((f - from) / LAYOUT.IN), clamp01((to - f) / LAYOUT.OUT));
+const visibleSpan = (from: number, to: number): [number, number] => [from, to];
 
 // ================================================================= conclusion band
 type VSpec = { from: number; rows: Row[]; rowAt?: number[]; big?: boolean };
@@ -131,22 +129,22 @@ const verdicts = (): VSpec[] =>
   (vCache ??= [
     { from: 0, rows: T.V.hook0, big: true },
     { from: E("notSlow"), rows: T.V.hook1 },
-    { from: E("aTake"), rows: T.V.buy1 },
-    { from: E("pProvide"), rows: T.V.buy2 },
+    { from: E("aBuy"), rows: T.V.buy1 },
+    { from: E("pBuy"), rows: T.V.buy2 },
     { from: E("cmpDiff"), rows: T.V.buy3 },
-    { from: E("sDown"), rows: T.V.sell1 },
-    { from: E("sFill"), rows: T.V.sell2 },
+    { from: E("sAct"), rows: T.V.sell1 },
+    { from: E("sPas"), rows: T.V.sell2 },
     { from: E("keyIn"), rows: T.V.sell3 },
     { from: E("cDone"), rows: T.V.chase1 },
-    { from: E("cAbs"), rows: T.V.chase2 },
-    { from: E("cExit"), rows: T.V.chase3 },
+    { from: E("cStuck"), rows: T.V.chase2 },
+    { from: E("cYou"), rows: T.V.chase3 },
     { from: E("tThree"), rows: T.V.three0 },
     { from: E("t1"), rows: T.V.three1 },
     { from: E("t2"), rows: T.V.three2 },
     { from: E("t3"), rows: T.V.three3 },
     { from: E("cav1"), rows: T.V.three4, rowAt: [E("cav1"), E("cav2")] },
-    { from: E("abPasS"), rows: T.V.abs1 },
-    { from: E("abPasB"), rows: T.V.abs2 },
+    { from: E("abStill"), rows: T.V.abs1 },
+    { from: E("abHold"), rows: T.V.abs2 },
     { from: E("abWhere"), rows: T.V.abs3, rowAt: [E("abWhere"), E("abNo")] },
     { from: E("lgNo1"), rows: T.V.logic1, rowAt: [E("lgNo1"), E("lgNo2")] },
     { from: E("lg1"), rows: T.V.logic2 },
@@ -164,7 +162,7 @@ export const verdictAt = (f: number): VerdictNow | null => {
     const cut = cuts.find((c) => c > v.from) ?? FRAMES + 99;
     const to = Math.min(next, cut);
     const a = alphaOf(f, v.from, to);
-    if (a > 0.002) return { rows: v.rows, rowA: v.rows.map((_, r) => (v.rowAt ? clamp01((f - v.rowAt[r] - (r ? 0 : LAYOUT.OUT)) / LAYOUT.IN) : 1)), a, big: !!v.big, key: i };
+    if (a > 0.002) return { rows: v.rows, rowA: v.rows.map((_, r) => (v.rowAt ? clamp01((f - v.rowAt[r]) / LAYOUT.IN) : 1)), a, big: !!v.big, key: i };
   }
   return null;
 };
@@ -218,52 +216,65 @@ const specs = (): LSpec[] =>
     const lg = C(LOGIC);
     const wx = cx(CHASE, CH_WALL_I);
     return [
+      // Each label lives from its word to the next label's word (or the scene change); at most two at a time.
       // ---------------- hook
-      { id: "hYang", from: e("hookYang") + 2, to: e("buyIn"), at: W(cx(HOOK, 6), cy(HOOK, 102.9) + 0.08, 0.2), accent: "up" },
+      { id: "hYang", from: e("hookYang"), to: e("hAct"), at: W(cx(HOOK, 6), cy(HOOK, 102.9) + 0.08, 0.2), accent: "up" },
       { id: "hYou", from: e("notSlow"), to: e("buyIn"), at: W(cx(HOOK, 6) + 0.2, cy(HOOK, 102.7), 0.2), accent: "ink" },
+      { id: "hDelta", from: e("hAct"), to: e("buyIn"), at: W(cx(HOOK, 6) - 0.2, cy(HOOK, 101.6), 0.2), accent: "up" },
       // ---------------- 01 buy
+      { id: "bOrder", from: e("aMkt"), to: e("aSpread"), at: (_f, pr) => pr(X.buyA, ly(-0.7), 0.62), accent: "up" },
       { id: "bAsk", from: e("aEat"), to: e("pBuy"), at: W(X.buyA + 0.32, ly(1), 0.4), accent: "up", pick: (f) => (bookBuyA(f).asks[0] < 0.01 ? 1 : 0), fill: (f) => ({ n: String(Math.round(bookBuyA(f).asks[0] * 100)) }) },
       { id: "bSpread", from: e("aSpread"), to: e("aPush"), at: W(X.buyA + TOWER_W + 0.14, ly(0), 0.3), accent: "gold" },
       { id: "bPx", from: e("aPush"), to: e("pBuy"), at: candleTop(bookBuyA), base: W(X.buyA + BOOK_CANDLE_DX, ly(2) + 0.06, 0.22), accent: "gold", fill: (f) => lv(f, bookBuyA(f)) },
-      { id: "bMine", from: e("pPlace"), to: e("cmp") + 16, at: W(X.buyB + 0.15 + 0.24, ly(-2), 0.84), accent: "ink", pick: (f) => (f >= e("pNoFill") + 2 ? 2 : f >= e("pBetter") ? 1 : 0) },
-      { id: "bPxB", from: e("pNoFill") + 2, to: e("cmp") + 16, at: candleTop(bookBuyB), base: W(X.buyB + BOOK_CANDLE_DX, ly(1) + 0.06, 0.22), accent: "gold", fill: (f) => lv(f, bookBuyB(f)) },
-      { id: "bCmpA", prefer: "left", from: e("cmp") + 22, to: e("sellIn"), at: W(X.buyA, ly(3) + 0.25, 0), accent: "up" },
-      { id: "bCmpB", prefer: "right", from: e("cmp") + 22, to: e("sellIn"), at: W(X.buyB, ly(3) + 0.25, 0), accent: "gold" },
+      { id: "bQueue", from: e("pBuy") + 14, to: e("pProvide"), at: W(X.buyB + 0.44, ly(-1), 0.4), accent: "ink" },
+      { id: "bMine", from: e("pPlace"), to: e("cmp"), at: W(X.buyB + 0.15 + 0.24, ly(-2), 0.84), accent: "ink", pick: (f) => (f >= e("pNoFill") + 8 ? 2 : f >= e("pBetter") ? 1 : 0) },
+      { id: "bPxB", from: e("pProvide"), to: e("cmp"), at: candleTop(bookBuyB), base: W(X.buyB + BOOK_CANDLE_DX, ly(1) + 0.06, 0.22), accent: "gold", pick: (f) => (f >= e("pNoFill") + 8 ? 1 : 0), fill: (f) => lv(f, bookBuyB(f)) },
+      { id: "bCmpA", prefer: "left", from: e("cmp") + 20, to: e("sellIn"), at: W(X.buyA, ly(3) + 0.25, 0), accent: "up" },
+      { id: "bCmpB", prefer: "right", from: e("cmp") + 20, to: e("sellIn"), at: W(X.buyB, ly(3) + 0.25, 0), accent: "gold" },
       // ---------------- 02 sell
+      { id: "sOrder", from: e("sAct"), to: e("sDown"), at: (_f, pr) => pr(X.sellA, ly(0.7), 0.62), accent: "down" },
       { id: "sBid", from: e("sHit"), to: e("sPas"), at: W(X.sellA + 0.32, ly(-1), 0.4), accent: "down", pick: (f) => (bookSellA(f).bids[0] < 0.01 ? 1 : 0), fill: (f) => ({ n: String(Math.round(bookSellA(f).bids[0] * 100)) }) },
       { id: "sPx", from: e("sDown"), to: e("sPas"), at: candleBot(bookSellA), base: W(X.sellA + BOOK_CANDLE_DX, ly(-2) - 0.06, 0.22), accent: "gold", fill: (f) => lv(f, bookSellA(f)) },
+      { id: "sQueue", from: e("sPas") + 14, to: e("sFill"), at: W(X.sellB + 0.44, ly(1), 0.4), accent: "ink" },
       { id: "sMine", from: e("sPlace"), to: e("keyIn"), at: W(X.sellB + 0.15 + 0.24, ly(2), 0.84), accent: "ink", pick: (f) => (f >= e("sFill") + 30 ? 1 : 0) },
-      { id: "sPxB", from: e("sFill") + 18, to: e("keyIn"), at: candleTop(bookSellB), base: W(X.sellB + BOOK_CANDLE_DX, ly(2) + 0.06, 0.22), accent: "gold", fill: (f) => lv(f, bookSellB(f)) },
-      { id: "sCmpA", prefer: "left", from: e("keyIn") + 30, to: e("chaseIn"), at: W(X.sellA, ly(3) + 0.25, 0), accent: "down" },
-      { id: "sCmpB", prefer: "right", from: e("keyIn") + 30, to: e("chaseIn"), at: W(X.sellB, ly(3) + 0.25, 0), accent: "gold" },
+      { id: "sPxB", from: e("sFill"), to: e("keyIn"), at: candleTop(bookSellB), base: W(X.sellB + BOOK_CANDLE_DX, ly(2) + 0.06, 0.22), accent: "gold", fill: (f) => lv(f, bookSellB(f)) },
+      { id: "sCmpA", prefer: "left", from: e("keyIn") + 20, to: e("chaseIn"), at: W(X.sellA, ly(3) + 0.25, 0), accent: "down" },
+      { id: "sCmpB", prefer: "right", from: e("keyIn") + 20, to: e("chaseIn"), at: W(X.sellB, ly(3) + 0.25, 0), accent: "gold" },
       // ---------------- 03 chase
-      { id: "cYang", from: e("cYang") + 6, to: e("cFade"), at: W(ch.x(5), ch.y(102.6) + 0.08, 0.2), accent: "up" },
-      { id: "cVol", from: e("cVol") + 4, to: e("cFade"), at: W(ch.x(5), CHASE.vb + 3.3 * VOL_K, 0.18), accent: "ink" },
-      { id: "cDelta", from: e("cDelta"), to: e("cBig"), at: W(ch.x(7), CHASE.vb + 0.45 * VOL_K * 1.25 + 0.1, 0.3), accent: "gold" },
+      { id: "cRange", from: e("chaseIn") + 22, to: e("cYang"), at: W(ch.x(0) - 0.2, ch.y(CHASE_LEVEL), 0.1), accent: "gold" },
+      { id: "cYang", from: e("cYang"), to: e("cFade"), at: W(ch.x(5), ch.y(102.6) + 0.08, 0.2), accent: "up" },
+      { id: "cVol", from: e("cVol"), to: e("cFade"), at: W(ch.x(5), CHASE.vb + 3.3 * VOL_K, 0.18), accent: "ink" },
+      { id: "cDelta", from: e("cFade"), to: e("cBig"), at: W(ch.x(7), CHASE.vb + 0.45 * VOL_K * 1.25 + 0.1, 0.3), accent: "gold" },
       { id: "cHigh", from: e("cNoHigh"), to: e("cBig"), at: W(ch.x(7), ch.y(103.05) + 0.12, 0.3), accent: "ink" },
-      { id: "cBig", from: e("cBig") + 10, to: e("cAbs"), at: W(wx, cy(CHASE, CH_WALL.lo) - 0.25, 0.55), accent: "up" },
+      { id: "cBig", from: e("cBig") + 8, to: e("cAbs"), at: W(wx, cy(CHASE, CH_WALL.lo) - 0.25, 0.55), accent: "up" },
       { id: "cStuck", from: e("cStuck"), to: e("cYou"), at: W(wx + 0.2, ch.y(102.85), 0.2), accent: "gold" },
       { id: "cWall", from: e("cAbs"), to: e("threeIn"), at: W(wx + 0.7, cy(CHASE, (CH_WALL.lo + CH_WALL.hi) / 2), 0.45), accent: "up" },
-      { id: "cYou", from: e("cYou") + 18, to: e("threeIn"), at: W(wx + 0.36, cy(CHASE, CH_WALL.lo) - 0.12, 0.55), accent: "ink" },
+      { id: "cYou", from: e("cYou") + 10, to: e("threeIn"), at: W(wx + 0.36, cy(CHASE, CH_WALL.lo) - 0.12, 0.55), accent: "ink" },
       // ---------------- 04 three things
-      { id: "tDelta", from: e("t1exp"), to: e("t2"), at: W(th.x(5), TH.vb + 1.4 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
-      { id: "tBuy", from: e("t2big") + 4, to: e("t3"), at: W(th.x(5), TH.vb + 1.4 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
+      { id: "tBull", from: e("tColor"), to: e("t1keep"), at: W(th.x(4), th.y(101.3) + 0.08, 0.2), accent: "up" },
+      { id: "tBear", from: e("tColor") + 4, to: e("t1keep"), at: W(th.x(6), th.y(100.65) - 0.08, 0.2), accent: "down" },
+      { id: "tDelta", from: e("t1keep"), to: e("t2"), at: W(th.x(5), TH.vb + 1.4 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
+      { id: "tBuy", from: e("t2big"), to: e("t3"), at: W(th.x(5), TH.vb + 1.4 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
       { id: "tPush", from: e("t2go"), to: e("t3"), at: W(th.x(5) - 0.31, th.y(101.5), 0.3), accent: "gold" },
       { id: "tNear", from: e("t3a"), to: e("t3c"), at: W((th.x(TH_NEAR[0]) + th.x(TH_NEAR[1])) / 2, th.y(101.95), 0.05), accent: "gold" },
-      { id: "tFar", from: e("t3c"), to: e("cav2"), at: W((th.x(TH_FAR[0]) + th.x(TH_FAR[1])) / 2, th.y(104.6), 0.05), accent: "up" },
-      { id: "tCav", from: e("cav2") + 2, to: e("absIn"), at: W(cx(TH, 8.5) + 0.9, cy(TH, THREE_LEVEL) - 0.2, 0.4), accent: "down", pick: (f) => (f >= e("cavBreak") + 8 ? 1 : 0) },
+      { id: "tFar", from: e("t3c"), to: e("cav1"), at: W((th.x(TH_FAR[0]) + th.x(TH_FAR[1])) / 2, th.y(104.6), 0.05), accent: "up" },
+      { id: "tChase", from: e("cav1"), to: e("absIn"), at: W(th.x(10), th.y(104.4) + 0.08, 0.2), accent: "up" },
+      { id: "tCav", from: e("cav2"), to: e("absIn"), at: W(cx(TH, 8.5) + 0.9, cy(TH, THREE_LEVEL) - 0.2, 0.4), accent: "down", pick: (f) => (f >= e("cavBreak") + 8 ? 1 : 0) },
       // ---------------- 05 absorption
+      { id: "aWallS", from: e("absIn") + 24, to: e("abBuy"), at: W(X.absorb + 1.0, ly(1), 0.4), accent: "ink" },
+      { id: "aWallB", from: e("absIn") + 28, to: e("abBuy"), at: W(X.absorb + 1.0, ly(-1), 0.4), accent: "ink" },
       { id: "aAsk", from: e("abBuy"), to: e("abSell"), at: W(X.absorb + 1.0, ly(1), 0.4), accent: "up", fill: (f) => ({ n: String(220 * hits(f, e("abBuy"))) }) },
       { id: "aPx", from: e("abStill"), to: e("abSell"), at: candleTop(bookAbsorb), base: W(X.absorb + BOOK_CANDLE_DX, ly(1) + 0.06, 0.22), accent: "gold" },
       { id: "aBid", from: e("abSell"), to: e("abWhere"), at: W(X.absorb + 1.0, ly(-1), 0.4), accent: "down", fill: (f) => ({ n: String(220 * hits(f, e("abSell"))) }) },
       { id: "aPx2", from: e("abHold"), to: e("abWhere"), at: candleBot(bookAbsorb), base: W(X.absorb + BOOK_CANDLE_DX, ly(-1) - 0.06, 0.22), accent: "gold" },
-      { id: "aUp", prefer: "up", from: e("abWhere") + 12, to: e("logicIn"), at: (f, pr) => arrowTip(f, pr, -1), accent: "up" },
-      { id: "aDn", prefer: "down", from: e("abWhere") + 12, to: e("logicIn"), at: (f, pr) => arrowTip(f, pr, 1), accent: "down" },
+      { id: "aUp", prefer: "up", from: e("abWhere") + 8, to: e("logicIn"), at: (f, pr) => arrowTip(f, pr, -1), accent: "up" },
+      { id: "aDn", prefer: "down", from: e("abWhere") + 8, to: e("logicIn"), at: (f, pr) => arrowTip(f, pr, 1), accent: "down" },
       // ---------------- 06 logic
-      { id: "lBreak", from: e("lg1") + 4, to: e("lg3") - LAYOUT.OUT, at: W(lg.x(3), LOGIC.vb + 1.3 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
-      { id: "lResp", from: e("lg2"), to: e("lg3") - LAYOUT.OUT, at: W(lg.x(3) - 0.31, lg.y(101.05), 0.3), accent: "gold" },
-      { id: "lFollow", from: e("lg3") + 4, to: e("endIn"), at: W(lg.x(4), lg.y(102.1) + 0.08, 0.2), accent: "up" },
-      { id: "lRetest", from: e("lg4") + 4, to: e("endIn"), at: W(cx(LOGIC, 5.5) + 0.75, cy(LOGIC, LOGIC_LEVEL) - 0.17, 0.4), accent: "down" },
+      { id: "lLevel", from: e("logicIn") + 22, to: e("lg1"), at: W(lg.x(0) - 0.2, lg.y(LOGIC_LEVEL), 0.1), accent: "gold" },
+      { id: "lBreak", from: e("lg1"), to: e("lg3"), at: W(lg.x(3), LOGIC.vb + 1.3 * VOL_K * 1.25 + 0.04, 0.2), accent: "up" },
+      { id: "lResp", from: e("lg2"), to: e("lg3"), at: W(lg.x(3) - 0.31, lg.y(101.05), 0.3), accent: "gold" },
+      { id: "lFollow", from: e("lg3"), to: e("endIn"), at: W(lg.x(4), lg.y(102.1) + 0.08, 0.2), accent: "up" },
+      { id: "lRetest", from: e("lg4"), to: e("endIn"), at: W(cx(LOGIC, 5.5) + 0.75, cy(LOGIC, LOGIC_LEVEL) - 0.17, 0.4), accent: "down" },
       // ---------------- end: the two answers
       { id: "eYang", prefer: "left", from: e("qYang"), to: e("next"), at: W(END_CANDLE.x, END_CANDLE.l - 0.1, 0.45), accent: "gold", chip: true },
       { id: "eAct", prefer: "right", from: e("qAct"), to: e("next"), at: W(END_BOOK_X, -1.7, 0.6), accent: "up", chip: true },

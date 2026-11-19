@@ -221,7 +221,7 @@ export const chaseFocus = (f: number) => 1 - ramp(f, E("cBig"), 12);
 /** in the close-up on the price response only bars 3..6 stay */
 export const threeFocus = (f: number) => 1 - win(f, E("t2"), E("t3") + 20, 10, 14);
 /** the second book of a pair only appears when the camera turns to it, so it never sits cut at the edge of the first one's shot */
-export const secondBook = (f: number, which: "buy" | "sell") => ramp(f, which === "buy" ? E("pBuy") + 10 : E("sPas") + 10, 12);
+export const secondBook = (f: number, which: "buy" | "sell") => ramp(f, which === "buy" ? E("pBuy") : E("sPas"), 10);
 export const chaseBars = (f: number): LiveBar[] => {
   const cIn = E("chaseIn");
   return CHASE.bars.map((b, i) => {

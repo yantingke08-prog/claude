@@ -1,6 +1,8 @@
-# 主动还是被动：谁拿走了流动性？（v2）
+# 主动还是被动：谁拿走了流动性？（v3）
 
 v2 沿用 v1 的口播（`script.json` / `口播文案.md` 原文未改，配音照旧读这一稿），重做的是画面信息层：固定安全区、实时数据标注、结论区和自动避让检查。
+
+v3：画面跟紧配音——动作、标注、结论都落在关键词**开始**的那一帧（不再等词说完）；换场镜头在上一句说完就起飞、0.8 秒到位（原来约 1.3 秒，新一句开口后约 1 秒才到）；标注从 41 个加到 53 个，每个讲解节拍都有 1–2 个实时数据标注。
 
 竖屏 1440×2560、30 fps 的金融科普短片。Remotion + Three.js（@remotion/three），K 线、订单簿、主动单、Delta 全部由代码生成，没有视频素材和 AI 图片；中文用 Noto Sans SC / Noto Serif SC 原生渲染。行情是固定的示意数据，右上角始终标注「教学示意，不构成投资建议」。
 
@@ -31,7 +33,7 @@ v2 沿用 v1 的口播（`script.json` / `口播文案.md` 原文未改，配音
 
 - `script.json`：19 句口播原文（字幕基准）和估算参数。
 - `timeline.json`：每句、每个字的起止帧，字幕分条，**总帧数也在这里**。代码里不写死任何帧号或时长。
-- `events.json`：画面动作的命名时间点，写法是「哪一句 + 哪个词」，例如 `aEat = L02 的「吃掉」说完`。重要动作用 `at: "end"`：等这个词说完才发生，动作结束后都留了落位时间。画面（`cue.ts`）、抽帧脚本和混音用同一套规则换算成帧。
+- `events.json`：画面动作的命名时间点，写法是「哪一句 + 哪个词」，例如 `aEat = L02 的「吃掉」说完`。v3 起所有动作都从关键词开口那一帧开始（`at: "end"` 仍支持，但不再使用）。
 - 仓库里提交的是**按字数估算的占位 timeline**（约 101 秒）。换成真实配音后跑一次 `npm run ap:sync`，字幕、动画、镜头、总时长自动跟着新时间走，不用改代码。
 
 ## 文件
@@ -60,7 +62,7 @@ v2 沿用 v1 的口播（`script.json` / `口播文案.md` 原文未改，配音
 | 左右边距 | ≥ 64 px | 所有文字、卡片和数据 |
 
 - 3D 镜头的主点上移 250 px（`viewShift`），舞台中心落在数据区中心，而不是画面中心。
-- 同一时间最多：1 条主结论、2 个数据标注、1 条字幕。旧元素先用 6 帧淡出，新元素再用 8 帧淡入，不叠化。
+- 同一时间最多：1 条主结论、2 个数据标注、1 条字幕。新元素在它的关键词开口时开始淡入（6 帧）；旧元素在下一个关键词之前用 5 帧淡完，不叠化。
 - 数据标注只标当前口播讲的对象，带实时数字（挂单被吃掉的手数、成交价、Delta、距结构的距离等，均为示意数据）。位置不手写：`scene.ts` 在数据区里搜索离锚点最近的空位，要求在它显示的整段时间里都不压任何 K 线、量柱、Delta、盘口和另一个标注，引线也不穿过另一个标注；放不下就换短标签，再放不下就不显示（检查脚本会报出来）。
 - `npm run ap:layout` 逐帧检查：标注数量、标注出区 / 压数据 / 互相重叠、镜头静止时数据物体出区、结论和字幕是否装得下各自的区域；并按事件列出每个关键帧上显示的标注和结论。有问题时退出码为 1，`ap:make` 会在渲染前停下。换了真实配音、跑过 `ap:sync` 之后会自动按新时间重查。
 - 这项检查用的是估算的文字宽度和 3D 包围盒，不能代替看画面：渲染前请用 `npm run ap:stills` 抽几帧看一眼。
@@ -83,7 +85,7 @@ pip install numpy scipy faster-whisper pypinyin
 npm run ap:sync
 ```
 
-它会改写 `src/activepassive/timeline.json`，生成 `../outputs-activepassive-v2/active-passive-v2.srt` 和 `public/activepassive/mix.wav`（−14 LUFS，峰值 ≤ −1.5 dBFS），并打印每句的起止时间。`npm run ap:check` 会按时间顺序列出每个画面事件落在哪个词上，方便核对。
+它会改写 `src/activepassive/timeline.json`，生成 `../outputs-activepassive-v3/active-passive-v3.srt` 和 `public/activepassive/mix.wav`（−14 LUFS，峰值 ≤ −1.5 dBFS），并打印每句的起止时间。`npm run ap:check` 会按时间顺序列出每个画面事件落在哪个词上，方便核对。
 
 4. 渲染：
 
@@ -95,9 +97,9 @@ npm run ap:make
 
 输出：
 
-- `D:/责苏/codex保存/active-passive-v2.mp4`
-- `D:/责苏/codex保存/active-passive-v2-cover.png`
-- `D:/责苏/codex保存/active-passive-v2.srt`
+- `D:/责苏/codex保存/active-passive-v3.mp4`
+- `D:/责苏/codex保存/active-passive-v3-cover.png`
+- `D:/责苏/codex保存/active-passive-v3.srt`
 
 ## 对齐说明
 

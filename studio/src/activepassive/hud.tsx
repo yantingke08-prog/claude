@@ -86,10 +86,10 @@ const Label: React.FC<{ l: LabelNow }> = ({ l }) => {
 
 /** 05: after the absorption, two dashed arrows — which way does the price go? */
 const Arrows: React.FC<{ f: number }> = ({ f }) => {
-  const a = clamp01((f - E("abWhere") - LAYOUT.OUT) / LAYOUT.IN) * clamp01(1 - (f - E("logicIn") + LAYOUT.OUT) / LAYOUT.OUT);
+  const a = clamp01((f - E("abWhere")) / LAYOUT.IN) * clamp01((E("logicIn") - f) / LAYOUT.OUT);
   if (a <= 0.002) return null;
   const mid = absorbMid(projector(f), bookAbsorb(f));
-  const k = out3((f - E("abWhere") - LAYOUT.OUT) / 16);
+  const k = out3((f - E("abWhere")) / 14);
   return (
     <svg width={LAYOUT.W} height={LAYOUT.H} style={{ position: "absolute", inset: 0, opacity: a }}>
       {[-1, 1].map((d) => {
@@ -160,7 +160,7 @@ export const Hud: React.FC<{ f: number }> = ({ f }) => {
       <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: LAYOUT.status.bottom + 30, background: "linear-gradient(180deg, rgba(4,7,13,0.92) 0%, rgba(4,7,13,0.75) 75%, rgba(4,7,13,0) 100%)" }} />
       <div style={{ position: "absolute", left: 0, right: 0, top: LAYOUT.verdict.top - 30, bottom: 0, background: "linear-gradient(180deg, rgba(4,7,13,0) 0%, rgba(4,7,13,0.7) 12%, rgba(4,7,13,0.85) 100%)" }} />
       <StatusBar f={f} />
-      {f >= E("abWhere") && f < E("logicIn") + 2 && <Arrows f={f} />}
+      {f >= E("abWhere") && f < E("logicIn") && <Arrows f={f} />}
       {labels.map((l) => (
         <Label key={l.id} l={l} />
       ))}

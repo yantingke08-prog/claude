@@ -52,7 +52,7 @@ export const run = () => {
   // key event frames: one row each, with what is on screen once the event has landed
   const rows: string[] = [];
   for (const name of Object.keys(EV).filter((k) => !k.startsWith("_"))) {
-    const f = Math.round(E(name) + LAYOUT.OUT + LAYOUT.IN + 2);
+    const f = Math.round(E(name) + LAYOUT.IN + 2);
     if (f >= FRAMES) continue;
     const r = perFrame(f);
     rows.push(`${name.padEnd(10)} f${String(f).padStart(5)}  labels ${r.labels.map((l) => l.id + (l.short ? "(short)" : "")).join(", ") || "-"}  |  conclusion ${r.v ? "#" + r.v.key : "-"}  |  ${r.out.length ? "FAIL " + r.out.length : "ok"}`);

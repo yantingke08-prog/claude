@@ -23,9 +23,10 @@ export const LAYOUT = {
   /** px kept free around data objects and between labels */
   pad: 14,
   gap: 18,
-  /** frames: an old element fades out over OUT, the next one starts fading in only after that, over IN */
-  OUT: 6,
-  IN: 8,
+  /** frames: an element appears on its word and fades in over IN; it fades out over the OUT frames before its end,
+   * so the old one is gone exactly when the next one's word starts */
+  OUT: 5,
+  IN: 6,
 } as const;
 
 export const zoneRect = (z: Zone): Rect => ({ x: LAYOUT.margin, y: z.top, w: LAYOUT.W - 2 * LAYOUT.margin, h: z.bottom - z.top });

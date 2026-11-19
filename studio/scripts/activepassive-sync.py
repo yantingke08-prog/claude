@@ -7,7 +7,7 @@ This script decides those moments; the animation code never contains a frame num
   python scripts/activepassive-sync.py estimate        placeholder timeline from character counts (no audio; committed)
   python scripts/activepassive-sync.py align           timeline from the real voice public/voiceover/vo.wav
         [--model small|medium|large-v3] [--words words.json] [--pauses]
-  python scripts/activepassive-sync.py srt [out.srt]   subtitles (default ../outputs-activepassive-v2/active-passive-v2.srt)
+  python scripts/activepassive-sync.py srt [out.srt]   subtitles (default ../outputs-activepassive-v3/active-passive-v3.srt)
   python scripts/activepassive-sync.py mix             public/activepassive/mix.wav = voice + quiet bed + sparse cues, -14 LUFS
   python scripts/activepassive-sync.py all [...]       align + srt + mix   (= npm run ap:sync)
   python scripts/activepassive-sync.py check           print every event's time and the line around it (for a quick read-through)
@@ -40,7 +40,7 @@ EVENTS = SRC / "events.json"
 # AP_VO / AP_MIX only exist for testing the pipeline on other files; normal use needs neither
 VO = Path(os.environ.get("AP_VO", ROOT / "public" / "voiceover" / "vo.wav"))
 MIX = Path(os.environ.get("AP_MIX", ROOT / "public" / "activepassive" / "mix.wav"))
-SRT_DEFAULT = ROOT.parent / "outputs-activepassive-v2" / "active-passive-v2.srt"
+SRT_DEFAULT = ROOT.parent / "outputs-activepassive-v3" / "active-passive-v3.srt"
 
 SKIP = set("，。？！；：、“”\"'‘’（）() ")
 SENT = "。？！；"

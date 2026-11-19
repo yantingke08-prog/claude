@@ -15,8 +15,10 @@ import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
 import { VolNoRise, VolNoRiseCover } from "./volnorise/Film";
 import { VolNoRise2, VolNoRise2Cover } from "./volnorise2/Film";
+import { VolNoRise3, VolNoRise3Cover } from "./volnorise3/Film";
 import { FPS as VNR_FPS, FRAMES as VNR_FRAMES, HEIGHT as VNR_H, WIDTH as VNR_W } from "./volnorise/cue";
 import { FPS as VNR2_FPS, FRAMES as VNR2_FRAMES, HEIGHT as VNR2_H, WIDTH as VNR2_W } from "./volnorise2/cue";
+import { FPS as VNR3_FPS, FRAMES as VNR3_FRAMES, HEIGHT as VNR3_H, WIDTH as VNR3_W } from "./volnorise3/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -55,6 +57,10 @@ export const RemotionRoot: React.FC = () => (
     <Folder name="VolNoRise2">
       <Composition id="VolNoRise2" component={VolNoRise2} durationInFrames={VNR2_FRAMES} fps={VNR2_FPS} width={VNR2_W} height={VNR2_H} defaultProps={{ muted: false }} />
       <Still id="VolNoRise2Cover" component={VolNoRise2Cover} width={VNR2_W} height={VNR2_H} />
+    </Folder>
+    <Folder name="VolNoRise3">
+      <Composition id="VolNoRise3" component={VolNoRise3} durationInFrames={VNR3_FRAMES} fps={VNR3_FPS} width={VNR3_W} height={VNR3_H} defaultProps={{ muted: false }} />
+      <Still id="VolNoRise3Cover" component={VolNoRise3Cover} width={VNR3_W} height={VNR3_H} />
     </Folder>
   </>
 );

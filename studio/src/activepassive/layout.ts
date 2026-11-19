@@ -21,7 +21,7 @@ export const LAYOUT = {
   /** at most this many data labels on screen at once (plus one conclusion and one caption) */
   maxLabels: 2,
   /** px kept free around data objects and between labels */
-  pad: 14,
+  pad: 10,
   gap: 18,
   /** frames: an element appears on its word and fades in over IN; it fades out over the OUT frames before its end,
    * so the old one is gone exactly when the next one's word starts */

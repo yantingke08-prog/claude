@@ -1,8 +1,10 @@
-# 主动还是被动：谁拿走了流动性？（v3）
+# 主动还是被动：谁拿走了流动性？（v4）
 
 v2 沿用 v1 的口播（`script.json` / `口播文案.md` 原文未改，配音照旧读这一稿），重做的是画面信息层：固定安全区、实时数据标注、结论区和自动避让检查。
 
 v3：画面跟紧配音——动作、标注、结论都落在关键词**开始**的那一帧（不再等词说完）；换场镜头在上一句说完就起飞、0.8 秒到位（原来约 1.3 秒，新一句开口后约 1 秒才到）；标注从 41 个加到 53 个，每个讲解节拍都有 1–2 个实时数据标注。
+
+v4：标注直接贴在解释对象旁边——先在 150 px 内找空位（订单簿按每块挂单、每层层板、脉冲分别避让，标注可以落在层板之间），放不下再试 240 px，再换短标签（短标签也带数字）；同屏两个标注不排在同一行。`npm run ap:layout --leaders` 列出每个标注的引线长度（当前中位数约 54 px）。开头几根 K 线逐根长出来，再出大阳线。
 
 竖屏 1440×2560、30 fps 的金融科普短片。Remotion + Three.js（@remotion/three），K 线、订单簿、主动单、Delta 全部由代码生成，没有视频素材和 AI 图片；中文用 Noto Sans SC / Noto Serif SC 原生渲染。行情是固定的示意数据，右上角始终标注「教学示意，不构成投资建议」。
 
@@ -63,7 +65,7 @@ v3：画面跟紧配音——动作、标注、结论都落在关键词**开始*
 
 - 3D 镜头的主点上移 250 px（`viewShift`），舞台中心落在数据区中心，而不是画面中心。
 - 同一时间最多：1 条主结论、2 个数据标注、1 条字幕。新元素在它的关键词开口时开始淡入（6 帧）；旧元素在下一个关键词之前用 5 帧淡完，不叠化。
-- 数据标注只标当前口播讲的对象，带实时数字（挂单被吃掉的手数、成交价、Delta、距结构的距离等，均为示意数据）。位置不手写：`scene.ts` 在数据区里搜索离锚点最近的空位，要求在它显示的整段时间里都不压任何 K 线、量柱、Delta、盘口和另一个标注，引线也不穿过另一个标注；放不下就换短标签，再放不下就不显示（检查脚本会报出来）。
+- 数据标注只标当前口播讲的对象，带实时数字（挂单被吃掉的手数、成交价、Delta、距结构的距离等，均为示意数据）。位置不手写：`scene.ts` 在数据区里由近到远搜索锚点旁的空位，要求在它显示的整段时间里都不压任何 K 线、量柱、Delta、盘口和另一个标注，引线也不穿过另一个标注；放不下就换短标签，再放不下就不显示（检查脚本会报出来）。
 - `npm run ap:layout` 逐帧检查：标注数量、标注出区 / 压数据 / 互相重叠、镜头静止时数据物体出区、结论和字幕是否装得下各自的区域；并按事件列出每个关键帧上显示的标注和结论。有问题时退出码为 1，`ap:make` 会在渲染前停下。换了真实配音、跑过 `ap:sync` 之后会自动按新时间重查。
 - 这项检查用的是估算的文字宽度和 3D 包围盒，不能代替看画面：渲染前请用 `npm run ap:stills` 抽几帧看一眼。
 
@@ -85,7 +87,7 @@ pip install numpy scipy faster-whisper pypinyin
 npm run ap:sync
 ```
 
-它会改写 `src/activepassive/timeline.json`，生成 `../outputs-activepassive-v3/active-passive-v3.srt` 和 `public/activepassive/mix.wav`（−14 LUFS，峰值 ≤ −1.5 dBFS），并打印每句的起止时间。`npm run ap:check` 会按时间顺序列出每个画面事件落在哪个词上，方便核对。
+它会改写 `src/activepassive/timeline.json`，生成 `../outputs-activepassive-v4/active-passive-v4.srt` 和 `public/activepassive/mix.wav`（−14 LUFS，峰值 ≤ −1.5 dBFS），并打印每句的起止时间。`npm run ap:check` 会按时间顺序列出每个画面事件落在哪个词上，方便核对。
 
 4. 渲染：
 
@@ -97,9 +99,9 @@ npm run ap:make
 
 输出：
 
-- `D:/责苏/codex保存/active-passive-v3.mp4`
-- `D:/责苏/codex保存/active-passive-v3-cover.png`
-- `D:/责苏/codex保存/active-passive-v3.srt`
+- `D:/责苏/codex保存/active-passive-v4.mp4`
+- `D:/责苏/codex保存/active-passive-v4-cover.png`
+- `D:/责苏/codex保存/active-passive-v4.srt`
 
 ## 对齐说明
 

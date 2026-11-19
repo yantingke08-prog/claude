@@ -3,7 +3,7 @@
 import EV from "./events.json";
 import { E, FRAMES, captions } from "./cue";
 import { holds, moving, presence, projector } from "./director";
-import { CAPTION, DATA, LAYOUT, VERDICT, captionLayout, inside, overlaps, verdictLayout, type Rect } from "./layout";
+import { CAPTION, DATA, LAYOUT, VERDICT, captionLayout, inside, nearest, overlaps, verdictLayout, type Rect } from "./layout";
 import { dataBoxes, droppedLabels, labelSpans, labelsAt, verdictAt, verdictSpans } from "./scene";
 
 type Issue = { f: number; what: string };
@@ -70,5 +70,13 @@ export const run = () => {
     });
     return `hold ${String(i).padStart(2)}  ${at.join("   ")}`;
   });
-  return { ext, issues, rows, dropped: droppedLabels(), spans: labelSpans(), verdicts: verdictSpans() };
+  // how far each label sits from what it explains (leader length at the middle of its time on screen)
+  const leaders = labelSpans().map((sp) => {
+    const f = Math.round((sp.span[0] + sp.span[1]) / 2);
+    const l = labelsAt(f, projector(f)).find((x) => x.id === sp.id);
+    if (!l) return { id: sp.id, len: -1, short: false };
+    const n = nearest(l.rect, l.anchor);
+    return { id: sp.id, len: Math.round(Math.hypot(n.x - l.anchor.x, n.y - l.anchor.y)), short: l.short };
+  });
+  return { leaders, ext, issues, rows, dropped: droppedLabels(), spans: labelSpans(), verdicts: verdictSpans() };
 };

@@ -1,6 +1,6 @@
 // Layout check for the active/passive film without rendering anything: bundles src/activepassive/layoutcheck.ts with
 // esbuild and walks every frame (zones from layout.ts, labels and data boxes from scene.ts).
-// Usage: node scripts/activepassive-layout.mjs [--rows] [--holds]      exit code 1 when anything overlaps or leaves its zone
+// Usage: node scripts/activepassive-layout.mjs [--rows] [--holds] [--leaders]      exit code 1 when anything overlaps or leaves its zone
 import { build } from "esbuild";
 import fs from "node:fs";
 import os from "node:os";
@@ -14,6 +14,11 @@ const t = Date.now();
 const r = run();
 if (process.argv.includes("--holds")) for (const row of r.ext) console.log(row);
 if (process.argv.includes("--rows")) for (const row of r.rows) console.log(row);
+if (process.argv.includes("--leaders")) for (const l of r.leaders) console.log(`leader ${l.id.padEnd(8)} ${String(l.len).padStart(4)} px${l.short ? "  (short)" : ""}`);
+{
+  const ls = r.leaders.map((l) => l.len).filter((x) => x >= 0).sort((a, b) => a - b);
+  console.log(`leaders: median ${ls[Math.floor(ls.length / 2)]} px, longest ${ls[ls.length - 1]} px, ${r.leaders.filter((l) => l.short).length} short labels`);
+}
 for (const d of r.dropped) console.log(`DROPPED label ${d.id}: ${d.reason}`);
 for (const i of r.issues) console.log(`f${String(i.f).padStart(5)}  ${i.what}`);
 const bad = r.issues.length + r.dropped.length;

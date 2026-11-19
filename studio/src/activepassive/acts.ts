@@ -211,7 +211,8 @@ const shown = (b: Bar, g = 1): LiveBar => ({ ...b, g, hot: 0, grey: 0 });
 
 export const hookBars = (f: number): LiveBar[] =>
   HOOK.bars.map((b, i) => {
-    if (i < HOOK_YANG) return shown(b, clamp01((f - i * 2) / 8));
+    // the opening range prints bar by bar (one every 4 frames, each grows over 7) before the big candle
+    if (i < HOOK_YANG) return live(f, b, 1 + i * 4, 7);
     const L = live(f, b, E("hookYang") - 2, 22);
     return { ...L, hot: 0.4 * ramp(f, E("hookYang") + 16, 10) };
   });

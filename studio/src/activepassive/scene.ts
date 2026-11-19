@@ -56,12 +56,24 @@ export const dataBoxes = (f: number, pr: Proj = projector(f)): Box[] => {
     if (level !== undefined && levelOp > 0.3) B(set, "level", cx(ch, 0) - 0.4, cx(ch, ch.bars.length - 1) + 0.6, cy(ch, level) - 0.04, cy(ch, level) + 0.04, 0, 0.1);
   };
   const book = (set: SetId, s: BookState) => {
+    // piece by piece, so a label can sit on the shelf right beside the level it explains
     const x = s.cfg.x;
     const cl = x + BOOK_CANDLE_DX;
-    B(set, `${set}-tower@${x}`, x - TOWER_W, x + TOWER_W + 0.25, ly(-3) - SLAB_H / 2 - 0.06, ly(3) + SLAB_H / 2 + 0.02, -0.65, 0.84);
-    B(set, `${set}-candle@${x}`, cl - 0.22, cl + 0.22, ly(Math.min(s.candle.l, s.candle.c)) - 0.05, ly(Math.max(s.candle.h, s.candle.c)) + 0.05, -0.21, 0.21);
-    B(set, `${set}-last@${x}`, cl - 0.45, x - TOWER_W, ly(s.price) - 0.04, ly(s.price) + 0.04, 0.6, 0.7);
+    const id = (n: string) => `${set}-${n}@${x}`;
+    [1, 2, 3].forEach((k, i) => {
+      const wa = Math.max(s.asks[i], s.takenA[i] > 0.05 ? s.cfg.asks[i] : 0) * SIZE_W;
+      const wb = Math.max(s.bids[i], s.takenB[i] > 0.05 ? s.cfg.bids[i] : 0) * SIZE_W;
+      if (wa > 0.02) B(set, id(`ask${k}`), x - wa / 2, x + wa / 2, ly(k) - SLAB_H / 2, ly(k) + SLAB_H / 2, -0.4, 0.4);
+      if (wb > 0.02) B(set, id(`bid${k}`), x - wb / 2, x + wb / 2, ly(-k) - SLAB_H / 2, ly(-k) + SLAB_H / 2, -0.4, 0.4);
+    });
+    [-3, -2, -1, 1, 2, 3].forEach((k) => B(set, id(`shelf${k}`), x - TOWER_W, x + TOWER_W, ly(k) - SLAB_H / 2 - 0.05, ly(k) - SLAB_H / 2 + 0.01, -0.65, 0.65));
+    if (s.mine && s.mine.op > 0.05) B(set, id("mine"), x + 0.15 - (s.mine.size * SIZE_W) / 2, x + 0.15 + (s.mine.size * SIZE_W) / 2, ly(s.mine.level) - SLAB_H / 2, ly(s.mine.level) + SLAB_H / 2, 0.4, 0.84);
+    s.pulses.forEach((q, i) => q.op > 0.05 && B(set, id(`pulse${i}`), x + (q.dx ?? 0) - 0.14, x + (q.dx ?? 0) + 0.14, ly(Math.min(q.y0, q.y1)) - 0.1, ly(Math.max(q.y0, q.y1)) + 0.1, (q.z ?? 0.62) - 0.12, (q.z ?? 0.62) + 0.12));
+    if (s.spread > 0.05) B(set, id("spread"), x + TOWER_W - 0.05, x + TOWER_W + 0.25, ly(-1), ly(1), 0.2, 0.4);
+    B(set, id("candle"), cl - 0.22, cl + 0.22, ly(Math.min(s.candle.l, s.candle.c)) - 0.05, ly(Math.max(s.candle.h, s.candle.c)) + 0.05, -0.21, 0.21);
+    B(set, id("last"), cl - 0.45, x + TOWER_W, ly(s.price) - 0.05, ly(s.price) + 0.05, 0.6, 0.7);
   };
+
   if (P.hook > 0.04) chart("hook", HOOK, hookBars(f), 0);
   if (P.buy > 0.04) {
     book("buy", bookBuyA(f));
@@ -310,7 +322,8 @@ const samplesOf = (s: LSpec) => {
   const [a, b] = visibleSpan(s.from, s.to);
   const out = new Set<number>();
   for (const t of [a + 1, a + LAYOUT.IN, (a + b) / 2, b - 2]) out.add(Math.round(Math.min(b - 1, Math.max(a + 1, t))));
-  for (let t = a + 1; t < b - 1; t += 12) out.add(Math.round(t));
+  for (let t = a + 1; t < b - 1; t += 1) out.add(Math.round(t));
+  for (let t = a + 1; t < Math.min(b - 1, a + 16); t += 2) out.add(Math.round(t));
   return [...out].sort((x, y) => x - y);
 };
 
@@ -342,8 +355,10 @@ const solve = () => {
       return oa < vb && va < ob;
     });
     let done = false;
-    for (const short of [false, true]) {
-      if (short && !T.L[s.id].s) break;
+    // closest first: the full text right beside its object, then the short text there, and only then further out
+    const tiers: [boolean, number][] = [[false, 150], [false, 240], [true, 150], [true, 240], [false, 560], [true, 560]];
+    for (const [short, maxLen] of tiers) {
+      if (short && !T.L[s.id].s) continue;
       const size = ts.map((t) => {
         const { k, v } = textOf(s, t, short);
         return sizeOf(s, k, v);
@@ -354,19 +369,22 @@ const solve = () => {
       const b0 = baseOf(s)(ts[0], at(ts[0]).pr);
       // leaders should not cut across other data: boxes that do not hold the anchor itself cost extra
       const crossable = at(ts[0]).boxes.filter((b) => !(a0.x >= b.x && a0.x <= b.x + b.w && a0.y >= b.y && a0.y <= b.y + b.h));
+      // where the other label on screen sits: never line up on the same row as it
+      const rows = others.map((o) => rectAt(o, ts[0])).map((r) => r.y + r.h / 2);
       const cands: { dx: number; dy: number; score: number }[] = [];
-      for (let x = DATA.x; x <= DATA.x + DATA.w - w; x += 16)
-        for (let y = DATA.y; y <= DATA.y + DATA.h - h; y += 14) {
+      for (let x = DATA.x; x <= DATA.x + DATA.w - w; x += 10)
+        for (let y = DATA.y; y <= DATA.y + DATA.h - h; y += 8) {
           const r = { x, y, w, h };
           const n = nearest(r, a0);
           const len = Math.hypot(n.x - a0.x, n.y - a0.y);
-          if (len < 34 || len > 560) continue;
-          const side = a0.x < r.x || a0.x > r.x + r.w ? 0 : 50;
+          if (len < 16 || len > maxLen) continue;
+          const side = 0;
+          const row = rows.some((ry) => Math.abs(ry - (y + h / 2)) < h * 0.8) ? 160 : 0;
           const mx = x + w / 2 - a0.x;
           const my = y + h / 2 - a0.y;
           const pref = s.prefer === "left" ? (mx < -40 ? 0 : 400) : s.prefer === "right" ? (mx > 40 ? 0 : 400) : s.prefer === "up" ? (my < 0 ? 0 : 400) : s.prefer === "down" ? (my > 0 ? 0 : 400) : 0;
           const cross = crossable.reduce((k, b) => k + (segHits(a0, n, b) ? 1 : 0), 0);
-          cands.push({ dx: x - b0.x, dy: y - b0.y, score: len + side + pref + 220 * cross });
+          cands.push({ dx: x - b0.x, dy: y - b0.y, score: len + side + pref + row + 220 * cross });
         }
       cands.sort((p, q) => p.score - q.score);
       for (const c of cands) {
@@ -380,7 +398,7 @@ const solve = () => {
           if (a.x < DATA.x || a.x > DATA.x + DATA.w || a.y < DATA.y || a.y > DATA.y + DATA.h) return why(`anchor outside@${t}`);
           if (boxes.some((b) => overlaps(r, b))) return why(`data@${t}`);
           const n = nearest(r, a);
-          if (Math.hypot(n.x - a.x, n.y - a.y) < 26) return why(`on anchor@${t}`);
+          if (Math.hypot(n.x - a.x, n.y - a.y) < 12) return why(`on anchor@${t}`);
           for (const o of others) {
             const [oa, ob] = visibleSpan(o.spec.from, o.spec.to);
             if (t < oa || t >= ob) continue;

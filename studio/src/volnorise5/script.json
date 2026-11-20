@@ -1,0 +1,50 @@
+{
+  "title": "放量不涨，先别追：低位看换手，高位防出货",
+  "slug": "vol-no-rise-v2",
+  "fps": 30,
+  "tts": {
+    "voice": "zh-CN-YunyangNeural",
+    "rate": "+4%",
+    "pitch": "+0Hz",
+    "lead": 0.6,
+    "tail": 2.8,
+    "lineGap": 0.28,
+    "sectionGap": 0.55
+  },
+  "estimate": {
+    "cps": 4.9,
+    "latin": 0.6,
+    "lead": 0.6,
+    "tail": 2.8,
+    "lineGap": 0.28,
+    "sectionGap": 0.55,
+    "pause": {
+      "，": 0.14,
+      "、": 0.08,
+      "：": 0.2,
+      "；": 0.24,
+      "。": 0.28,
+      "？": 0.3,
+      "！": 0.28
+    }
+  },
+  "notes": "Conclusion first: the countdown ends on a clear answer (先别追) and the thesis (低位看换手，高位防出货); everything after it explains why. text = what the voice reads and what the captions show; the picture keys every action to words of these lines (events.json), so edit a word here and in events.json together. gapAfter = seconds of silence after a line (L02: the 5-second countdown runs in that silence).",
+  "lines": [
+    { "id": "L01", "section": "hook", "text": "放量不涨，你会追吗？" },
+    { "id": "L02", "section": "hook", "text": "给你五秒决定。", "gapAfter": 5.5 },
+    { "id": "L03", "section": "ans", "text": "答案：先别追。" },
+    { "id": "L04", "section": "ans", "text": "低位看换手，高位防出货。" },
+    { "id": "L05", "section": "why", "text": "成交量放大，价格却涨不动，说明上方的卖盘压得住买盘。" },
+    { "id": "L06", "section": "why", "text": "这时候追进去，很容易买在当天的高处。" },
+    { "id": "L07", "section": "pos", "text": "同样一根放量不涨，放在低位和高位，意思完全不同。" },
+    { "id": "L08", "section": "low", "text": "低位：股价刚离开底部平台，放量多半是换手，前面套住的人在卖，新资金在接。" },
+    { "id": "L09", "section": "low", "text": "后面缩量回调，守住这根的低点，再重新站上来，换手才算完成。" },
+    { "id": "L10", "section": "high", "text": "高位：已经连续大涨，远离起涨点，这时候放量不涨，要防有人在高处出货。" },
+    { "id": "L11", "section": "high", "text": "后面一跌就放量，跌破这根的低点，反弹又收不回，出货的迹象就更明显。" },
+    { "id": "L12", "section": "sum", "text": "低位看换手：缩量回调、守住低点、重新站稳。" },
+    { "id": "L13", "section": "sum", "text": "高位防出货：放量下跌、跌破低点、反弹收不回。" },
+    { "id": "L14", "section": "act", "text": "所以当天先别追。低位，等站稳再考虑；高位，跌破先回避；止损提前设好。" },
+    { "id": "L15", "section": "end", "text": "你遇到放量不涨，一般怎么做？评论区说说。" },
+    { "id": "L16", "section": "end", "text": "教学示意，不构成投资建议。" }
+  ]
+}

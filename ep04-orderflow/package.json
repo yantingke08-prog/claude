@@ -1,0 +1,25 @@
+{
+  "name": "ep04-orderflow-three-fills",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EP.04 订单流 · 三种成交 — voiceover-driven vertical Remotion film (1080x1920, 30fps)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "node --experimental-strip-types --no-warnings scripts/check-timeline.mts",
+    "still": "remotion still src/index.ts Ep04OrderFlowThreeFills out/still.png --frame=60",
+    "align": "powershell -ExecutionPolicy Bypass -File scripts/align-vo.ps1",
+    "render": "powershell -ExecutionPolicy Bypass -File scripts/render.ps1"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.539",
+    "@remotion/media-utils": "4.0.539",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

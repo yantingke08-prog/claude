@@ -1,8 +1,8 @@
 // All colours live here. Components never write a hex value.
 // 红=涨，绿=跌，紫=压力，蓝=支撑 — never mixed up.
 export const C = {
-  up: "#FF2D55", // 涨 / 阳线 / 多 / 买 / B 气泡 / ✓
-  down: "#2EE6B0", // 跌 / 阴线 / 空 / 卖 / 空 气泡 / 破位
+  up: "#FF3B5C", // 涨 / 阳线 / 多 / 买 / B 气泡 / ✓
+  down: "#35EFB9", // 跌 / 阴线 / 空 / 卖 / 空 气泡 / 破位
   resistance: "#8B5CF6", // 压力 / 孤立高点 / 概念定义
   resistanceDeep: "#6D3FE0",
   support: "#3B82F6", // 支撑 / 孤立低点
@@ -12,7 +12,8 @@ export const C = {
   grid: "#1B2440",
   text: "#FFFFFF",
   muted: "#C7CEDB",
-  brand: "#FF2D55",
+  brand: "#FF3B5C",
+  doji: "#8A93A6", // 十字星 (open ≈ close): neither up nor down
   ghost: "#C7CEDB", // hypothetical (if-this-happens) candles, drawn as outlines
 } as const;
 
@@ -38,6 +39,9 @@ export const FPS = 30;
 export const FONT_FAMILY = "LVPSans";
 export const FONT = `"${FONT_FAMILY}","Noto Sans SC","Source Han Sans SC","Microsoft YaHei",sans-serif`;
 export const MONO = `"JetBrains Mono","Consolas","Menlo",monospace`;
+
+/** L.V.P. = Location · Volume · Pattern */
+export const BRAND = { mark: "L.V.P.", full: "LOCATION · VOLUME · PATTERN", line: "ORDER FLOW" } as const;
 
 export const DISCLAIMER = "个人经验分享，不构成投资建议，市场有风险，投资需谨慎。";
 

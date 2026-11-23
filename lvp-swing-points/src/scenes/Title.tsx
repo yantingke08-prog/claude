@@ -4,7 +4,7 @@ import React from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
 import { PriceLadder, clamp01, easeInOutSine, easeOutCubic, lerp, ramp, useTime } from "../kit";
 import { TITLE, TITLE_EN } from "../script.ts";
-import { C, FONT, H, W, glow, withAlpha, N } from "../theme.ts";
+import { BRAND, C, FONT, H, W, glow, withAlpha, N } from "../theme.ts";
 
 export const Title: React.FC = () => {
   const { t, shotStart, shotEnd } = useTime();
@@ -41,8 +41,8 @@ export const Title: React.FC = () => {
           textAnchor="middle"
           fontFamily={FONT}
           fontWeight={900}
-          fontSize={260}
-          letterSpacing={24}
+          fontSize={220}
+          letterSpacing={10}
           fill={withAlpha(C.text, fillIn)}
           stroke={C.brand}
           strokeWidth={5}
@@ -50,7 +50,7 @@ export const Title: React.FC = () => {
           strokeDashoffset={900 * (1 - stroke)}
           style={{ filter: glow(C.brand, 18, 0.9) }}
         >
-          LVP
+          {BRAND.mark}
         </text>
       </svg>
       <div style={{ position: "absolute", left: W / 2 - 440, top: 380, opacity: stroke }}>
@@ -66,13 +66,13 @@ export const Title: React.FC = () => {
           fontFamily: FONT,
           fontWeight: 700,
           fontSize: 40,
-          letterSpacing: 26,
+          letterSpacing: 12,
           color: C.muted,
           opacity: sub,
           transform: `translateY(${lerp(16, 0, sub)}px)`,
         }}
       >
-        LVP ORDER FLOW
+        {BRAND.full}
       </div>
       <div style={{ position: "absolute", left: 0, right: 0, top: 720, textAlign: "center", fontFamily: FONT, opacity: ep, transform: `translateY(${lerp(16, 0, ep)}px)` }}>
         <span style={{ fontSize: 56, fontWeight: 900, color: C.text }}>{TITLE}</span>

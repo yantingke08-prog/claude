@@ -38,7 +38,7 @@ export const Captions: React.FC<{ units: Unit[] }> = ({ units }) => {
         lineHeight: 1,
         letterSpacing: 2,
         color: C.text,
-        WebkitTextStroke: "3px rgba(0,0,0,0.7)",
+        WebkitTextStroke: "2px rgba(0,0,0,0.75)",
         paintOrder: "stroke fill",
         textShadow: "0 4px 8px rgba(0,0,0,0.6)",
       }}

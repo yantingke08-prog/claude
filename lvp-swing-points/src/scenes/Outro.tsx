@@ -2,7 +2,7 @@
 import React from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
 import { PriceLadder, easeOutCubic, lerp, pop, ramp, useTime } from "../kit";
-import { C, FONT, withAlpha, N } from "../theme.ts";
+import { BRAND, C, FONT, withAlpha, N } from "../theme.ts";
 
 export const Outro: React.FC = () => {
   const { t, cue } = useTime();
@@ -14,10 +14,10 @@ export const Outro: React.FC = () => {
       <div style={{ opacity: p.opacity, transform: `scale(${p.scale * breathe}) translateY(-60px)`, display: "flex", alignItems: "center", gap: 40 }}>
         <Img src={staticFile("brand/lvp-mark-white.svg")} style={{ width: 200, height: 200 }} />
         <div>
-          <div style={{ fontSize: 150, fontWeight: 900, letterSpacing: 16, color: C.text, WebkitTextStroke: `3px ${C.brand}`, textShadow: `0 0 30px ${withAlpha(C.brand, 0.7)}`, lineHeight: 1 }}>
-            LVP
+          <div style={{ fontSize: 130, fontWeight: 900, letterSpacing: 8, color: C.text, WebkitTextStroke: `3px ${C.brand}`, textShadow: `0 0 30px ${withAlpha(C.brand, 0.7)}`, lineHeight: 1 }}>
+            {BRAND.mark}
           </div>
-          <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: 18, color: C.muted, marginTop: 18 }}>ORDER FLOW</div>
+          <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: 6, color: C.muted, marginTop: 18 }}>{BRAND.full}</div>
         </div>
         <div style={{ opacity: lad, transform: `translateX(${lerp(20, 0, lad)}px)` }}>
           <PriceLadder size={160} progress={lad} />

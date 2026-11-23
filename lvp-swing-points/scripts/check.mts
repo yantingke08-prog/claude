@@ -6,7 +6,7 @@
 // 5. the timeline builds from vo.timestamps.json and from the even-split fallback
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { CUES } from "../src/cues.ts";
-import { ADV, CASE, CASE_FAKE, CASE_HOLD, CLAIMS, HOOK, HOOK_FLY, isSwingHigh, isSwingLow } from "../src/data.ts";
+import { ADV, CASE, CASE_FAKE, CASE_HOLD, CLAIMS, HOOK, HOOK_FLY, HOOK_PROBLEMS, isSwingHigh, isSwingLow, maxRun } from "../src/data.ts";
 import { buildTimeline, findAnchor, normalise, type Timeline, type VoTimestamps } from "../src/timeline.ts";
 
 const root = new URL("..", import.meta.url);
@@ -84,6 +84,7 @@ must(CASE_FAKE.bars[0].h > h(CASE.H2) && CASE_FAKE.bars[CASE_FAKE.bars.length - 
 must(Math.min(...CASE_HOLD.bars.map((b) => b.l)) > l(CASE.L3), "case: the 'holds' branch never breaks L3");
 must(B[CASE.BREAKDOWN].c < l(CASE.L3), "case: the real path breaks below L3");
 must(ADV.bars[ADV.T1].l > ADV.bars[ADV.LOW].l && ADV.bars[ADV.T2].l > ADV.bars[ADV.LOW].l, "advanced: both tests stay above the isolated low");
+must(HOOK_PROBLEMS.length === 0, `hook realism (seed ${HOOK.SEED}): mixed colours, longest run ${maxRun(HOOK.bars)} ≤ 5, doji, long wicks, varied bodies${HOOK_PROBLEMS.length ? " — " + HOOK_PROBLEMS.join("; ") : ""}`);
 must(HOOK_FLY[HOOK_FLY.length - 1].c > HOOK.bars[HOOK.TOP].h, "hook: the 一卖就飞 branch goes above the old top");
 must(HOOK.bars[HOOK.TRAP].c < HOOK.bars[HOOK.ENTRY].c + 1, "hook: the 不走 branch gives the profit back");
 

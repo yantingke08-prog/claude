@@ -1,9 +1,9 @@
 // Layer primitives: L1 background, L2 chart engine, L3 annotations, L5 text, L6 brand.
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useId } from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
 import { CUES, type CueName } from "./cues.ts";
-import type { Bar } from "./data.ts";
-import { C, DISCLAIMER, FONT, H, MONO, W, glow, withAlpha } from "./theme.ts";
+import { isDoji, type Bar } from "./data.ts";
+import { BRAND, C, DISCLAIMER, FONT, H, MONO, W, glow, withAlpha } from "./theme.ts";
 import { findAnchor, type Timeline } from "./timeline.ts";
 
 // ------------------------------------------------------------------ easing
@@ -92,6 +92,15 @@ export const makeScale = (o: { n: number; x0: number; x1: number; top: number; b
     x1: o.x1,
   };
 };
+/** blend two framings of the same chart (a camera move that keeps every candle on its slot) */
+export const mixScale = (a: Scale, b: Scale, k: number): Scale => ({
+  x: (i) => lerp(a.x(i), b.x(i), k),
+  y: (p) => lerp(a.y(p), b.y(p), k),
+  step: lerp(a.step, b.step, k),
+  body: lerp(a.body, b.body, k),
+  x0: lerp(a.x0, b.x0, k),
+  x1: lerp(a.x1, b.x1, k),
+});
 export const rangeOf = (bars: Bar[], pad = 0.08) => {
   const lo = Math.min(...bars.map((b) => b.l));
   const hi = Math.max(...bars.map((b) => b.h));
@@ -111,6 +120,7 @@ export const growSchedule = (segs: { to: number; at: number; per?: number }[], p
   return (i: number) => (i <= pre ? Number.NEGATIVE_INFINITY : times[i] ?? Number.POSITIVE_INFINITY);
 };
 
+/** candles: gradient bodies with a bright edge and glow, round-capped wicks; dojis grey */
 export const Candles: React.FC<{
   bars: Bar[];
   sc: Scale;
@@ -120,36 +130,59 @@ export const Candles: React.FC<{
   opacity?: number | ((i: number) => number);
 }> = ({ bars, sc, appear, offset = 0, ghost = false, opacity = 1 }) => {
   const { t } = useTime();
+  const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   return (
     <g>
+      <defs>
+        {(["up", "down"] as const).map((k) => (
+          <linearGradient key={k} id={`${id}-${k}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={C[k]} stopOpacity={1} />
+            <stop offset="100%" stopColor={C[k]} stopOpacity={0.62} />
+          </linearGradient>
+        ))}
+      </defs>
       {bars.map((b, k) => {
         const at = appear(k);
         const g = clamp01((t - at) / GROW);
         if (g <= 0) return null;
+        const doji = isDoji(b);
         const up = b.c >= b.o;
-        const col = up ? C.up : C.down;
+        const col = doji ? C.doji : up ? C.up : C.down;
         const x = sc.x(offset + k);
         const yo = sc.y(b.o);
         const yc = sc.y(b.c);
         const op = typeof opacity === "function" ? opacity(k) : opacity;
+        const wickW = Math.max(1.6, sc.body * 0.11);
+        const top = Math.min(yo, yc);
+        const hgt = Math.max(doji ? 3 : 2, Math.abs(yc - yo));
         return (
-          <g
-            key={k}
-            style={{ transform: `scaleY(${easeOutCubic(g)})`, transformOrigin: `${x}px ${yo}px`, opacity: op }}
-          >
-            <line x1={x} x2={x} y1={sc.y(b.h)} y2={sc.y(b.l)} stroke={col} strokeWidth={ghost ? 2.5 : 2} strokeDasharray={ghost ? "5 4" : undefined} />
+          <g key={k} style={{ transform: `scaleY(${easeOutCubic(g)})`, transformOrigin: `${x}px ${yo}px`, opacity: op }}>
+            <line
+              x1={x}
+              x2={x}
+              y1={sc.y(b.h)}
+              y2={sc.y(b.l)}
+              stroke={col}
+              strokeWidth={ghost ? 2.5 : wickW}
+              strokeLinecap="round"
+              strokeDasharray={ghost ? "5 4" : undefined}
+              opacity={ghost ? 1 : 0.9}
+            />
             <rect
               x={x - sc.body / 2}
-              y={Math.min(yo, yc)}
+              y={doji ? top - hgt / 2 : top}
               width={sc.body}
-              height={Math.max(2, Math.abs(yc - yo))}
-              rx={1.5}
-              fill={ghost ? withAlpha(col, 0.28) : col}
+              height={hgt}
+              rx={Math.min(3, sc.body * 0.14)}
+              fill={ghost ? withAlpha(col, 0.28) : doji ? col : `url(#${id}-${up ? "up" : "down"})`}
               stroke={col}
-              strokeWidth={ghost ? 2.5 : 0}
+              strokeWidth={ghost ? 2.5 : 1.2}
               strokeDasharray={ghost ? "6 4" : undefined}
-              style={ghost ? undefined : { filter: glow(col, up ? 9 : 8, up ? 0.4 : 0.35) }}
+              style={ghost || doji ? undefined : { filter: glow(col, up ? 10 : 9, up ? 0.45 : 0.4) }}
             />
+            {!ghost && !doji && hgt > 6 && (
+              <rect x={x - sc.body / 2 + 2} y={top + 2} width={Math.max(1, sc.body * 0.18)} height={hgt - 4} rx={1} fill={withAlpha(C.text, 0.22)} />
+            )}
           </g>
         );
       })}
@@ -246,29 +279,37 @@ export const Label: React.FC<{
   );
 };
 
-/** B / 空 bubble with a one-off ripple (scale 1→1.8, opacity 60→0, 0.5 s) */
-export const Bubble: React.FC<{ x: number; y: number; letter: string; color: string; at: number; out?: number; below?: boolean; r?: number }> = ({
-  x,
-  y,
-  letter,
-  color,
-  at,
-  out,
-  below = true,
-  r = 26,
-}) => {
+/** B / 空 bubble with a stem arrow to the candle and a ripple (scale 1→1.8, opacity 60→0, 0.5 s) */
+export const Bubble: React.FC<{
+  x: number;
+  y: number;
+  letter: string;
+  color: string;
+  at: number;
+  out?: number;
+  below?: boolean;
+  r?: number;
+  gap?: number; // distance from the candle tip to the bubble edge
+  ripples?: number;
+}> = ({ x, y, letter, color, at, out, below = true, r = 26, gap = 26, ripples = 1 }) => {
   const { t } = useTime();
-  const cy = below ? y + r + 26 : y - r - 26;
-  const rip = clamp01((t - at - 0.15) / 0.5);
+  const s = below ? 1 : -1;
+  const tip = y + s * 8; // arrow tip, just off the wick end
+  const cy = tip + s * (gap + r);
+  const head = Math.max(9, r * 0.32);
   return (
     <PopG at={at} out={out} x={x} y={cy}>
-      {rip > 0 && rip < 1 && <circle cx={x} cy={cy} r={r * lerp(1, 1.8, rip)} fill="none" stroke={color} strokeWidth={3} opacity={0.6 * (1 - rip)} />}
-      <path
-        d={below ? `M${x - 9} ${cy - r + 3} L${x} ${y + 6} L${x + 9} ${cy - r + 3} Z` : `M${x - 9} ${cy + r - 3} L${x} ${y - 6} L${x + 9} ${cy + r - 3} Z`}
-        fill={color}
-      />
-      <circle cx={x} cy={cy} r={r} fill={color} style={{ filter: glow(color, 18, 0.45) }} />
-      <text x={x} y={cy + 11} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={30} fill={C.text}>
+      {Array.from({ length: ripples }, (_, k) => {
+        const rip = clamp01((t - at - 0.15 - k * 0.45) / 0.5);
+        return rip > 0 && rip < 1 ? <circle key={k} cx={x} cy={cy} r={r * lerp(1, 1.8, rip)} fill="none" stroke={color} strokeWidth={3} opacity={0.6 * (1 - rip)} /> : null;
+      })}
+      <g style={{ filter: glow(color, 8, 0.8) }}>
+        <line x1={x} y1={cy - s * r} x2={x} y2={tip + s * head * 0.9} stroke={color} strokeWidth={Math.max(3, r * 0.12)} strokeLinecap="round" />
+        <path d={`M${x} ${tip} L${x - head * 0.75} ${tip + s * head * 1.2} L${x + head * 0.75} ${tip + s * head * 1.2} Z`} fill={color} />
+      </g>
+      <circle cx={x} cy={cy} r={r} fill={color} style={{ filter: glow(color, r * 0.7, 0.55) }} />
+      <circle cx={x} cy={cy} r={r - 3} fill="none" stroke={withAlpha(C.text, 0.55)} strokeWidth={2} />
+      <text x={x} y={cy + r * 0.4} textAnchor="middle" fontFamily={FONT} fontWeight={900} fontSize={r * 1.15} fill={C.text}>
         {letter}
       </text>
     </PopG>
@@ -481,8 +522,8 @@ export const Badge: React.FC<{ scale?: number; x?: number; y?: number; origin?: 
   <div style={{ position: "absolute", left: x, top: y, display: "flex", alignItems: "center", gap: 12, transform: `scale(${scale})`, transformOrigin: origin, fontFamily: FONT }}>
     <Img src={staticFile("brand/lvp-mark-white.svg")} style={{ width: 54, height: 54 }} />
     <div style={{ lineHeight: 1 }}>
-      <div style={{ fontSize: 30, fontWeight: 900, color: C.text, letterSpacing: 2, textShadow: `0 0 12px ${withAlpha(C.brand, 0.7)}`, WebkitTextStroke: `1px ${C.brand}` }}>LVP</div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: C.muted, letterSpacing: 5, marginTop: 4 }}>ORDER FLOW</div>
+      <div style={{ fontSize: 30, fontWeight: 900, color: C.text, letterSpacing: 2, textShadow: `0 0 12px ${withAlpha(C.brand, 0.7)}`, WebkitTextStroke: `1px ${C.brand}` }}>{BRAND.mark}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: 2, marginTop: 5 }}>{BRAND.full}</div>
     </div>
   </div>
 );

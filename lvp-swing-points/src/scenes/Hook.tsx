@@ -16,6 +16,9 @@ import {
   growSchedule,
   lerp,
   makeScale,
+  mixScale,
+  ramp,
+  type Scale,
   pop,
   rangeOf,
   useTime,
@@ -24,22 +27,26 @@ import {
 import { C, FONT, glow, withAlpha } from "../theme.ts";
 
 const N = HOOK.bars.length;
-const R = rangeOf([...HOOK.bars, ...HOOK_FLY], 0.1);
-const sc = makeScale({ n: N, x0: 110, x1: 1460, top: 190, bottom: 800, ...R });
+// two framings: close on entry → rally → pullback for the first seconds, then the whole board
+// (room for the 一卖就飞 / 被套 branches) when the 走 / 不走 buttons arrive
+const SC_FULL = makeScale({ n: N, x0: 80, x1: 1480, top: 175, bottom: 790, ...rangeOf([...HOOK.bars, ...HOOK_FLY], 0.1) });
+const SC_OPEN = makeScale({ n: HOOK.DOUBT + 3, x0: 90, x1: 1830, top: 200, bottom: 800, ...rangeOf(HOOK.bars.slice(0, HOOK.DOUBT + 1), 0.16) });
 
 const BTN = { go: { x: 1560, y: 360 }, stay: { x: 1560, y: 520 }, w: 250, h: 104 };
 
 export const Hook: React.FC = () => {
   const { t, cue } = useTime();
+  const sc = mixScale(SC_OPEN, SC_FULL, ramp(t, cue("hookGo") - 0.3, 0.7, easeInOutSine));
   const appear = growSchedule(
     [
-      { to: HOOK.ENTRY, at: cue("hookHere") },
-      { to: HOOK.TOP, at: cue("hookEntered") + 0.25 },
-      { to: HOOK.DROP, at: cue("hookDrop") },
-      { to: HOOK.DOUBT, at: cue("hookDoubt") + 0.2, per: 0.18 },
+      { to: HOOK.PRE, at: cue("hookStart"), per: 0.1 }, // 0–0.3 s: the fall reaches the low
+      { to: HOOK.ENTRY, at: cue("hookHere") - 0.15 }, // the entry candle prints just before "这里"
+      { to: HOOK.TOP, at: cue("hookEntered") + 0.1, per: 0.17 }, // 连涨
+      { to: HOOK.DROP, at: cue("hookDrop"), per: 0.14 }, // 回调
+      { to: HOOK.DOUBT, at: cue("hookDoubt") + 0.2, per: 0.2 },
       { to: HOOK.TRAP, at: cue("hookStay") + 0.35, per: 0.26 },
     ],
-    HOOK.PRE,
+    HOOK.PRE - 3,
   );
   const flyAt = cue("hookFly");
   const flyOut = cue("hookStay");
@@ -56,10 +63,12 @@ export const Hook: React.FC = () => {
     <>
       <PushIn dim={dim * (t > brandAt ? 1 - 0.6 * clamp01((t - brandAt) / 0.4) : 1)}>
         <Stage>
-          <HLine y={sc.y(e.c)} x1={sc.x(HOOK.ENTRY)} x2={sc.x(N - 1) + 10} color={C.muted} at={cue("hookDrop")} dashed label="成本" />
+          <HLine y={sc.y(e.c)} x1={sc.x(HOOK.ENTRY)} x2={sc.x(HOOK.DOUBT + 1)} color={C.muted} at={cue("hookDrop")} dashed label="成本" />
           <Candles bars={HOOK.bars} sc={sc} appear={appear} opacity={realOpacity} />
           {t < flyOut + 0.3 && <Candles bars={HOOK_FLY} sc={sc} appear={flyAppear} offset={HOOK.DOUBT + 1} ghost opacity={1 - clamp01((t - flyOut) / 0.3)} />}
-          <Bubble x={sc.x(HOOK.ENTRY)} y={sc.y(e.l)} letter="B" color={C.up} at={cue("hookHere") + 0.1} />
+          <EntryMark sc={sc} at={cue("hookHere")} until={cue("hookDrop")} />
+          <Bubble x={sc.x(HOOK.ENTRY)} y={sc.y(e.l)} letter="B" color={C.up} at={cue("hookHere")} r={40} gap={40} ripples={2} />
+          <Label x={sc.x(HOOK.ENTRY) + 62} y={sc.y(e.l) + 96} text="进场" color={C.up} anchor="start" size={34} at={cue("hookHere") + 0.15} out={cue("hookDrop")} />
           <Label x={sc.x(HOOK.DOUBT + 4)} y={sc.y(131) - 10} text="一卖就飞" color={C.up} at={flyAt + 0.3} out={flyOut} />
           <Label x={sc.x(HOOK.TRAP) - 40} y={sc.y(HOOK.bars[HOOK.TRAP].l) + 64} text="利润回吐" color={C.down} at={cue("hookGiveBack")} />
         </Stage>
@@ -69,6 +78,24 @@ export const Hook: React.FC = () => {
       <Cards at={cardsAt} out={brandAt} />
       <BrandBeat at={brandAt} />
     </>
+  );
+};
+
+// ---------------------------------------------------------------- the entry candle, outlined while you buy
+const EntryMark: React.FC<{ sc: Scale; at: number; until: number }> = ({ sc, at, until }) => {
+  const { t } = useTime();
+  const p = pop(t, at, until);
+  if (p.opacity <= 0) return null;
+  const b = HOOK.bars[HOOK.ENTRY];
+  const x = sc.x(HOOK.ENTRY);
+  const y1 = sc.y(b.h) - 14;
+  const y2 = sc.y(b.l) + 10;
+  const w = sc.step * 1.25;
+  const pulse = 0.55 + 0.45 * Math.abs(Math.sin((t - at) * 4));
+  return (
+    <g style={{ opacity: p.opacity }}>
+      <rect x={x - w / 2} y={y1} width={w} height={y2 - y1} rx={w / 2} fill={withAlpha(C.up, 0.1)} stroke={C.up} strokeWidth={2.5} opacity={pulse} style={{ filter: glow(C.up, 12, 0.8) }} />
+    </g>
   );
 };
 

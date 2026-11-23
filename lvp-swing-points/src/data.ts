@@ -71,26 +71,109 @@ class Builder {
   }
 }
 
-// ---------------------------------------------------------------- hook (0–24 s)
-const hb = new Builder(118, 7);
-hb.leg(104, 7); // green down leg (already on screen at frame 0)
-const HOOK_PRE = hb.last;
-const HOOK_ENTRY = hb.leg(106, 1); // the low red candle where you buy (B)
-hb.leg(112, 5);
-hb.inside();
-hb.leg(119, 6);
-hb.inside();
-const HOOK_TOP = hb.leg(126, 6); // 连涨好几天
-const HOOK_DROP = hb.leg(116.5, 8); // 一波回调砸了下来
-hb.leg(119.5, 3); // 冲高
-const HOOK_DOUBT = hb.leg(115, 3); // 回落 — 走还是不走
-const HOOK_TRAP = hb.leg(105, 7); // 不走：被套，利润吐回去
-export const HOOK = { bars: hb.bars, PRE: HOOK_PRE, ENTRY: HOOK_ENTRY, TOP: HOOK_TOP, DROP: HOOK_DROP, DOUBT: HOOK_DOUBT, TRAP: HOOK_TRAP };
+// ---------------------------------------------------------------- hook (0–24 s): realistic, mixed candles
+// Each leg drifts toward a target but mixes in counter candles, random body sizes, long upper /
+// lower wicks and the odd doji; no more than 5 candles of one colour in a row. The entry candle
+// (探底回升, long lower wick) and the top (冲高回落, long upper wick) are placed by hand.
+// The seed is the first one that passes realismProblems(); scripts/check.mts re-checks it.
 
-// 走 → 一卖就飞: a hypothetical branch, drawn as outlines from HOOK_DOUBT
-const flyB = new Builder(hb.bars[HOOK_DOUBT].c, 11).after(-1);
-flyB.leg(131, 7);
-export const HOOK_FLY = flyB.bars;
+/** max same-colour run (dojis break a run), used by the realism rules */
+export const maxRun = (bars: Bar[]) => {
+  let best = 0;
+  let run = 0;
+  let prev = 0;
+  for (const b of bars) {
+    const d = isDoji(b) ? 0 : b.c > b.o ? 1 : -1;
+    run = d !== 0 && d === prev ? run + 1 : d !== 0 ? 1 : 0;
+    prev = d;
+    best = Math.max(best, run);
+  }
+  return best;
+};
+/** a doji: body under 10 % of the range — drawn grey */
+export const isDoji = (b: Bar) => Math.abs(b.c - b.o) < 0.1 * Math.max(1e-9, b.h - b.l);
+
+const walk = (rnd: () => number, from: number, to: number, n: number, opts: { counter?: number; doji?: number } = {}): Bar[] => {
+  const out: Bar[] = [];
+  const dir = to >= from ? 1 : -1;
+  const avg = Math.abs(to - from) / n;
+  let c = from;
+  let run = 0;
+  for (let k = 0; k < n; k++) {
+    const left = n - k;
+    const need = (to - c) / left; // what is still owed per bar
+    const counter = k > 0 && k < n - 1 && (run >= 3 + Math.floor(rnd() * 2) || rnd() < (opts.counter ?? 0.25));
+    const doji = !counter && k > 0 && k < n - 1 && rnd() < (opts.doji ?? 0.08);
+    const o = c + (rnd() - 0.5) * avg * 0.15;
+    let body: number;
+    if (doji) body = (rnd() - 0.5) * avg * 0.06;
+    else if (counter) body = -dir * avg * (0.3 + rnd() * 0.6);
+    else body = need + dir * avg * (rnd() - 0.35) * 0.9;
+    if (!doji && !counter && Math.sign(body) !== dir) body = dir * avg * (0.4 + rnd() * 0.4);
+    if (k === n - 1) body = to - o;
+    const cc = o + body;
+    const range = avg * (0.9 + rnd() * 0.6);
+    const longUp = rnd() < 0.14;
+    const longDn = rnd() < 0.14;
+    const h = Math.max(o, cc) + range * (longUp ? 0.9 + rnd() * 0.6 : 0.08 + rnd() * 0.3);
+    const l = Math.min(o, cc) - range * (longDn ? 0.9 + rnd() * 0.6 : 0.08 + rnd() * 0.3);
+    out.push({ o, h, l, c: cc });
+    run = counter || doji ? 0 : run + 1;
+    c = cc;
+  }
+  return out;
+};
+
+const buildHook = (seed: number) => {
+  const rnd = mulberry(seed);
+  const bars: Bar[] = [];
+  const add = (bs: Bar[]) => (bars.push(...bs), bars.length - 1);
+  const last = () => bars[bars.length - 1].c;
+  add(walk(rnd, 117, 106.6, 9, { counter: 0.28 })); // 下跌：绿多红少
+  const pre = bars.length - 1;
+  // entry: a red candle that probes low and closes up (探底回升) — 在这里进场
+  const eo = last() - 0.3;
+  const entry = add([{ o: eo, c: eo + 1.5, h: eo + 1.9, l: eo - 2.4 }]);
+  add(walk(rnd, last(), 121.4, 12, { counter: 0.24 })); // 连涨，穿插绿色小回调
+  // top: a red candle that spikes and fades (冲高回落)
+  const to = last() + 0.2;
+  const top = add([{ o: to, c: to + 1.1, h: to + 4.2, l: to - 0.5 }]);
+  const drop = add(walk(rnd, last(), 113.5, 8, { counter: 0.25 })); // 回调，穿插红色小反抽
+  add(walk(rnd, last(), 116.8, 2, { counter: 0 })); // 冲高
+  const doubt = add(walk(rnd, last(), 113.2, 3, { counter: 0 })); // 回落 — 走还是不走
+  const trap = add(walk(rnd, last(), 105.5, 7, { counter: 0.25 })); // 不走：利润吐回去
+  const fly = walk(rnd, bars[doubt].c, 131, 7, { counter: 0.22 }); // 走：一卖就飞 (outline branch)
+  return { bars, pre, entry, top, drop, doubt, trap, fly };
+};
+
+export const hookRealismProblems = (hk: ReturnType<typeof buildHook>) => {
+  const p: string[] = [];
+  const { bars, entry, top, trap, fly } = hk;
+  if (maxRun(bars) > 5) p.push(`same-colour run of ${maxRun(bars)}`);
+  if (maxRun(fly) > 5) p.push(`fly branch run of ${maxRun(fly)}`);
+  if (!bars.some(isDoji)) p.push("no doji");
+  const rally = bars.slice(entry + 1, top);
+  if (rally.filter((b) => b.c < b.o && !isDoji(b)).length < 2) p.push("rally has fewer than 2 green pullbacks");
+  const fall = bars.slice(top + 1, trap + 1);
+  if (fall.filter((b) => b.c > b.o && !isDoji(b)).length < 2) p.push("fall has fewer than 2 red rebounds");
+  if (bars.slice(0, top).some((b, i) => i !== entry && b.l <= bars[entry].l)) p.push("entry is not the low");
+  if (bars.some((b, i) => i !== top && b.h >= bars[top].h)) p.push("top is not the high");
+  const longUp = bars.filter((b) => b.h - Math.max(b.o, b.c) > 1.2 * Math.abs(b.c - b.o) && b.h - Math.max(b.o, b.c) > 0.8).length;
+  const longDn = bars.filter((b) => Math.min(b.o, b.c) - b.l > 1.2 * Math.abs(b.c - b.o) && Math.min(b.o, b.c) - b.l > 0.8).length;
+  if (longUp < 2 || longDn < 2) p.push(`too few long wicks (up ${longUp}, down ${longDn})`);
+  const bodies = bars.map((b) => Math.abs(b.c - b.o)).filter((x) => x > 0.05);
+  if (Math.max(...bodies) < 3 * Math.min(...bodies)) p.push("bodies too uniform");
+  if (bars[trap].c > bars[entry].c + 1.2) p.push("trap does not give the profit back");
+  if (fly[fly.length - 1].c <= bars[top].h) p.push("fly branch does not clear the top");
+  return p;
+};
+
+let HOOK_SEED = 1;
+while (hookRealismProblems(buildHook(HOOK_SEED)).length && HOOK_SEED < 5000) HOOK_SEED++;
+const hk = buildHook(HOOK_SEED);
+export const HOOK = { bars: hk.bars, PRE: hk.pre, ENTRY: hk.entry, TOP: hk.top, DROP: hk.drop, DOUBT: hk.doubt, TRAP: hk.trap, SEED: HOOK_SEED };
+export const HOOK_FLY = hk.fly;
+export const HOOK_PROBLEMS = hookRealismProblems(hk);
 
 // mini charts for the "怕 / 猜" comparison cards
 const m1 = new Builder(100, 3);
@@ -224,7 +307,6 @@ export const ADV = { bars: ab.bars, ENTRY: A_ENTRY, LOW: A_LOW, T1: A_T1, T2: A_
 
 /** every chart the film annotates, with the pivots it claims — used by scripts/check.mts */
 export const CLAIMS: { name: string; bars: Bar[]; highs: number[]; lows: number[]; above?: [number, number][] }[] = [
-  { name: "hook", bars: HOOK.bars, highs: [HOOK.TOP], lows: [] },
   { name: "define-chart", bars: DEFINE_CHART.bars, highs: [DEF_H1, DEF_H2], lows: [DEF_L1, DEF_L2] },
   { name: "trio-high", bars: TRIO_HIGH, highs: [1], lows: [] },
   { name: "trio-low", bars: TRIO_LOW, highs: [], lows: [1] },

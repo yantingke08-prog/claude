@@ -7,6 +7,7 @@ const c = (phrase: string, after?: string): Cue => ({ phrase, after });
 
 export const CUES = {
   // hook
+  hookStart: c("当你在这里进场"),
   hookHere: c("这里进场"),
   hookEntered: c("进场"),
   hookRally: c("行情已经连涨"),

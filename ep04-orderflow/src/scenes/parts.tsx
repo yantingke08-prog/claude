@@ -3,7 +3,7 @@ import React from "react";
 import { At, Box, C, HLine, MONO, Tag, clamp01, pop } from "../kit";
 
 // ---------- order book ladder ----------
-export const BOOK = { cx: 540, top: 440, rowH: 74, maxLvl: 5, minLvl: -5, unit: 120, gap: 84, slabH: 50 };
+export const BOOK = { cx: 540, top: 490, rowH: 74, maxLvl: 5, minLvl: -5, unit: 120, gap: 84, slabH: 50 };
 export const yOf = (lvl: number) => BOOK.top + (BOOK.maxLvl - lvl) * BOOK.rowH;
 export const priceText = (lvl: number) => (10 + Math.round(lvl) * 0.01).toFixed(2);
 export const askEdge = BOOK.cx + BOOK.gap; // asks grow to the right from here

@@ -1,30 +1,38 @@
-// 把这几股力量放一起看：追价的人决定谁着急，挂单的人决定谁有耐心，被迫成交的人决定行情会不会突然加速。
+// 把这几股力量放一起看 / 追价的人决定谁着急 / 挂单的人决定谁有耐心 / 被迫成交的人决定行情会不会突然加速
+// The whole chart again; the three places where each force decided the bar.
 import React from "react";
-import { Stage, cam, camPath, lerp, ramp, rampIO, useShot, win } from "../kit";
-import { Pillars } from "./parts";
+import { C, Stage, Tag, aim, camSteps, ramp, useShot } from "../kit";
+import { ABSORB, BREAK, CHASE, MAIN, PLUNGE } from "../data";
+import { Axis, Chart, Ring, bx, py } from "./chart";
 
 export const Sum: React.FC = () => {
-  const { t, at, dur } = useShot();
-  const together = rampIO(t, at("放一起看"), 1.0);
-  const a = at("谁着急");
-  const b = at("谁有耐心");
-  const c3 = at("突然加速");
-  const c = camPath(t, [
-    [0, cam(0, -200, -260, 14, -18)],
-    [dur, cam(0, -40, 120, 8, 12)],
+  const { t, at } = useShot();
+  const all = at("放一起看");
+  const a1 = at("追价的人");
+  const a2 = at("谁着急");
+  const b1 = at("挂单的人");
+  const b2 = at("谁有耐心");
+  const c1 = at("被迫成交的人");
+  const c2 = at("突然加速");
+  const lit = (i: number) => (i === CHASE ? ramp(t, a1, 0.2) : i === ABSORB ? ramp(t, b1, 0.2) : i === BREAK || i === PLUNGE ? ramp(t, c1, 0.2) : 0);
+  const c = camSteps(t, [
+    [0, aim(bx(68), py(-12), 1.35, 7, -8)],
+    [all, aim(540, 900, 1, 6, 0)],
+    [a1, aim(bx(CHASE), py(6), 1.5, 6, -4)],
+    [b1, aim(bx(ABSORB), py(2), 1.5, 6, -6)],
+    [c1, aim(bx(PLUNGE) - 60, py(-14), 1.4, 7, -8)],
+    [c2 + 0.6, aim(540, 900, 1, 6, 0)],
   ]);
   return (
     <Stage cam={c}>
-      <Pillars
-        p={[lerp(0.5, 1, together), lerp(0.5, 1, together), lerp(0.5, 1, together)]}
-        spread={lerp(1.15, 1, together)}
-        glow={[win(t, a, b), win(t, b, c3), win(t, c3, dur + 1)]}
-        tags={[
-          { text: "着急", o: ramp(t, a, 0.3) },
-          { text: "耐心", o: ramp(t, b, 0.3) },
-          { text: "加速", o: ramp(t, c3, 0.3) },
-        ]}
-      />
+      <Chart upto={MAIN.length - 1} o={(i) => 0.4 + 0.6 * Math.max(1 - ramp(t, all, 0.4), lit(i))} glow={(i) => lit(i) * 0.6} />
+      <Axis ticks={[14, 7, 0, -7, -14, -21, -28]} />
+      <Ring i={CHASE} color={C.up} o={ramp(t, a1, 0.25)} />
+      <Ring i={ABSORB} color={C.passive} o={ramp(t, b1, 0.25)} />
+      <Ring i={PLUNGE} color={C.forced} o={ramp(t, c1, 0.25)} pad={16} />
+      <Tag x={bx(CHASE)} y={py(MAIN[CHASE].h) - 44} text="着急" color={C.up} align="center" o={ramp(t, a2, 0.25)} />
+      <Tag x={bx(ABSORB) + 22} y={py(MAIN[ABSORB].h) - 44} text="耐心" color={C.passive} align="center" o={ramp(t, b2, 0.25)} />
+      <Tag x={bx(PLUNGE) - 30} y={py(MAIN[PLUNGE].l) + 10} text="加速" color={C.forced} align="right" o={ramp(t, c2, 0.25)} />
     </Stage>
   );
 };

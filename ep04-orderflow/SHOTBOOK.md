@@ -1,27 +1,43 @@
-# SHOTBOOK — EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
+# SHOTBOOK v2: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
 
-1080×1920 · 30 fps · length = the real voiceover length (`public/audio/vo.mp3`).
+1080×1920 · 30 fps · the length is the real voiceover length (`public/audio/vo.mp3`).
 
-**About the times below.** Nothing in the code uses these numbers. Every shot change and every animation is tied to a *text anchor*: `at("吃卖单")` returns the moment the voiceover starts that word, read from `public/audio/vo.timestamps.json`. The ranges in this table come from the even-split fallback over the 133 s placeholder. To print the real ranges after alignment, run `npm run check`.
+## What changed from v1 (feedback: 画面节奏太慢)
 
-Rules held everywhere: key content stays between y 290 and 1340. The top 260 px and bottom 1520–1920 px are platform UI. Captions are one line at y≈1445. Tags are short, object-coloured text within 16 px of their object, with no cards, leader lines or dots. Shots cross-fade over the previous shot (10 frames, never through black). The two ［短暂停顿］ never fall on a shot boundary; `npm run check` enforces this.
+- **Every caption clause starts a visual change.** v1 had 15 of 77 clauses with nothing happening; v2 has none. In total there are 105 beats, and the longest stretch without a change is 2.9 s (fallback timing). `npm run check` now fails if any clause has no beat or any gap exceeds 3 s.
+- **The camera moves on the word.** v1 stretched each move across the whole gap between two anchors, so the frame crept for 5–10 s. v2 uses `camSteps`: the camera holds, then makes a 0.65 s move that starts on the word.
+- **The K-line chart is the main subject** (following `skills/orderflow-explainer-video`). There is one deterministic 80-bar chart (示意图 · 模拟数据, always labelled in the corner). The three abstract pillar shots are gone. Drill-downs use only three layers: chart → that bar's footprint (volume per price) → order book. During a drill-down, a minimap marks which bar you are looking at.
+- **Rules carried over:** at most 3 tags per shot, each keyed to its word; nothing in the caption band (3D content is masked to y 300–1360); the two ［短暂停顿］ never fall on a shot boundary; the camera uses `aim()` so the subject stays in the content band.
 
-Colours: 主动买/上涨 red · 主动卖/下跌 green · 被动挂单 blue · 被迫/止损 amber.
+## Data (src/data.ts)
 
-| # | shot | est. range (s) | voiceover anchors → what happens | main tag |
-|---|------|---------------|-----------------------------------|----------|
-| 1 | `hook` | 0.0–4.5 | Close on a 3D candle chart. **追进去**: the last candle surges and a red entry level appears. **掉头**: the candle turns and closes far below, leaving a long upper wick. The camera pulls back. | 追进 / 掉头 |
-| 2 | `tape` | 4.5–10.2 | An order-book ladder in 3D. **那一秒**: a clock reading 09:31:05 freezes. **三种成交**: a red market order punches into the asks, a blue bid holds, and a dashed amber stop block lights below. **胜负**: the price drops a tick. **没看见**: the book dims. | 主动 · 被动 · 被迫 |
-| 3 | `who` | 10.2–14.7 | **先别盯**: the candle chart sinks back into the dark while the ladder comes forward. **谁在成交**: mixed orders hit the current price. | 谁在成交 |
-| 4 | `three` | 14.7–25.4 | Three pillars stand in a 3D row and the camera pans across them. **追着价格打**: red blocks shoot in from the left. **挂在原地**: blue blocks settle from above. **还有一种**: the amber pillar is half built behind a dashed stop line. **止损一破**: the line snaps. **被硬逼着**: amber blocks are shoved up. | 主动成交 / 被动成交 / 被迫成交 |
-| 5 | `tug` | 25.4–29.4 | A big price figure sits above the three pillars. **下一跳**: tag. **较劲**: orders fly from each pillar into the price, which wobbles and settles one tick away. | 下一跳 |
-| 6 | `aggr` | 29.4–42.3 | **主动买…往上跳**: red orders eat ask levels 10.01→10.03 one by one and the price marker climbs. Fresh bids then line up under the new price. **主动卖…往下走**: green orders eat bids 10.02→9.99. **付多少钱**: a red bracket 10.00→10.03. | 主动买 / 主动卖 / 多付3跳 |
-| 7 | `absorb` | 42.3–66.7 | A thick ask wall sits at 10.01. **冲上去**: red orders hit it and barely dent it. **有没有人接**: the wall glows. **被动承接**: the wall refills. **推不动**: tag. **下面买单厚**: a thick bid wall grows. **被接住**: green orders are absorbed. **成交很大**: a VOL counter climbs while the price only twitches. **价格却不走**: tag. The ［短暂停顿］ holds this shot. **有人主动打**: both sides fire. **稳稳接**: both walls glow. | 有人接 → 被动承接 → 推不动 → 被接住 → 价不动 → 稳稳接 |
-| 8 | `broll-desk` | 66.7–75.7 | **B-roll**: a trader seen from behind, three glowing screens, a slow push-in. **追第一笔**: a big red 追 pops over the left screen. **挂单硬扛**: a blue 扛 pops over the right screen. **弹幕**: both pulse. **先别急着回答**: both fade. | 追 / 扛 |
-| 9 | `forced` | 75.7–95.8 | Narrow range candles sit under a white key level, with resistance faint above. **第三批人**: dashed amber stop orders appear just below the level. **关键位一破**: a candle breaks the level. **止损单被触发**: the stops fire one after another into the candle, which extends down through **被迫成交**. **一下加速**: a long green candle plunges with a short camera shake. **主力发力了**: tag "主力?". **逼了出来**: tag "连续被迫". | 止损单 → 被迫成交 → 主力? → 连续被迫 |
-| 10 | `sum` | 95.8–106.1 | **放一起看**: the three pillars slide together and complete. **谁着急** / **谁有耐心** / **突然加速**: each pillar glows in turn, with its tag. | 着急 / 耐心 / 加速 |
-| 11 | `accept` | 106.1–120.1 | **最后一步**: a dashed "新价格" level appears and holds through the ［短暂停顿］. **接受它**: the level brightens. **往上冲**: the camera moves to the left panel; the price breaks out. **回踩有人接**: it retests the level, where blue bids catch it. **站得住**: tag. **冲上去没人跟**: the camera moves to the right panel; a red spike. **马上收回来**: it turns green and falls back through the level. **不认可**: tag. | 新价格 / 站得住 / 不认可 |
-| 12 | `print` | 120.1–126.6 | **拍脑袋**: a dim "10.08" appears and is struck out. **是买卖双方…一笔一笔**: red and green trade prints pop one by one, faster and faster, and a 3D candle builds from them. **拍出来的**: tag on the candle. | 一笔一笔 / 成交拍出来 |
-| 13 | `next` | 126.6–133.0 | **下一期**: a 3D volume profile grows. **百分之七十**: the 70 % value-area band lights blue and the rest dims. **同一个区间**: the band glows. | 70% |
+| bar | what | used in |
+|-----|------|---------|
+| 0–43 | the rise | context |
+| 44 | the bar you chased: up to 10.14, closes 10.02 (long upper wick), 3400手. Its footprint rows sum to 3400. | hook, tape, sum |
+| 52 | the biggest volume in the area (3900手), and the close equals the open | absorb-k, sum |
+| 59–72 | the narrow range, key level 9.94 | forced |
+| 73 / 74 | the break, then the stop cascade (−22 ticks, 5200手) | forced, sum |
+| profile | volume per price across all 80 bars; value area = 70.7 % | next |
+| forks | 12 identical bars, then A (accepted) / B (rejected) | accept |
 
-B-roll is used only for #8 (a question to the audience, with no honest trading picture). The registry is `src/broll.ts`; files go in `assets/broll/`.
+## Shots
+
+Times are the even-split estimates over the 133 s placeholder; run `npm run check` after alignment for the real ones. **Bold** words are the anchors that trigger each change.
+
+| # | shot | est. (s) | beats (one or more per clause) | tags |
+|---|------|---------|--------------------------------|------|
+| 1 | `hook` · chart | 0.0–4.5 | **追进去**: bar 44 surges and the camera pushes in; red entry level. **掉头**: the bar turns, with a shake. **运气差**: focus box; bars outside dim. | 追进 · 掉头 |
+| 2 | `tape` · footprint | 4.5–10.2 | **那一秒**: bar 44 opens into its footprint (bid × ask per price), row by row; the minimap appears. **三种成交**: red rows, then blue rows, then amber rows light up in turn. **胜负**: the close box drops to 10.02. **没看见**: the plain candle is laid over the footprint. | 主动 · 被动 · 被迫 |
+| 3 | `who` · chart → book | 10.2–14.7 | **先别盯**: the chart sinks back. **你想啊**: the order book comes forward. **谁在成交**: trades hit the last price. | 谁在成交 |
+| 4 | `three` · book | 14.7–25.4 | **挂单慢**: a red order appears. **追着价格打**: it lifts the 10.01 offer and the price ticks up. **有人不着急**: a blue order drops onto 9.99. **等别人来**: a seller fills it. **还有一种**: an amber stop appears at 9.97. **没打算动**: it dims and waits; the camera moves to it. **止损一破**: the price breaks down with a shake. **被硬逼着**: the stop turns into a sell and hits the bids. | 主动 · 被动 · 被迫 |
+| 5 | `tug` · book close-up | 25.4–29.4 | **下一跳**: the camera pushes onto the price cell. **几股力量**: three colours of orders stream in. **较劲**: the price flickers. **结果**: it settles one tick up, with a shake. | 下一跳 |
+| 6 | `aggr` · book | 29.4–42.3 | **最直接的**: the camera moves to the asks. **追着价格打的人**: a queue of buyers. **吃卖单**: they eat 10.01→10.03. **往上跳**: a jump and shake. **砸买单**: sellers eat the bids. **往下走**: a drop and shake. **它告诉你**: pull back. **付多少钱**: a red bracket over 3 ticks. | 主动买 · 主动卖 · 多付3跳 |
+| 7 | `absorb` · book | 42.3–60.7 | **不能只看**: the book dims. **你冲上去**: red burst. **有没有人接**: the 10.01 slab glows. **挂在某个价位**: an order drops onto 10.01. **不追价**: the price slips away and back while the order stays. **送上门**: buys are absorbed. **被动承接**: tag. **上面卖单厚**: the wall thickens. **推不动**: buying bounces off. **下面买单厚**: a bid wall. **主动卖再猛**: green barrage. **被接住**: tag. | 被动承接 · 推不动 · 被接住 |
+| 8 | `absorb-k` · chart | 60.7–66.7 | **成交很大**: bar 52's volume shoots up (3900手). **价格却不走**: a flat line at the same price; the ［短暂停顿］ holds this shot. **有人主动打**: orders hit the bar from both sides. **稳稳接**: blue resting orders show at both of the bar's edges. | 价不动 · 稳稳接 |
+| 9 | `broll-desk` | 66.7–75.7 | **栽在**: push-in step. **追第一笔**: 追 appears. **挂单硬扛**: 扛 appears. **弹幕**: both pulse. **先别急着**: both fade and the frame pulls back. | 追 · 扛 |
+| 10 | `forced` · chart | 75.7–95.8 | **突然加速**: push onto the narrow range, with a focus box. **第三批人**: stop clusters appear under 9.94. **被迫平仓**: they pulse. **一破**: bar 73 breaks the level, with a shake. **被触发**: the first stops fire into the bar. **观望的人** / **也被迫成交**: more fire. **一下加速**: bar 74 plunges, with a big shake and a volume spike. **主力发力**: tag. **其实有时候**: pull back. **同一方向**: push in. **逼了出来**: the stops relight in sequence. | 止损单 → 被迫成交 → 连续被迫 · 主力? |
+| 11 | `sum` · chart | 95.8–106.1 | **放一起看**: the full chart. **追价的人**: ring on bar 44. **谁着急**: tag. **挂单的人**: ring on bar 52. **谁有耐心**: tag. **被迫成交的人**: ring on bar 74. **突然加速**: tag, then pull back. | 着急 · 耐心 · 加速 |
+| 12 | `accept` · two stacked charts | 106.1–120.1 | **最后一步**: the new price level appears in both panels and holds through the ［短暂停顿］. **新价格出来**: the same push bar prints in both. **接受它**: the level glows. **往上冲**: push into A. **能延续** / **回踩** / **有人接** / **站得住**: one A bar per word (blue bids catch the retest). **没人跟**: move to B. **收回来**: B's spike reverses. **不认可**: B falls away. | 新价格 · 站得住 · 不认可 |
+| 13 | `print` | 120.1–126.6 | **拍脑袋**: "10.08?". **定出来**: struck out. **买卖双方**: the first prints. **一笔一笔**: the print rate jumps. **成交拍出来**: the candle built from the prints is tagged. | 一笔一笔 · 成交拍出来 |
+| 14 | `next` · chart + profile | 126.6–133.0 | **下一期**: the volume profile grows. **为什么**: pull back. **百分之七十**: the value area lights. **挤在**: it glows and the rest dims. | 70% |

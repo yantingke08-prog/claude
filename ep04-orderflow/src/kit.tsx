@@ -126,13 +126,49 @@ export const camPath = (t: number, keys: [number, Cam][]): Cam => {
   return keys[keys.length - 1][1];
 };
 
+/**
+ * Beat camera: holds still, then on each key time makes a quick eased move (d seconds) to that pose.
+ * Moves land on the voiceover word instead of creeping across the whole gap between anchors.
+ */
+export const camSteps = (t: number, keys: [number, Cam][], d = 0.65): Cam => {
+  let c = keys[0][1];
+  for (let k = 1; k < keys.length; k++) {
+    const [tk, ck] = keys[k];
+    if (t < tk) break;
+    c = camLerp(c, ck, easeIO((t - tk) / d));
+  }
+  return c;
+};
+
+/** short decaying shake starting at a (s) */
+export const shake = (t: number, a: number, amp = 10, d = 0.45) =>
+  t > a && t < a + d ? Math.sin((t - a) * 70) * amp * (1 - (t - a) / d) : 0;
+
+/**
+ * Aim the camera so world point (px, py) sits at the centre of the content band (screen y≈845),
+ * magnified `zoom` times. Perspective 1700, origin (540, 806).
+ */
+export const aim = (px: number, pyy: number, zoom = 1, rx = 6, ry = -4): Cam => {
+  const s = Math.max(0.5, zoom);
+  return { x: px - 540, y: pyy - 806 - 39 / s, z: 1700 - 1700 / s, rx, ry };
+};
+
 export const Stage: React.FC<{ cam: Cam; children: React.ReactNode; floorY?: number; drift?: number }> = ({
   cam: c,
   children,
   floorY = 1290,
   drift = 0,
 }) => (
-  <AbsoluteFill style={{ perspective: 1700, perspectiveOrigin: "50% 42%", overflow: "hidden" }}>
+  <AbsoluteFill
+    style={{
+      perspective: 1700,
+      perspectiveOrigin: "540px 806px",
+      overflow: "hidden",
+      // 3D content never reaches the platform UI / header (top) or the caption band (bottom)
+      WebkitMaskImage: "linear-gradient(180deg, transparent 300px, #000 340px, #000 1330px, transparent 1372px)",
+      maskImage: "linear-gradient(180deg, transparent 300px, #000 340px, #000 1330px, transparent 1372px)",
+    }}
+  >
     <div
       style={{
         position: "absolute",

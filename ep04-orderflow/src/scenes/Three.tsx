@@ -1,48 +1,73 @@
-// 有人嫌挂单慢，直接追着价格打；有人不着急，挂在原地等别人来；还有一种，本来没打算动，止损一破，被硬逼着成交。
+// 有人嫌挂单慢 / 直接追着价格打 / 有人不着急 / 挂在原地等别人来 / 还有一种 / 本来没打算动 / 止损一破 / 被硬逼着成交
+// Layer 3: the same order book, one actor per clause.
 import React from "react";
-import { C, HLine, Pellet, Stage, cam, camPath, lerp, ramp, rampIO, useShot, win } from "../kit";
-import { PILLAR_X, Pillars, pillarTop } from "./parts";
+import { Box, C, HLine, Pellet, Stage, Tag, cam, camSteps, clamp01, lerp, ramp, rampIO, shake, useShot, win } from "../kit";
+import { CHASE } from "../data";
+import { Minimap } from "./chart";
+import { BOOK, Book, askEdge, baseSize, bidEdge, yOf } from "./parts";
 
 export const Three: React.FC = () => {
   const { t, at, dur } = useShot();
-  const a0 = at("有人嫌");
-  const a1 = at("追着价格打");
-  const b0 = at("有人不着急");
-  const b1 = at("挂在原地");
-  const c0 = at("还有一种");
-  const c1 = at("止损一破");
-  const c2 = at("被硬逼着");
-  const p = [rampIO(t, a1 - 0.2, 0.9), rampIO(t, b1 - 0.1, 1.4), 0.5 * rampIO(t, c0, 0.8) + 0.5 * rampIO(t, c2, 0.6)];
-  const focus = (k: number) => cam((PILLAR_X[k] - 540) * 0.75, -40, 260, 8, (540 - PILLAR_X[k]) * 0.02);
-  const c = camPath(t, [
-    [0, focus(0)],
-    [b0, focus(0)],
-    [b0 + 0.9, focus(1)],
-    [c0, focus(1)],
-    [c0 + 0.9, focus(2)],
-    [Math.max(c2 + 1.2, dur - 1.4), focus(2)],
-    [dur, cam(0, -20, 40, 8, 0)],
+  const impatient = at("挂单慢");
+  const chase = at("追着价格打");
+  const calm = at("有人不着急");
+  const wait = at("等别人来");
+  const third = at("还有一种");
+  const asleep = at("没打算动");
+  const broke = at("止损一破");
+  const forced = at("被硬逼着");
+
+  // the red chaser: appears, waits impatiently, then lifts the offer at 10.01
+  const redIn = ramp(t, impatient, 0.25);
+  const redGo = rampIO(t, chase, 0.35);
+  const eaten = ramp(t, chase + 0.3, 0.25);
+  // the blue limit order: placed at 9.99, then filled by a seller
+  const blueIn = ramp(t, calm, 0.3);
+  const blueFill = ramp(t, wait + 0.35, 0.3);
+  // the amber stop at 9.97: asleep until the level breaks, then forced into the bids
+  const stopIn = ramp(t, third, 0.3);
+  const fall = rampIO(t, broke - 0.2, 0.5);
+  const fire = rampIO(t, forced, 0.4);
+  const mid = lerp(lerp(0, 1, eaten), -3, fall) - fire;
+
+  const c = camSteps(t, [
+    [0, cam(0, 0, 60, 8, -4)],
+    [impatient, cam(-160, -60, 260, 8, 8)],
+    [chase, cam(80, -110, 280, 8, -8)],
+    [calm, cam(-60, 40, 260, 9, 10)],
+    [wait, cam(-20, 60, 300, 9, 4)],
+    [third, cam(-120, 160, 260, 10, 10)],
+    [asleep, cam(-160, 200, 360, 10, 12)],
+    [broke, cam(-60, 140, 220, 9, 4)],
+    [forced, cam(0, 120, 120, 9, -4)],
+    [dur - 0.3, cam(0, 60, 40, 8, 0)],
   ]);
-  const stopY = pillarTop(2) - 10;
-  const broken = ramp(t, c1, 0.25);
+  const stopY = yOf(-3);
   return (
-    <Stage cam={c}>
-      {/* 主动: a stream of red orders racing in */}
-      {[0, 1, 2].map((k) => (
-        <Pellet key={k} x={lerp(-60, PILLAR_X[0] - 90, ((t - a0 - k * 0.3) % 1.2) / 1.2)} y={pillarTop(3) + 40 + k * 40} color={C.up} o={win(t, a0, b0) * 0.9} />
-      ))}
-      {/* 被迫: the stop line that snaps */}
-      <HLine x={PILLAR_X[2] - 130} y={stopY} w={lerp(260, 120, broken)} color={C.forced} dashed o={win(t, c0, dur + 1) * (1 - broken * 0.5)} />
-      <HLine x={PILLAR_X[2] + 10 + 40 * broken} y={stopY + 30 * broken} w={broken ? 120 : 0} color={C.forced} dashed o={win(t, c1, dur + 1) * 0.5} />
-      <Pillars
-        p={p}
-        glow={[win(t, a1, b0), win(t, b1, c0), win(t, c2, dur + 1)]}
-        tags={[
-          { text: "主动成交", o: ramp(t, a1, 0.3) },
-          { text: "被动成交", o: ramp(t, b1, 0.3) },
-          { text: "被迫成交", o: ramp(t, c2, 0.3) },
-        ]}
-      />
-    </Stage>
+    <>
+      <Stage cam={{ ...c, y: c.y + shake(t, broke, 8) }}>
+        <Book
+          mid={mid}
+          ask={(l) => (l === 1 ? baseSize(l) * (1 - eaten) : l > 1 ? baseSize(l) : 0)}
+          bid={(l) => (l === -1 ? baseSize(l) * (1 - 0.5 * blueFill) : l <= 0 && l > -3 ? baseSize(l) * (1 - clamp01(fall * 3 - (2 + l))) * (1 - fire * 0.4) : l <= -3 ? baseSize(l) * (1 - fire * (l === -4 ? 0.7 : 0)) : 0)}
+          glowAsk={(l) => (l === 1 ? win(t, chase, chase + 0.8) : 0)}
+          glowBid={(l) => (l === -4 ? win(t, forced + 0.2, forced + 1.2) : 0)}
+        />
+        {/* 主动 */}
+        <Box x={lerp(90, askEdge - 30, redGo)} y={yOf(1) - 18} w={60} h={36} d={20} color={C.up} dark={C.upD} glow={0.6} o={redIn * (1 - eaten)} />
+        <Pellet x={askEdge + 20} y={yOf(1)} color={C.up} o={win(t, chase + 0.25, chase + 0.6, 0.08)} r={20} />
+        <Tag x={askEdge + 16} y={yOf(1) - 48} text="主动" color={C.up} o={win(t, chase, dur + 1)} />
+        {/* 被动 */}
+        <Box x={bidEdge - baseSize(-1) * 120 - 76} y={yOf(-1) - 22 - (1 - blueIn) * 120} w={64} h={44} d={22} color={C.passive} dark={C.passiveD} glow={win(t, wait + 0.35, wait + 1)} o={blueIn * (1 - blueFill * 0.7)} />
+        <Pellet x={lerp(1000, bidEdge - 30, clamp01((t - wait) / 0.4))} y={yOf(-1)} color={C.down} o={win(t, wait, wait + 0.45, 0.06)} />
+        <Tag x={bidEdge - baseSize(-1) * 120 - 92} y={yOf(-1)} text="被动" color={C.passive} align="right" o={win(t, wait + 0.35, dur + 1)} />
+        {/* 被迫 */}
+        <HLine x={bidEdge - 330} y={stopY - 32} w={330} color={C.forced} dashed o={stopIn * (1 - ramp(t, broke, 0.2))} />
+        <Box x={bidEdge - 330} y={stopY - 18} w={150} h={36} color={C.forced} dark={C.forcedD} dashed o={stopIn * (1 - ramp(t, asleep, 0.4) * 0.5) * (1 - ramp(t, forced, 0.2))} />
+        <Box x={lerp(bidEdge - 330, bidEdge - 160, fire)} y={lerp(stopY, yOf(-4), fire) - 18} w={150} h={36} color={C.forced} dark={C.forcedD} glow={1} o={ramp(t, forced, 0.15) * (1 - ramp(t, forced + 0.9, 0.4) * 0.6)} />
+        <Tag x={bidEdge - 85} y={yOf(-4) + 44} text="被迫" color={C.forced} align="center" o={ramp(t, forced, 0.25)} />
+      </Stage>
+      <Minimap upto={CHASE} mark={CHASE} />
+    </>
   );
 };

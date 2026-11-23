@@ -1,77 +1,70 @@
-// 但还有最后一步［短暂停顿］新价格出来以后，市场得接受它。
-// 往上冲，成交能延续，回踩有人接，新价格才站得住；冲上去没人跟，马上收回来，就是市场不认可。
+// 但还有最后一步［短暂停顿］新价格出来以后 / 市场得接受它 / 往上冲 / 成交能延续 / 回踩有人接 / 新价格才站得住 /
+// 冲上去没人跟 / 马上收回来 / 就是市场不认可
+// Two outcomes, stacked: the same history in both panels, different bars after the fork. Both drawn as K-lines.
 import React from "react";
-import { At, Box, C, HLine, Stage, Tag, cam, camPath, clamp01, lerp, ramp, rampIO, useShot, win } from "../kit";
+import { Box, C, HLine, Stage, Tag, Txt, aim, camSteps, ramp, rampIO, useShot } from "../kit";
+import { FORK_ACCEPT, FORK_AT, FORK_REJECT, LEVEL, type Bar } from "../data";
+import { Chart, py, type Geo } from "./chart";
 
-const LEVEL = 640;
+const TOP: Geo = { x0: 130, dx: 44, w: 28, y0: 470 + 17 * 18, k: 18, volBase: 0, volH: 0, maxV: 1 };
+const BOT: Geo = { ...TOP, y0: 940 + 12 * 18 };
+const lastX = TOP.x0 + (FORK_ACCEPT.length - 1) * TOP.dx;
 
-/** polyline drawn progressively: p in 0..1 of the points */
-const Path: React.FC<{ pts: [number, number][]; p: number; color: string; o?: number }> = ({ pts, p, color, o = 1 }) => {
-  if (p <= 0.001) return null; // a zero-length round-capped polyline would leave a dot
-  const n = pts.length - 1;
-  const upto = clamp01(p) * n;
-  const k = Math.floor(upto);
-  const shown = pts.slice(0, k + 1);
-  if (k < n) {
-    const f = upto - k;
-    shown.push([lerp(pts[k][0], pts[k + 1][0], f), lerp(pts[k][1], pts[k + 1][1], f)]);
-  }
-  return (
-    <svg width={1080} height={1400} style={{ position: "absolute", left: 0, top: 0, overflow: "visible", opacity: o }}>
-      <polyline points={shown.map((q) => q.join(",")).join(" ")} fill="none" stroke={color} strokeWidth={7} strokeLinejoin="round" strokeLinecap="round" style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
-    </svg>
-  );
+/** bar k of a fork appears (forming) from time a */
+const grow = (bars: Bar[], k: number, t: number, a: number): Partial<Bar> => {
+  const b = bars[k];
+  const p = rampIO(t, a, 0.4);
+  const c = b.o + (b.c - b.o) * p;
+  return { o: b.o, c, h: Math.max(b.o, c, b.o + (b.h - b.o) * p), l: Math.min(b.o, c, b.o + (b.l - b.o) * p) };
 };
 
-const INTRO: [number, number][] = [
-  [80, 1150], [180, 1060], [260, 1100], [360, 960], [430, 990], [520, 820], [600, 860], [680, 700],
-];
-// left panel: breaks out, retests the level, holds
-const HOLD: [number, number][] = [
-  [70, 900], [150, 820], [220, 700], [290, 560], [350, 520], [400, 600], [430, 634], [470, 560], [510, 470],
-];
-// right panel: spikes above, nobody follows, falls straight back
-const FAIL: [number, number][] = [
-  [570, 900], [650, 820], [720, 700], [790, 560], [830, 520], [870, 640], [920, 780], [990, 860],
-];
-
 export const Accept: React.FC = () => {
-  const { t, at, end, dur } = useShot();
+  const { t, at } = useShot();
   const last = at("最后一步");
+  const out = at("新价格出来");
   const accept = at("接受它");
   const go = at("往上冲");
-  const retest = at("回踩有人接");
+  const cont = at("能延续");
+  const retest = at("回踩");
+  const caught = at("有人接");
   const stand = at("站得住");
-  const noFollow = at("冲上去没人跟");
-  const back = at("马上收回来");
+  const noFollow = at("没人跟");
+  const back = at("收回来");
   const reject = at("不认可");
-  const intro = rampIO(t, 0, Math.max(0.8, last + 0.6));
-  const split = ramp(t, go - 0.2, 0.5);
-  const hold = rampIO(t, go, Math.max(1, end("站得住") - go));
-  const fail = clamp01(rampIO(t, noFollow, Math.max(0.6, back - noFollow + 0.2)) * 0.62 + rampIO(t, back, 0.8) * 0.38);
-  const c = camPath(t, [
-    [0, cam(0, -20, 60, 8, 0)],
-    [go, cam(0, -20, 60, 8, 0)],
-    [go + 0.8, cam(-220, -60, 260, 8, 10)],
-    [noFollow, cam(-220, -60, 260, 8, 10)],
-    [noFollow + 0.8, cam(230, -60, 260, 8, -10)],
-    [reject + 0.6, cam(230, -60, 260, 8, -10)],
-    [dur, cam(0, -40, 40, 8, 0)],
+
+  // which bar of each fork is forming, and when (all keyed to words)
+  const accT = [out, cont, retest, caught, stand, stand + 0.35];
+  const rejT = [out, noFollow, back, back + 0.4, reject, reject + 0.3];
+  const shown = (times: number[]) => FORK_AT - 1 + times.filter((x) => t >= x).length;
+  const uptoA = shown(accT);
+  const uptoR = shown(rejT);
+  const liveA = uptoA >= FORK_AT ? grow(FORK_ACCEPT, uptoA, t, accT[uptoA - FORK_AT]) : undefined;
+  const liveR = uptoR >= FORK_AT ? grow(FORK_REJECT, uptoR, t, rejT[uptoR - FORK_AT]) : undefined;
+
+  const c = camSteps(t, [
+    [0, aim(560, 850, 1, 6, 0)],
+    [out, aim(600, 850, 1.06, 6, -3)],
+    [go, aim(660, py(9, TOP), 1.45, 6, -6)],
+    [retest, aim(720, py(9, TOP), 1.55, 6, -8)],
+    [noFollow, aim(660, py(6, BOT), 1.45, 6, -6)],
+    [back, aim(720, py(5, BOT), 1.55, 6, -8)],
+    [reject + 0.5, aim(560, 850, 1, 6, 0)],
   ]);
   return (
     <Stage cam={c}>
-      <HLine x={60} y={LEVEL} w={960} color={C.text} dashed o={ramp(t, last, 0.4) * (0.6 + 0.4 * win(t, accept, go))} />
-      <Tag x={60} y={LEVEL - 32} text="新价格" color={C.text} o={win(t, last + 0.2, go)} />
-      <Path pts={INTRO} p={intro} color={C.up} o={1 - split * 0.8} />
-      <At x={0} y={0} o={split}>
-        <Path pts={HOLD} p={hold} color={C.up} />
-        {/* the resting bids that catch the retest */}
-        <Box x={380} y={LEVEL + 8} w={110} h={30} color={C.passive} dark={C.passiveD} glow={win(t, retest, stand + 1)} o={ramp(t, retest - 0.3, 0.3)} />
-        <Tag x={526} y={HOLD[8][1]} text="站得住" color={C.up} o={win(t, stand, noFollow + 0.4)} />
-        <Path pts={FAIL.slice(0, 5)} p={fail / 0.5} color={C.up} />
-        {fail > 0.5 && <Path pts={FAIL.slice(4)} p={(fail - 0.5) / 0.5} color={C.down} />}
-        <Tag x={1006} y={FAIL[7][1] + 44} text="不认可" color={C.down} align="right" o={ramp(t, reject, 0.3)} z={4} />
-      </At>
+      <Txt x={TOP.x0 - 40} y={py(16, TOP)} text="A" mono size={34} color={C.dim} />
+      <Txt x={TOP.x0 - 40} y={py(11, BOT)} text="B" mono size={34} color={C.dim} />
+      <Chart bars={FORK_ACCEPT} geo={TOP} upto={uptoA} live={liveA} vol={false} glow={(i) => (i === FORK_AT + 3 ? ramp(t, caught, 0.2) * 0.5 : 0)} />
+      <Chart bars={FORK_REJECT} geo={BOT} upto={uptoR} live={liveR} vol={false} glow={(i) => (i === FORK_AT + 1 ? ramp(t, back, 0.2) * 0.6 : 0)} />
+      {/* the new price, in both panels */}
+      {[TOP, BOT].map((g, k) => (
+        <HLine key={k} x={g.x0 - 20} y={py(LEVEL, g)} w={lastX - g.x0 + 60} color={C.text} dashed o={ramp(t, last, 0.3) * (0.55 + 0.45 * ramp(t, accept, 0.25))} />
+      ))}
+      <Tag x={lastX + 46} y={py(LEVEL, TOP)} text="新价格" color={C.text} o={ramp(t, last + 0.1, 0.25) * (1 - ramp(t, go, 0.3))} size={36} />
+      {/* the bids that catch the retest */}
+      <Box x={TOP.x0 + (FORK_AT + 3) * TOP.dx - 34} y={py(LEVEL, TOP) + 4} w={68} h={22} d={14} color={C.passive} dark={C.passiveD} glow={1} o={ramp(t, caught, 0.2)} />
+      <Tag x={lastX + 30} y={py(FORK_ACCEPT[FORK_ACCEPT.length - 1].c, TOP)} text="站得住" color={C.up} o={ramp(t, stand + 0.4, 0.25)} size={36} />
+      <Tag x={lastX + 30} y={py(FORK_REJECT[FORK_REJECT.length - 1].c, BOT)} text="不认可" color={C.down} o={ramp(t, reject + 0.3, 0.25)} size={36} />
     </Stage>
   );
 };

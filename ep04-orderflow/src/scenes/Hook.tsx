@@ -1,56 +1,45 @@
-// 你刚追进去，价格立马掉头，不是你运气差。
+// 你刚追进去 / 价格立马掉头 / 不是你运气差
+// Layer 1: the real K-line chart. The bar you chased forms live, then turns.
 import React from "react";
-import { C, Candle, HLine, Stage, Tag, cam, camPath, lerp, ramp, rampIO, useShot } from "../kit";
+import { C, HLine, Stage, Tag, aim, camSteps, lerp, ramp, rampIO, shake, useShot } from "../kit";
+import { CHASE, MAIN } from "../data";
+import { Axis, Chart, FocusBox, bx, py } from "./chart";
 
-const Y = (p: number) => 1090 - p * 70;
-// history: [open, close, high, low] in price units (deterministic)
-export const HOOK_HISTORY: [number, number, number, number][] = [
-  [0, 1.1, 1.4, -0.4],
-  [1.1, 0.7, 1.5, 0.4],
-  [0.7, 1.9, 2.2, 0.5],
-  [1.9, 2.6, 2.9, 1.6],
-  [2.6, 2.2, 2.9, 1.9],
-  [2.2, 3.3, 3.6, 2.0],
-  [3.3, 4.1, 4.4, 3.0],
-];
-export const candleX = (k: number) => 150 + k * 100;
-
-export const HookChart: React.FC<{ t: number; chase: number; turn: number; o?: number }> = ({ t, chase, turn, o = 1 }) => {
-  const last = HOOK_HISTORY.length;
-  const rise = rampIO(t, chase - 0.9, 1.1); // the push you chase into
-  const fall = rampIO(t, turn, 0.9);
-  const open = 4.1;
-  const peak = lerp(4.3, 7.4, rise);
-  const close = lerp(peak, 3.0, fall);
-  const high = Math.max(peak, 4.3);
-  return (
-    <div style={{ position: "absolute", left: 0, top: 0, transformStyle: "preserve-3d", opacity: o }}>
-      {HOOK_HISTORY.map(([op, cl, hi, lo], k) => (
-        <Candle key={k} cx={candleX(k)} open={Y(op)} close={Y(cl)} high={Y(hi)} low={Y(lo)} w={56} o={0.85} />
-      ))}
-      <Candle cx={candleX(last)} open={Y(open)} close={Y(close)} high={Y(high)} low={Y(3.9)} w={64} glow={0.6} />
-    </div>
-  );
+/** the chase bar as it forms: up into your entry, then straight back down */
+export const chaseLive = (t: number, chase: number, turn: number) => {
+  const rise = rampIO(t, chase - 0.35, 0.6);
+  const fall = rampIO(t, turn, 0.55);
+  const b = MAIN[CHASE];
+  const top = lerp(b.o, 11, rise) + (fall > 0 ? 3 * Math.min(1, fall * 3) : 0); // a last poke to 14 as it turns
+  const c = fall > 0 ? lerp(top, b.c, fall) : lerp(b.o, 11, rise);
+  return { o: b.o, h: Math.max(b.o, Math.min(b.h, top)), l: fall >= 1 ? b.l : Math.min(b.o, c), c, v: b.v };
 };
+
+export const CHASE_CAM = aim(bx(CHASE) - 60, py(8), 1.6, 6, -6);
 
 export const Hook: React.FC = () => {
   const { t, at } = useShot();
   const chase = at("追进去");
   const turn = at("掉头");
-  const entryY = 1090 - 7.1 * 70;
-  const x = candleX(HOOK_HISTORY.length);
-  const c = camPath(t, [
-    [0, cam(260, -120, 520, 4, -14)],
-    [turn, cam(160, -60, 280, 6, -10)],
-    [turn + 1.6, cam(60, 0, 80, 8, -6)],
+  const luck = at("运气差");
+  const live = chaseLive(t, chase, turn);
+  const c = camSteps(t, [
+    [0, aim(440, 820, 1.1, 6, -4)],
+    [chase - 0.3, CHASE_CAM],
+    [turn, aim(bx(CHASE) - 40, py(6), 1.45, 7, -3)],
+    [luck, aim(bx(CHASE) - 90, py(6), 1.3, 6, -8)],
   ]);
+  const x = bx(CHASE);
+  const entry = py(11);
   return (
-    <Stage cam={c} drift={Math.sin(t * 0.4) * 1.2}>
-      <HookChart t={t} chase={chase} turn={turn} />
+    <Stage cam={{ ...c, x: c.x + shake(t, turn + 0.1, 9) }} drift={Math.sin(t * 0.5) * 0.8}>
+      <Chart upto={CHASE} live={live} glow={(i) => (i === CHASE ? 0.6 : 0)} o={(i) => (i >= CHASE - 5 ? 1 : 1 - 0.6 * ramp(t, luck, 0.3))} />
+      <Axis ticks={[14, 7, 0, -7, -14, -21, -28]} />
       {/* your entry: a short red level where you chased in */}
-      <HLine x={x - 152} y={entryY} w={110} color={C.up} o={ramp(t, chase, 0.3)} />
-      <Tag x={x - 168} y={entryY} text="追进" color={C.up} align="right" o={ramp(t, chase, 0.3)} size={44} />
-      <Tag x={x + 46} y={1090 - 3.0 * 70 + 30} text="掉头" color={C.down} o={ramp(t, turn + 0.5, 0.3)} size={44} />
+      <HLine x={x - 70} y={entry} w={56} color={C.up} o={ramp(t, chase, 0.25)} />
+      <Tag x={x - 82} y={entry} text="追进" color={C.up} align="right" o={ramp(t, chase, 0.25)} />
+      <Tag x={x + 18} y={py(MAIN[CHASE].c) + 4} text="掉头" color={C.down} o={ramp(t, turn + 0.35, 0.25)} />
+      <FocusBox x={bx(CHASE - 5) - 10} y={py(15)} w={bx(CHASE + 1) - bx(CHASE - 5) + 30} h={py(0) - py(15)} o={ramp(t, luck, 0.3) * 0.9} />
     </Stage>
   );
 };

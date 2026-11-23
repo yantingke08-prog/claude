@@ -1,7 +1,7 @@
 // 你更容易栽在哪种成交上？追第一笔主动单，还是挂单硬扛？弹幕打"追"或者"扛"。 / 先别急着回答。
 import React from "react";
 import { AbsoluteFill, Img } from "remotion";
-import { C, FONT, Tag, lerp, pop, ramp, rnd, useShot, win } from "../kit";
+import { C, FONT, Tag, pop, ramp, rampIO, rnd, useShot, win } from "../kit";
 import { brollSrc } from "../broll";
 
 /** Procedural stand-in for the desk-watch still: trader from behind, three glowing screens. */
@@ -52,13 +52,15 @@ const DeskWatch: React.FC<{ t: number }> = ({ t }) => {
 };
 
 export const Broll: React.FC = () => {
-  const { t, at, dur } = useShot();
+  const { t, at } = useShot();
   const chase = at("追第一笔");
   const hold = at("挂单硬扛");
   const vote = at("弹幕");
   const wait = at("先别急着");
   const src = brollSrc("desk-watch");
-  const zoom = lerp(1.0, 1.12, t / Math.max(1, dur));
+  const fall = at("栽在");
+  // the push-in steps forward on every clause instead of creeping
+  const zoom = 1 + 0.05 * rampIO(t, fall, 0.5) + 0.04 * rampIO(t, chase, 0.5) + 0.04 * rampIO(t, hold, 0.5) + 0.03 * rampIO(t, vote, 0.5) - 0.1 * rampIO(t, wait, 0.6) + 0.004 * t;
   const pulse = (a: number) => 1 + 0.08 * Math.max(0, Math.sin((t - a) * 6)) * win(t, a, wait);
   const fade = 1 - ramp(t, wait, 0.6) * 0.75;
   return (

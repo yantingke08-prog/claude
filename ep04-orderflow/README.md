@@ -63,9 +63,11 @@ npx remotion render src/index.ts Ep04OrderFlowThreeFills out/Ep04OrderFlowThreeF
 | `src/broll.ts`, `assets/broll/` | The B-roll registry and its stills. |
 | `scripts/align-vo.ps1`, `scripts/align_vo.py` | Forced alignment. |
 | `scripts/render.ps1` | One-command render. |
-| `scripts/check-timeline.mts` | `npm run check`. |
+| `scripts/check-timeline.mts` | `npm run check`: script integrity, one-line captions, the pause rule, anchors, and **pacing** (every caption clause starts a visual beat; no gap over 3 s). |
+| `src/data.ts` | Deterministic example data: the 80-bar main chart, the chase bar's footprint (sums to its volume), the volume profile with its 70 % value area, and the acceptance forks. |
+| `src/scenes/chart.tsx` | K-line chart, axis, focus box, rings, and the minimap (position anchor for drill-downs). |
 | `SHOTBOOK.md` | Shot list: range, voiceover anchors, what is on screen. |
 
 ## Changing a shot
 
-Each scene reads its times only through text anchors, for example `const t0 = at("吃卖单")`. To move an action to another word, change the anchor text. To give a sentence a different scene, change its `shot` in `src/script.json`, or set `shot` on that line in `vo.timestamps.json`.
+Cameras use `camSteps` (hold, then a 0.65 s move that starts on the word) and `aim(x, y, zoom)` (keeps the subject in the content band). Each scene reads its times only through text anchors, for example `const t0 = at("吃卖单")`. To move an action to another word, change the anchor text. To give a sentence a different scene, change its `shot` in `src/script.json`, or set `shot` on that line in `vo.timestamps.json`.

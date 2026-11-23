@@ -51,6 +51,7 @@ export const Film: React.FC<FilmProps> = ({ timeline, hasAudio }) => {
         >
           {SCRIPT.title}
         </div>
+        <div style={{ position: "absolute", right: 40, top: SAFE.top - 6, fontSize: 28, fontWeight: 600, letterSpacing: 2, color: C.dim }}>示意图 · 模拟数据</div>
         <Captions units={tl.units} />
       </AbsoluteFill>
       {hasAudio && <Audio src={staticFile(VO_AUDIO)} />}

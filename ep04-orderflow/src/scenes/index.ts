@@ -7,6 +7,7 @@ import { Three } from "./Three";
 import { Tug } from "./Tug";
 import { Aggr } from "./Aggr";
 import { Absorb } from "./Absorb";
+import { AbsorbK } from "./AbsorbK";
 import { Broll } from "./Broll";
 import { Forced } from "./Forced";
 import { Sum } from "./Sum";
@@ -22,6 +23,7 @@ export const SCENES: Record<string, React.FC> = {
   "tug": Tug,
   "aggr": Aggr,
   "absorb": Absorb,
+  "absorb-k": AbsorbK,
   "broll-desk": Broll,
   "forced": Forced,
   "sum": Sum,

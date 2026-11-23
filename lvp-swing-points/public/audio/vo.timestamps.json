@@ -1,0 +1,599 @@
+{
+ "duration": 190.9,
+ "lines": [
+  {
+   "text": "当你在这里进场，行情已经连涨了好几天",
+   "start": 0,
+   "end": 3.2,
+   "shot": "hook"
+  },
+  {
+   "text": "结果一波回调砸了下来",
+   "start": 3.2,
+   "end": 4.9,
+   "shot": "hook"
+  },
+  {
+   "text": "走还是不走？是不是又开始纠结了",
+   "start": 4.9,
+   "end": 7.2,
+   "shot": "hook"
+  },
+  {
+   "text": "走，怕这只是正常的回踩",
+   "start": 7.2,
+   "end": 9.4,
+   "shot": "hook"
+  },
+  {
+   "text": "一卖就飞",
+   "start": 9.4,
+   "end": 10.7,
+   "shot": "hook"
+  },
+  {
+   "text": "不走，又怕它是真反转，把利润全吐回去",
+   "start": 10.7,
+   "end": 13.7,
+   "shot": "hook"
+  },
+  {
+   "text": "如果你还在这样想",
+   "start": 13.7,
+   "end": 14.7,
+   "shot": "hook"
+  },
+  {
+   "text": "说明你还停在市场的新手阶段",
+   "start": 14.7,
+   "end": 17.2,
+   "shot": "hook"
+  },
+  {
+   "text": "真正的交易者，从不靠“怕”和“猜”来决定去留",
+   "start": 17.2,
+   "end": 21,
+   "shot": "hook"
+  },
+  {
+   "text": "趋势反转之前，K线早就把答案写好了",
+   "start": 21,
+   "end": 24.1,
+   "shot": "hook"
+  },
+  {
+   "text": "你进场之后",
+   "start": 28,
+   "end": 29.6,
+   "shot": "concept"
+  },
+  {
+   "text": "价格留下的那个孤立高点",
+   "start": 29.6,
+   "end": 31.3,
+   "shot": "concept"
+  },
+  {
+   "text": "在订单流的视角里",
+   "start": 31.3,
+   "end": 32.6,
+   "shot": "concept"
+  },
+  {
+   "text": "它就是挂在上面、等着被吃掉的买方流动性",
+   "start": 32.6,
+   "end": 34.5,
+   "shot": "concept"
+  },
+  {
+   "text": "等回调结束",
+   "start": 34.5,
+   "end": 35.7,
+   "shot": "concept"
+  },
+  {
+   "text": "价格第二次去碰这个高点",
+   "start": 35.7,
+   "end": 38.1,
+   "shot": "concept"
+  },
+  {
+   "text": "主力的底牌，就在这里摊开",
+   "start": 38.1,
+   "end": 39.8,
+   "shot": "concept"
+  },
+  {
+   "text": "那，孤立高低点到底怎么定义",
+   "start": 39.8,
+   "end": 41.3,
+   "shot": "concept"
+  },
+  {
+   "text": "很简单，三根K线算一组",
+   "start": 41.3,
+   "end": 43.1,
+   "shot": "define"
+  },
+  {
+   "text": "只要中间那根K线的高点",
+   "start": 43.1,
+   "end": 45.3,
+   "shot": "define"
+  },
+  {
+   "text": "高过它两边两根K线的高点",
+   "start": 45.3,
+   "end": 47.7,
+   "shot": "define"
+  },
+  {
+   "text": "而它的低点，同样高过两边那两根的低点",
+   "start": 47.7,
+   "end": 51,
+   "shot": "define"
+  },
+  {
+   "text": "那么中间那根K线的这个高点",
+   "start": 51,
+   "end": 53.4,
+   "shot": "define"
+  },
+  {
+   "text": "就叫孤立高点",
+   "start": 53.4,
+   "end": 54.7,
+   "shot": "define"
+  },
+  {
+   "text": "条件反过来，就是孤立低点",
+   "start": 54.7,
+   "end": 56.4,
+   "shot": "define"
+  },
+  {
+   "text": "孤立高点，可以看作压力",
+   "start": 56.4,
+   "end": 58.7,
+   "shot": "define"
+  },
+  {
+   "text": "孤立低点，可以看作支撑",
+   "start": 58.7,
+   "end": 60.5,
+   "shot": "define"
+  },
+  {
+   "text": "关键是别把它当死线，要跟着它一起挪",
+   "start": 60.5,
+   "end": 63.5,
+   "shot": "define"
+  },
+  {
+   "text": "我们来看一个案例",
+   "start": 63.5,
+   "end": 64.7,
+   "shot": "define"
+  },
+  {
+   "text": "这里先冒出一个孤立高点",
+   "start": 64.7,
+   "end": 66.1,
+   "shot": "case"
+  },
+  {
+   "text": "先把它标成一条潜在的压力线",
+   "start": 66.1,
+   "end": 68.3,
+   "shot": "case"
+  },
+  {
+   "text": "用一条线画出来",
+   "start": 68.3,
+   "end": 70.1,
+   "shot": "case"
+  },
+  {
+   "text": "接着行情开始往下",
+   "start": 70.1,
+   "end": 71.4,
+   "shot": "case"
+  },
+  {
+   "text": "走出一个孤立低点",
+   "start": 71.4,
+   "end": 72.8,
+   "shot": "case"
+  },
+  {
+   "text": "先把它看作一条潜在支撑",
+   "start": 72.8,
+   "end": 74.9,
+   "shot": "case"
+  },
+  {
+   "text": "行情又开始往回走",
+   "start": 74.9,
+   "end": 77.5,
+   "shot": "case"
+  },
+  {
+   "text": "现在要盯的重点是",
+   "start": 77.5,
+   "end": 78.9,
+   "shot": "case"
+  },
+  {
+   "text": "价格对这条压力线的突破动作",
+   "start": 78.9,
+   "end": 80.9,
+   "shot": "case"
+  },
+  {
+   "text": "这里价格干脆地突破了压力",
+   "start": 80.9,
+   "end": 83.3,
+   "shot": "case"
+  },
+  {
+   "text": "又走出一根新的孤立高点",
+   "start": 83.3,
+   "end": 84.9,
+   "shot": "case"
+  },
+  {
+   "text": "行情继续向下",
+   "start": 84.9,
+   "end": 86.5,
+   "shot": "case"
+  },
+  {
+   "text": "继续盯",
+   "start": 86.5,
+   "end": 87.7,
+   "shot": "case"
+  },
+  {
+   "text": "价格对这条支撑线的突破动作",
+   "start": 87.7,
+   "end": 89.7,
+   "shot": "case"
+  },
+  {
+   "text": "这一次，价格没有跌破支撑",
+   "start": 89.7,
+   "end": 92.1,
+   "shot": "case"
+  },
+  {
+   "text": "而是在这里又走出一个孤立低点",
+   "start": 92.1,
+   "end": 94.1,
+   "shot": "case"
+  },
+  {
+   "text": "然后重新往上",
+   "start": 94.1,
+   "end": 95.1,
+   "shot": "case"
+  },
+  {
+   "text": "你看这条支撑",
+   "start": 95.1,
+   "end": 96.7,
+   "shot": "case"
+  },
+  {
+   "text": "已经托住了价格两次",
+   "start": 96.7,
+   "end": 98.3,
+   "shot": "case"
+  },
+  {
+   "text": "继续观察",
+   "start": 98.3,
+   "end": 99.7,
+   "shot": "case"
+  },
+  {
+   "text": "价格能不能顶穿这个高点",
+   "start": 99.7,
+   "end": 101.2,
+   "shot": "case"
+  },
+  {
+   "text": "这一回，价格在高点上方没有被压住",
+   "start": 101.2,
+   "end": 103.9,
+   "shot": "case"
+  },
+  {
+   "text": "一根大阳线",
+   "start": 103.9,
+   "end": 105.3,
+   "shot": "case"
+  },
+  {
+   "text": "直接冲过了压力",
+   "start": 105.3,
+   "end": 106.7,
+   "shot": "case"
+  },
+  {
+   "text": "假设你在这里做的是多单",
+   "start": 106.7,
+   "end": 108.8,
+   "shot": "case"
+  },
+  {
+   "text": "那现在就可以安心拿着",
+   "start": 108.8,
+   "end": 111.3,
+   "shot": "case"
+  },
+  {
+   "text": "反过来，要是价格这次突破失败",
+   "start": 111.3,
+   "end": 114.1,
+   "shot": "case"
+  },
+  {
+   "text": "或者假突破一下又掉下来",
+   "start": 114.1,
+   "end": 116,
+   "shot": "case"
+  },
+  {
+   "text": "那么",
+   "start": 116,
+   "end": 116.9,
+   "shot": "case"
+  },
+  {
+   "text": "及时减仓或者离场",
+   "start": 116.9,
+   "end": 118.6,
+   "shot": "case"
+  },
+  {
+   "text": "才是最该做的选择",
+   "start": 118.6,
+   "end": 120.2,
+   "shot": "case"
+  },
+  {
+   "text": "反过来",
+   "start": 120.2,
+   "end": 120.9,
+   "shot": "case"
+  },
+  {
+   "text": "那换成做空呢",
+   "start": 120.9,
+   "end": 123,
+   "shot": "case"
+  },
+  {
+   "text": "价格在这里留下一个孤立低点",
+   "start": 123,
+   "end": 125.2,
+   "shot": "case"
+  },
+  {
+   "text": "你就该重点盯价格对它的突破动作",
+   "start": 125.2,
+   "end": 128.4,
+   "shot": "case"
+  },
+  {
+   "text": "如果像这样始终不破",
+   "start": 128.4,
+   "end": 130.2,
+   "shot": "case"
+  },
+  {
+   "text": "那你就要考虑减仓",
+   "start": 130.2,
+   "end": 131.5,
+   "shot": "case"
+  },
+  {
+   "text": "可要是价格干脆利落地砸下去",
+   "start": 131.5,
+   "end": 133.9,
+   "shot": "case"
+  },
+  {
+   "text": "直接跌穿这个孤立低点",
+   "start": 133.9,
+   "end": 135.2,
+   "shot": "case"
+  },
+  {
+   "text": "那就继续拿着",
+   "start": 135.2,
+   "end": 136.6,
+   "shot": "case"
+  },
+  {
+   "text": "我们再往深一步",
+   "start": 136.6,
+   "end": 138.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "假设你手里是多单",
+   "start": 138.2,
+   "end": 139.8,
+   "shot": "advanced"
+  },
+  {
+   "text": "你对趋势的判断",
+   "start": 139.8,
+   "end": 141.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "进场的理由也站得住",
+   "start": 141.2,
+   "end": 142.8,
+   "shot": "advanced"
+  },
+  {
+   "text": "你在这里进了场",
+   "start": 142.8,
+   "end": 144.4,
+   "shot": "advanced"
+  },
+  {
+   "text": "看到价格两次都没能砸穿这个孤立低点",
+   "start": 144.4,
+   "end": 147.7,
+   "shot": "advanced"
+  },
+  {
+   "text": "能不能加仓",
+   "start": 147.7,
+   "end": 149.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "可以",
+   "start": 149.2,
+   "end": 150.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "但我要提醒你一句",
+   "start": 150.2,
+   "end": 151.7,
+   "shot": "advanced"
+  },
+  {
+   "text": "前提是你对趋势的判断是对的，入场逻辑是成立的",
+   "start": 151.7,
+   "end": 155.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "再假设你也是多头",
+   "start": 155.2,
+   "end": 156.8,
+   "shot": "advanced"
+  },
+  {
+   "text": "但错过了刚才那个入场点",
+   "start": 156.8,
+   "end": 158.2,
+   "shot": "advanced"
+  },
+  {
+   "text": "后来你看到价格两次都没能砸穿这个低点",
+   "start": 158.2,
+   "end": 161.6,
+   "shot": "advanced"
+  },
+  {
+   "text": "这时候能不能建仓进场",
+   "start": 161.6,
+   "end": 163.7,
+   "shot": "advanced"
+  },
+  {
+   "text": "也可以",
+   "start": 163.7,
+   "end": 165,
+   "shot": "advanced"
+  },
+  {
+   "text": "这就是动态跟踪",
+   "start": 165,
+   "end": 166.5,
+   "shot": "advanced"
+  },
+  {
+   "text": "盯着孤立高低点一起变",
+   "start": 166.5,
+   "end": 168.4,
+   "shot": "advanced"
+  },
+  {
+   "text": "让它帮我们止盈",
+   "start": 168.4,
+   "end": 170.4,
+   "shot": "advanced"
+  },
+  {
+   "text": "止损，或者帮我们加仓",
+   "start": 170.4,
+   "end": 172.3,
+   "shot": "advanced"
+  },
+  {
+   "text": "减仓和离场",
+   "start": 172.3,
+   "end": 173.7,
+   "shot": "advanced"
+  },
+  {
+   "text": "回头看",
+   "start": 173.7,
+   "end": 174.7,
+   "shot": "broll1"
+  },
+  {
+   "text": "其实我们整期一直在做的",
+   "start": 174.7,
+   "end": 176.6,
+   "shot": "broll1"
+  },
+  {
+   "text": "其实是同一件事",
+   "start": 176.6,
+   "end": 177.8,
+   "shot": "broll1"
+  },
+  {
+   "text": "不是猜行情接下来会去哪",
+   "start": 177.8,
+   "end": 179.6,
+   "shot": "broll2"
+  },
+  {
+   "text": "而是持续去读，市场当下在说什么",
+   "start": 179.6,
+   "end": 182.6,
+   "shot": "broll2"
+  },
+  {
+   "text": "你的每一个动作",
+   "start": 182.6,
+   "end": 183.9,
+   "shot": "broll2"
+  },
+  {
+   "text": "都在跟着市场给的反馈走",
+   "start": 183.9,
+   "end": 186.5,
+   "shot": "broll3"
+  },
+  {
+   "text": "一步步收窄自己的风险敞口",
+   "start": 186.5,
+   "end": 188.5,
+   "shot": "ticker"
+  },
+  {
+   "text": "我是 LVP",
+   "start": 188.5,
+   "end": 189.6,
+   "shot": "outro"
+  },
+  {
+   "text": "我们下期再见",
+   "start": 189.6,
+   "end": 190.9,
+   "shot": "outro"
+  }
+ ]
+}

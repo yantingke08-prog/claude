@@ -1,0 +1,8 @@
+node_modules/
+out/
+.ghconfig/
+*.mp4
+*.mov
+*.m4a
+*.wav
+.remotion/

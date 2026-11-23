@@ -1,0 +1,27 @@
+{
+  "name": "lvp-swing-points",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LVP 孤立高低点 — voiceover-driven 16:9 Remotion explainer (1920x1080, 30fps), dark neon terminal style",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "node --experimental-strip-types --no-warnings scripts/check.mts",
+    "seed": "node --experimental-strip-types --no-warnings scripts/seed-timestamps.mts",
+    "stills": "node scripts/stills.mjs",
+    "render": "powershell -ExecutionPolicy Bypass -File scripts/render.ps1"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/media-utils": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3"
+  }
+}

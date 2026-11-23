@@ -69,8 +69,8 @@ export const Absorb: React.FC = () => {
         <Box x={askEdge + baseSize(1) * 120} y={yOf(1) - 25 - (1 - placed) * 160} w={0.9 * 120 * (1 - placed)} h={50} d={30} color={C.passive} dark={C.passiveD} glow={1} o={ramp(t, sits, 0.15) * (1 - placed)} />
         {buyOn && [0, 1, 2].map((k) => pellet(k, true))}
         {sellOn && [0, 1, 2].map((k) => pellet(k, false))}
-        <Tag x={Math.min(askEdge + askWall * 120 + 16, 1040)} y={yOf(1)} text="被动承接" color={C.passive} align={askEdge + askWall * 120 > 880 ? "right" : "left"} o={win(t, passive, topThick)} />
-        <Tag x={askEdge} y={yOf(1) - 52} text="推不动" color={C.up} o={win(t, noPush, botThick)} />
+        <Tag x={1040} y={yOf(1) - 44} text="被动承接" color={C.passive} align="right" o={win(t, passive, topThick)} />
+        <Tag x={BOOK.cx - 96} y={yOf(1) - 40} text="推不动" color={C.up} align="right" o={win(t, noPush, botThick)} />
         <Tag x={bidEdge} y={yOf(0) - 52} text="被接住" color={C.down} align="right" o={ramp(t, caught, 0.25)} />
       </Stage>
       <Minimap upto={ABSORB} mark={ABSORB} markColor={C.passive} />

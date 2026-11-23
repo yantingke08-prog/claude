@@ -56,16 +56,17 @@ export const Three: React.FC = () => {
         {/* 主动 */}
         <Box x={lerp(90, askEdge - 30, redGo)} y={yOf(1) - 18} w={60} h={36} d={20} color={C.up} dark={C.upD} glow={0.6} o={redIn * (1 - eaten)} />
         <Pellet x={askEdge + 20} y={yOf(1)} color={C.up} o={win(t, chase + 0.25, chase + 0.6, 0.08)} r={20} />
-        <Tag x={askEdge + 16} y={yOf(1) - 48} text="主动" color={C.up} o={win(t, chase, dur + 1)} />
+        <Tag x={BOOK.cx - 96} y={yOf(1)} text="主动买" color={C.up} align="right" o={win(t, chase + 0.2, calm)} />
         {/* 被动 */}
         <Box x={bidEdge - baseSize(-1) * 120 - 76} y={yOf(-1) - 22 - (1 - blueIn) * 120} w={64} h={44} d={22} color={C.passive} dark={C.passiveD} glow={win(t, wait + 0.35, wait + 1)} o={blueIn * (1 - blueFill * 0.7)} />
         <Pellet x={lerp(1000, bidEdge - 30, clamp01((t - wait) / 0.4))} y={yOf(-1)} color={C.down} o={win(t, wait, wait + 0.45, 0.06)} />
-        <Tag x={bidEdge - baseSize(-1) * 120 - 92} y={yOf(-1)} text="被动" color={C.passive} align="right" o={win(t, wait + 0.35, dur + 1)} />
+        <Tag x={bidEdge - baseSize(-1) * 120 - 92} y={yOf(-1)} text="被动挂单" color={C.passive} align="right" o={win(t, calm + 0.2, third)} />
         {/* 被迫 */}
         <HLine x={bidEdge - 330} y={stopY - 32} w={330} color={C.forced} dashed o={stopIn * (1 - ramp(t, broke, 0.2))} />
         <Box x={bidEdge - 330} y={stopY - 18} w={150} h={36} color={C.forced} dark={C.forcedD} dashed o={stopIn * (1 - ramp(t, asleep, 0.4) * 0.5) * (1 - ramp(t, forced, 0.2))} />
         <Box x={lerp(bidEdge - 330, bidEdge - 160, fire)} y={lerp(stopY, yOf(-4), fire) - 18} w={150} h={36} color={C.forced} dark={C.forcedD} glow={1} o={ramp(t, forced, 0.15) * (1 - ramp(t, forced + 0.9, 0.4) * 0.6)} />
-        <Tag x={bidEdge - 85} y={yOf(-4) + 44} text="被迫" color={C.forced} align="center" o={ramp(t, forced, 0.25)} />
+        <Tag x={bidEdge - 176} y={yOf(-4)} text="被迫卖" color={C.forced} align="right" o={ramp(t, forced + 0.3, 0.25)} />
+        <Tag x={bidEdge - 346} y={stopY} text="止损" color={C.forced} align="right" o={win(t, third + 0.2, forced)} />
       </Stage>
       <Minimap upto={CHASE} mark={CHASE} />
     </>

@@ -450,3 +450,45 @@ export const rnd = (seed: number) => {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
 };
+
+/**
+ * Rewind look (2D overlay, content band only): scanlines rolling upward, a bright tracking bar and a ◀◀ glyph.
+ * o = 0..1 strength; the scene itself plays its motion backwards while this is on.
+ */
+export const RewindFx: React.FC<{ o: number; t: number }> = ({ o, t }) => {
+  if (o <= 0.001) return null;
+  return (
+    <div style={{ position: "absolute", left: 0, top: 300, width: W, height: 1070, overflow: "hidden", pointerEvents: "none", zIndex: 50 }}>
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: -12,
+          width: W,
+          height: 1100,
+          background: "repeating-linear-gradient(180deg, rgba(200,220,255,0.07) 0 2px, transparent 2px 7px)",
+          transform: `translateY(${-((t * 420) % 7)}px)`,
+          opacity: o,
+        }}
+      />
+      <div style={{ position: "absolute", left: 0, top: 1070 - ((t * 1500) % 1170), width: W, height: 46, background: "linear-gradient(180deg, transparent, rgba(220,235,255,0.12), transparent)", opacity: o }} />
+      <div
+        style={{
+          position: "absolute",
+          left: W / 2,
+          top: 90,
+          transform: "translate(-50%,-50%)",
+          fontFamily: FONT,
+          fontSize: 76,
+          fontWeight: 900,
+          letterSpacing: -10,
+          color: "#ffffff",
+          opacity: o * (0.75 + 0.25 * Math.sin(t * 18)),
+          textShadow: "0 0 24px rgba(255,255,255,0.6)",
+        }}
+      >
+        ◀◀
+      </div>
+    </div>
+  );
+};

@@ -1,6 +1,21 @@
-# SHOTBOOK v2: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
+# SHOTBOOK v3: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
 
 1080×1920 · 30 fps · the length is the real voiceover length (`public/audio/vo.mp3`).
+
+## v3 changes (feedback: rewind at the start; the ~135 s chart and profile were piled on top of each other; tags unclear and overlapping)
+
+- **Rewind (◀◀, scanlines, 0.8 s, all keyed to words):**
+  - **hook:** the main bar appears, rises on 追进去, falls on 掉头, then rewinds to your entry on 运气差. 那一秒 opens that frozen moment as a footprint, and on 胜负 the close replays the drop.
+  - **aggr:** buyers eat 10.01→10.03 and the price jumps on 往上跳. On 主动卖 the book rewinds to 10.00, and sellers eat the bids instead on 往下走.
+  - **accept:** one chart (no longer two stacked panels). Outcome A plays bar by bar and holds on 站得住. On 冲上去没人跟 it rewinds to the fork, and outcome B plays in the same place, then 收回来 / 不认可.
+- **next (~127–133 s):** the chart and the volume profile are now two separate columns on one price scale. The 70 % band spans both, with its price range printed (9.83–10.04).
+- **Tags:** each sits beside its object, says what it means, and shows only while that object is the subject:
+  - 你追进 is a red level on the bar.
+  - The footprint zones are outlined and named 主动买 / 被动接 / 被迫卖.
+  - 你看到的只是这根K线 sits above the footprint.
+  - Book tags sit in the empty side of the book (no longer on top of the next slab).
+  - 追买多付3跳 is a bracket right against the 10.00–10.03 prices.
+  - Overlapping tags such as 收回来 and the old 被动/被迫 were removed.
 
 ## What changed from v1 (feedback: 画面节奏太慢)
 

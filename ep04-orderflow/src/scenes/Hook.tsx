@@ -36,8 +36,7 @@ export const Hook: React.FC = () => {
   const c = camSteps(t, [
     [0, aim(bx(CHASE) - 240, py(-2), 1.15, 6, -4)],
     [chaseWord - 0.15, CHASE_CAM],
-    [turn, aim(bx(CHASE + 2), py(4), 1.6, 7, -4)],
-    [luck, aim(bx(CHASE) - 80, py(4), 1.3, 6, -6)],
+    [turn, aim(bx(CHASE + 2), py(4), 1.5, 7, -4)],
   ]);
   const x = bx(CHASE);
   return (

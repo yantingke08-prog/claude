@@ -7,8 +7,12 @@ import { SCRIPT } from "./script";
 import { buildTimeline } from "./timelineCore";
 
 const FPS = 30;
+/** seconds the film holds after the last spoken word, so the tail of the voice settles */
+const TAIL = 1.8;
 
-// Duration = the real voiceover length. The visuals never decide how long the film is.
+const lastWord = (tl: ReturnType<typeof buildTimeline>) => tl.units[tl.units.length - 1]?.end ?? tl.duration;
+
+// Duration = the real voiceover length + TAIL after the last word. The visuals never decide how long the film is.
 const calculateMetadata: CalculateMetadataFunction<FilmProps> = async () => {
   let audio: number | null = null;
   try {
@@ -27,7 +31,7 @@ const calculateMetadata: CalculateMetadataFunction<FilmProps> = async () => {
   const timeline = buildTimeline(SCRIPT, ts, audio);
   for (const w of timeline.warnings) console.warn(`[vo] ${w}`);
   return {
-    durationInFrames: Math.max(1, Math.ceil(timeline.duration * FPS)),
+    durationInFrames: Math.max(1, Math.ceil(Math.max(timeline.duration, lastWord(timeline) + TAIL) * FPS)),
     props: { timeline, hasAudio: audio !== null },
   };
 };

@@ -1,6 +1,22 @@
-# SHOTBOOK v4: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
+# SHOTBOOK v5: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
 
 1080×1920 · 30 fps · the length is the real voiceover length (`public/audio/vo.mp3`).
+
+## v5 changes (user feedback, 2026-11-24)
+
+1. **Shot cuts land on the line.** `LEAD = 0`: a new shot cuts in exactly when its line starts. `FADE_IN = 4` frames (0.13 s).
+2. **示意图 · 模拟数据** moved to `top: 200`, on a semi-transparent plate with a border and rounded corners, clear of the price axis.
+3. **No pacing check.** `npm run check` keeps only the correctness checks: script = 逐字稿, one-line captions, no cut on a ［短暂停顿］, anchors exist.
+4. **Prints never dim.** Every trade brick stays at constant 0.92 opacity after it lands; the only animation is a 0.1 s scale pop on landing.
+5. **Camera: at most 2–3 positions per sentence**, all shots. Removed keys include: Absorb 13 → 5, Three 10 → 3, Forced 7 + 6 per-hit → 6 (the stop hits jolt but don't re-aim), Accept 7 → 5, Sum 6 → 2, Print 5 → 2.
+6. **Overlaps.**
+   - The main chart is slightly narrower (dx 11), so the last candles no longer touch the price labels.
+   - The 被动挂单 tag is fully in frame.
+   - The closing shot's price range sits above the band on the chart side.
+7. **All candles are 3D** (the flat branch for small candles is gone). The closing chart is drawn larger (16 px per tick, 6.6 px candles) on a fixed 3D camera, which doesn't move, so there is no shimmer.
+8. **是买卖双方一笔一笔成交拍出来的** (print shot): trades land as bricks on a price ladder and stack up at their price. A cursor marks the last trade's price. The candle beside the ladder is their envelope. No brightness changes.
+9. **Ending hold:** the film runs 1.8 s past the last spoken word (`TAIL` in Root.tsx) and holds the final chart + 70 % band.
+10. **76 s desk B-roll (three screens):** unchanged. Its code has been identical since v2 (only v1 differed: a slow continuous creep-zoom instead of word-stepped zooms). Waiting for the user to say which version or element to restore.
 
 ## v4 changes (user feedback, 2026-11-24)
 

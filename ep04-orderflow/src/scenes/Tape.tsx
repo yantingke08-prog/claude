@@ -54,9 +54,7 @@ export const Tape: React.FC = () => {
   const ghost = ramp(t, unseen, 0.4); // what you actually saw: just one candle
   const c = camSteps(t, [
     [0, CHASE_CAM],
-    [sec, cam(0, -40, 60, 8, 8)],
-    [three, cam(30, -20, 120, 8, -4)],
-    [decided, cam(0, 30, 160, 9, -6)],
+    [sec, cam(0, -20, 100, 8, 4)],
     [unseen, cam(0, 0, 60, 8, 4)],
   ]);
   const b = MAIN[TURN];

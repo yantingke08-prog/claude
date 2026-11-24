@@ -43,14 +43,13 @@ export const Forced: React.FC = () => {
   const hitShake = STOPS.reduce((sum, _, k) => sum + shake(t, hitAt(k) + 0.3, 5, 0.3), 0);
 
   const c = camSteps(t, [
+    // one sentence = at most 2–3 camera positions; the stop hits jolt the frame but never re-aim it
     [0, aim(540, 930, 1, 6, -2)],
-    [speed, aim(bx(66), py(-5), 1.6, 6, -6)],
-    [third, aim(bx(67), py(-10), 1.5, 7, -8)],
-    [brk, aim(bx(69), py(-8), 1.7, 6, -8)],
-    [trig, aim(bx(69), py(-11), 1.6, 7, -10)],
+    [speed, aim(bx(67), py(-8), 1.5, 7, -8)],
+    [brk, aim(bx(69), py(-10), 1.6, 6, -8)],
     [accel, aim(bx(69), py(-15), 1.35, 7, -8)],
     [really, aim(bx(60), py(-8), 1.05, 6, -4)],
-    ...STOPS.map((_, k) => [hitAt(k), aim(bx(69), py(-10 - k * 2), 1.35 + k * 0.06, 7, -8 - k)] as [number, ReturnType<typeof aim>]),
+    [same, aim(bx(68), py(-13), 1.3, 7, -8)],
   ]);
   return (
     <Stage cam={{ ...c, y: c.y + shake(t, brk + 0.2, 8) + shake(t, accel + 0.2, 14, 0.6) + hitShake }}>

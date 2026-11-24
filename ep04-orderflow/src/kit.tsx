@@ -311,9 +311,8 @@ export const Candle: React.FC<{
   const top = Math.min(open, close);
   const h = Math.max(3, Math.abs(open - close));
   const ww = Math.max(1.5, Math.round(w * 0.14 * 2) / 2); // wick: thin line, a fraction of the body
-  const flat = w < 20; // small candles: flat, crisp, no 3D faces (they blur and flicker when zoomed out)
   return (
-    <div style={{ position: "absolute", left: 0, top: 0, transformStyle: flat ? undefined : "preserve-3d", opacity: o }}>
+    <div style={{ position: "absolute", left: 0, top: 0, transformStyle: "preserve-3d", opacity: o }}>
       <div
         style={{
           position: "absolute",
@@ -323,25 +322,10 @@ export const Candle: React.FC<{
           height: Math.max(0, low - high),
           background: col,
           opacity: 0.9,
-          transform: flat ? undefined : `translateZ(${-w * 0.25}px)`,
+          transform: `translateZ(${-w * 0.25}px)`,
         }}
       />
-      {flat ? (
-        <div
-          style={{
-            position: "absolute",
-            left: cx - w / 2,
-            top,
-            width: w,
-            height: h,
-            background: col,
-            boxShadow: glow ? `0 0 ${10 + 20 * glow}px ${col}` : undefined,
-            outline: `1px solid ${dark}`,
-          }}
-        />
-      ) : (
-        <Box x={cx - w / 2} y={top} w={w} h={h} d={w * 0.5} color={col} dark={dark} glow={glow} />
-      )}
+      <Box x={cx - w / 2} y={top} w={w} h={h} d={w * 0.5} color={col} dark={dark} glow={glow} />
     </div>
   );
 };

@@ -44,10 +44,8 @@ export const Accept: React.FC = () => {
   const c = camSteps(t, [
     [0, aim(560, 850, 1, 6, 0)],
     [out, aim(600, 850, 1.06, 6, -3)],
-    [go, aim(660, py(9, TOP), 1.45, 6, -6)],
-    [retest, aim(720, py(9, TOP), 1.55, 6, -8)],
-    [noFollow, aim(660, py(6, BOT), 1.45, 6, -6)],
-    [back, aim(720, py(5, BOT), 1.55, 6, -8)],
+    [go, aim(680, py(9, TOP), 1.5, 6, -7)],
+    [noFollow, aim(680, py(6, BOT), 1.5, 6, -7)],
     [reject + 0.5, aim(560, 850, 1, 6, 0)],
   ]);
   return (

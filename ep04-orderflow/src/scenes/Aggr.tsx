@@ -18,11 +18,9 @@ export const Aggr: React.FC = () => {
   const buying = buyP > 0 && buyP < 3;
   const tgt = Math.min(3, Math.floor(buyP) + 1);
   const c = camSteps(t, [
-    [0, cam(0, 40, 0, 10, -10)],
-    [first, cam(120, -60, 200, 9, -12)],
+    [0, cam(120, -60, 200, 9, -12)],
     [who, cam(-100, -20, 220, 9, 8)],
-    [buy0, cam(40, -100, 260, 8, -10)],
-    [up, cam(40, -160, 320, 7, -8)],
+    [buy0, cam(40, -110, 270, 8, -10)],
   ]);
   return (
     <>

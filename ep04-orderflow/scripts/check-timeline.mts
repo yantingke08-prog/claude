@@ -70,39 +70,6 @@ for (const f of readdirSync(new URL("src/scenes/", root))) {
   }
 }
 
-// 5  pacing: every caption unit must start at least one visual beat (an at("…") / end("…") anchor inside it),
-//    and no stretch of voiceover may go longer than MAX_STILL seconds without a beat.
-const MAX_STILL = 3.0;
-const beats: number[] = [];
-const bare: string[] = [];
-for (const s of tl.shots) {
-  const file = shotScene.get(s.id);
-  if (!file) continue;
-  const src = read(`src/scenes/${file}.tsx`);
-  const anchors = [...src.matchAll(/\b(?:at|end)\("([^"]+)"/g)].map((m) => normalise(m[1]));
-  const text = s.units.map((k) => tl.units[k].spoken).join("");
-  const times = s.units.flatMap((k) => tl.units[k].charStart);
-  const starts = new Set<number>();
-  for (const a of anchors) {
-    const i = text.indexOf(a);
-    if (i >= 0) starts.add(i);
-  }
-  let off = 0;
-  for (const k of s.units) {
-    const u = tl.units[k];
-    if (![...starts].some((i) => i >= off && i < off + u.spoken.length)) bare.push(`${s.id}: ${u.display}`);
-    off += u.spoken.length;
-  }
-  beats.push(s.start, ...[...starts].map((i) => times[i]));
-}
-beats.sort((a, b) => a - b);
-let worst = 0;
-let worstAt = 0;
-for (let i = 1; i < beats.length; i++) if (beats[i] - beats[i - 1] > worst) [worst, worstAt] = [beats[i] - beats[i - 1], beats[i - 1]];
-for (const b of bare) fail(`no visual beat in caption unit → ${b}`);
-if (worst > MAX_STILL) fail(`${worst.toFixed(2)} s without a visual beat after ${worstAt.toFixed(2)} s (max ${MAX_STILL})`);
-console.log(`pacing: ${beats.length} beats, longest still ${worst.toFixed(2)} s, ${bare.length} caption units without a beat`);
-
 console.log(`\n${tl.units.length} caption units, ${tl.shots.length} shots, source=${tl.source}, ${tl.duration.toFixed(2)} s`);
 for (const s of tl.shots) {
   console.log(`${s.start.toFixed(2).padStart(7)}–${s.end.toFixed(2).padEnd(7)} ${s.id.padEnd(11)} ${tl.units[s.units[0]].display}`);

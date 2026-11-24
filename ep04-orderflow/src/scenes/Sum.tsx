@@ -18,10 +18,6 @@ export const Sum: React.FC = () => {
   const c = camSteps(t, [
     [0, aim(bx(68), py(-12), 1.35, 7, -8)],
     [all, aim(540, 900, 1, 6, 0)],
-    [a1, aim(bx(CHASE), py(6), 1.5, 6, -4)],
-    [b1, aim(bx(ABSORB), py(2), 1.5, 6, -6)],
-    [c1, aim(bx(PLUNGE) - 60, py(-14), 1.4, 7, -8)],
-    [c2 + 0.6, aim(540, 900, 1, 6, 0)],
   ]);
   return (
     <Stage cam={c}>

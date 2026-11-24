@@ -31,16 +31,10 @@ export const Three: React.FC = () => {
   const mid = lerp(lerp(0, 1, eaten), -3, fall) - fire;
 
   const c = camSteps(t, [
-    [0, cam(0, 0, 60, 8, -4)],
-    [impatient, cam(-160, -60, 260, 8, 8)],
-    [chase, cam(80, -110, 280, 8, -8)],
-    [calm, cam(-60, 40, 260, 9, 10)],
-    [wait, cam(-20, 60, 300, 9, 4)],
-    [third, cam(-120, 160, 260, 10, 10)],
-    [asleep, cam(-160, 200, 360, 10, 12)],
-    [broke, cam(-60, 140, 220, 9, 4)],
-    [forced, cam(0, 120, 120, 9, -4)],
-    [dur - 0.3, cam(0, 60, 40, 8, 0)],
+    // one sentence, three kinds of trader: one camera position each
+    [0, cam(-40, -80, 240, 8, -4)],
+    [calm, cam(-120, 50, 240, 9, 8)],
+    [third, cam(-100, 150, 260, 10, 8)],
   ]);
   const stopY = yOf(-3);
   return (

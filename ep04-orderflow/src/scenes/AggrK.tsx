@@ -26,9 +26,7 @@ export const AggrK: React.FC = () => {
   const b = MAIN[CHASE];
   const x = bx(CHASE);
   const c = camSteps(t, [
-    [0, aim(bx(CHASE + 2), py(5), 1.45, 6, -4)],
-    [sell, aim(bx(CHASE + 2), py(3), 1.6, 7, -6)],
-    [down, aim(bx(CHASE + 3), py(1), 1.55, 7, -4)],
+    [0, aim(bx(CHASE + 2), py(3), 1.55, 7, -5)],
     [tells, aim(bx(CHASE) - 60, py(6), 1.35, 6, -4)],
     [pay, aim(x - 40, py(7), 1.8, 6, -6)],
   ]);

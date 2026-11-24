@@ -20,11 +20,8 @@ export const AbsorbK: React.FC = () => {
   const vh = (b.v / GEO.maxV) * GEO.volH;
   const c = camSteps(t, [
     [0, aim(540, 930, 1, 6, -2)],
-    [Math.min(big, 0.9), aim(x - 40, 1000, 1.12, 6, -4)],
     [big, aim(x - 20, 1010, 1.2, 6, -6)],
-    [flat, aim(x - 50, 975, 1.3, 6, -6)],
-    [hit, aim(x - 30, 975, 1.38, 6, -8)],
-    [steady, aim(x - 20, 980, 1.34, 6, -4)],
+    [hit, aim(x - 30, 975, 1.34, 6, -6)],
   ]);
   const pel = (k: number, buy: boolean) => {
     const p = (((t * 2.6 + k / 3 + (buy ? 0 : 0.5)) % 1) + 1) % 1;

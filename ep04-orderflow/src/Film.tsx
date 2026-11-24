@@ -9,12 +9,12 @@ import { buildTimeline, type Timeline } from "./timelineCore";
 
 export type FilmProps = { timeline: Timeline | null; hasAudio: boolean };
 
-const FADE_IN = 10; // frames: incoming shot fades over the outgoing one (no black frames)
-const LEAD = 3; // incoming shot starts this many frames before its anchor so it is fully there on the word
+const FADE_IN = 4; // frames (0.13 s): incoming shot fades over the outgoing one (no black frames)
+const LEAD = 0; // the new shot cuts in exactly when its line starts
 
 export const Film: React.FC<FilmProps> = ({ timeline, hasAudio }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
   const tl = useMemo(() => timeline ?? buildTimeline(SCRIPT, null, null), [timeline]);
   const t = frame / fps;
   return (
@@ -23,7 +23,7 @@ export const Film: React.FC<FilmProps> = ({ timeline, hasAudio }) => {
       {tl.shots.map((s, k) => {
         const a = Math.round(s.start * fps) - (k ? LEAD : 0);
         const next = tl.shots[k + 1];
-        const b = next ? Math.round(next.start * fps) - LEAD + FADE_IN : Math.ceil(tl.duration * fps) + 1;
+        const b = next ? Math.round(next.start * fps) - LEAD + FADE_IN : durationInFrames + 1; // the last shot holds through the end-of-film tail
         if (frame < a || frame >= b) return null;
         const Scene = SCENES[s.id];
         if (!Scene) return null;
@@ -51,7 +51,23 @@ export const Film: React.FC<FilmProps> = ({ timeline, hasAudio }) => {
         >
           {SCRIPT.title}
         </div>
-        <div style={{ position: "absolute", right: 40, top: SAFE.top - 6, fontSize: 28, fontWeight: 600, letterSpacing: 2, color: C.dim }}>示意图 · 模拟数据</div>
+        <div
+          style={{
+            position: "absolute",
+            right: 40,
+            top: 200,
+            padding: "6px 14px",
+            fontSize: 26,
+            fontWeight: 600,
+            letterSpacing: 2,
+            color: C.dim,
+            background: "rgba(5,8,15,0.62)",
+            border: `1.5px solid ${C.faint}`,
+            borderRadius: 10,
+          }}
+        >
+          示意图 · 模拟数据
+        </div>
         <Captions units={tl.units} />
       </AbsoluteFill>
       {hasAudio && <Audio src={staticFile(VO_AUDIO)} />}

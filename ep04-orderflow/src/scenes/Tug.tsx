@@ -17,9 +17,8 @@ export const Tug: React.FC = () => {
   const lvl = settled > 0.5 ? 1 : wob > 0.4 ? 1 : wob < -0.4 ? -1 : 0;
   const c = camSteps(t, [
     [0, cam(0, 0, 80, 8, 0)],
-    [next, cam(0, yOf(0) - 800, 620, 6, -4)],
-    [forces, cam(0, yOf(0) - 800, 360, 8, 6)],
-    [result, cam(0, yOf(0) - 820, 520, 6, -2)],
+    [next, cam(0, yOf(0) - 800, 560, 6, -4)],
+    [result, cam(0, yOf(0) - 820, 500, 6, -2)],
   ]);
   const cols = [C.up, C.passive, C.forced];
   const streams = cols.map((col, k) =>

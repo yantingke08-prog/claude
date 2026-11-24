@@ -40,19 +40,12 @@ export const Absorb: React.FC = () => {
     );
   };
   const c = camSteps(t, [
+    // ≤ 2 positions per sentence
     [0, cam(0, 30, 40, 10, -10)],
-    [notOnly, cam(-140, 0, 160, 9, 10)],
     [rush, cam(60, -40, 240, 9, -12)],
-    [catcher, cam(160, -60, 320, 8, -16)],
-    [sits, cam(160, -60, 360, 7, -14)],
-    [noChase, cam(60, -40, 220, 8, -6)],
-    [comes, cam(120, -60, 300, 8, -12)],
-    [passive, cam(160, -60, 260, 7, -16)],
-    [topThick, cam(140, -80, 160, 6, -14)],
-    [noPush, cam(60, -40, 260, 8, -8)],
-    [botThick, cam(-140, 80, 200, 10, 14)],
-    [hard, cam(-100, 60, 280, 10, 10)],
-    [caught, cam(-160, 60, 320, 9, 14)],
+    [sits, cam(160, -60, 320, 8, -14)],
+    [topThick, cam(100, -60, 200, 7, -10)],
+    [botThick, cam(-140, 80, 220, 10, 14)],
   ]);
   return (
     <>

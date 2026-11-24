@@ -24,7 +24,16 @@ export type Timeline = {
   spokenT: number[];
   source: "timestamps" | "fallback";
   warnings: string[];
+  /** how the raw voiceover is laid on the film: play [from, to) of the file at film time `at` */
+  audio: { segments: AudioSeg[]; fileSeconds: number; insert: number; split: number };
+  /** the last spoken character ends here (film time); after it the picture fades to black */
+  speechEnd: number;
 };
+export type AudioSeg = { from: number; to: number; at: number };
+
+/** after the last word: a short hold, then a fade to black (no long freeze, no trailing silence) */
+export const END_HOLD = 0.35;
+export const END_FADE = 0.9;
 
 const NON_SPOKEN = /[\s|，。；？！：、"“”‘’'「」『』《》（）()［］[\]…—\-·,.;?!:]/g;
 export const normalise = (s: string) => s.replace(NON_SPOKEN, "").toUpperCase();
@@ -54,22 +63,42 @@ const charsFromTimestamps = (ts: VoTimestamps): CharT[] => {
 const valid = (ts: VoTimestamps | null | undefined): ts is VoTimestamps =>
   !!ts && Array.isArray(ts.lines) && ts.lines.some((l) => Number.isFinite(l.end) && l.end > 0 && normalise(l.text ?? "").length > 0);
 
+/** Repair ASR / alignment glitches: characters out of order, overlapping or with no length. */
+export const sanitiseChars = (chars: CharT[]) => {
+  let fixed = 0;
+  const out = chars.map((c) => ({ ...c }));
+  for (let k = 0; k < out.length; k++) {
+    const c = out[k];
+    const prev = out[k - 1];
+    if (prev && c.start < prev.start + 0.02) {
+      c.start = prev.start + 0.02;
+      fixed++;
+    }
+    if (prev && prev.end > c.start) prev.end = c.start; // no overlap
+    if (c.end < c.start + 0.02) {
+      c.end = c.start + 0.02;
+      fixed++;
+    }
+  }
+  return { chars: out, fixed };
+};
+
 export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds: number | null | undefined, script: ScriptLine[] = LINES): Timeline => {
   const warnings: string[] = [];
   const spokenPer = script.map((l) => normalise(l.text));
   const total = spokenPer.reduce((s, x) => s + x.length, 0);
   const tsOk = valid(ts);
 
-  let duration = audioSeconds && audioSeconds > 0 ? audioSeconds : 0;
-  if (!duration && tsOk && ts.duration > 0) {
-    duration = ts.duration;
+  // 1. per-character times in AUDIO-FILE time
+  let fileSeconds = audioSeconds && audioSeconds > 0 ? audioSeconds : 0;
+  if (!fileSeconds && tsOk && ts.duration > 0) {
+    fileSeconds = ts.duration;
     warnings.push("public/audio/vo.mp3 not found: length taken from vo.timestamps.json (film is silent).");
   }
-  if (!duration) {
-    duration = DEFAULT_DURATION;
+  if (!fileSeconds) {
+    fileSeconds = DEFAULT_DURATION;
     warnings.push(`No vo.mp3 and no timestamps: placeholder length ${DEFAULT_DURATION}s.`);
   }
-
   let chars: CharT[];
   let source: Timeline["source"];
   if (tsOk) {
@@ -78,22 +107,20 @@ export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds:
     if (tc.length === total) chars = tc;
     else {
       warnings.push(`Timestamps have ${tc.length} spoken chars, script has ${total}: mapping proportionally.`);
-      chars = Array.from({ length: total }, (_, k) => tc[Math.min(tc.length - 1, Math.floor((k * tc.length) / total))]);
+      chars = Array.from({ length: total }, (_, k) => ({ ...tc[Math.min(tc.length - 1, Math.floor((k * tc.length) / total))] }));
     }
+    const s = sanitiseChars(chars);
+    chars = s.chars;
+    if (s.fixed) warnings.push(`Repaired ${s.fixed} out-of-order / zero-length character times in vo.timestamps.json.`);
   } else {
     source = "fallback";
     warnings.push("vo.timestamps.json missing or empty: splitting the audio evenly by text length.");
-    const gapBefore = new Map(BUMPERS.map((b) => [b.before, b.fallbackGap]));
-    const firstOf = new Set<number>();
-    script.forEach((l, k) => (k === 0 || script[k - 1].shot !== l.shot) && firstOf.add(k));
-    const gaps = script.map((l, k) => (firstOf.has(k) ? gapBefore.get(l.shot) ?? 0 : 0));
-    const weights = spokenPer.map((s) => s.length + 0.9);
-    const W = weights.reduce((a, b) => a + b, 0);
-    const usable = Math.max(1, duration - 0.6 - gaps.reduce((a, b) => a + b, 0));
+    const weights = spokenPer.map((x) => x.length + 0.9);
+    const W = weights.reduce((x, y) => x + y, 0);
+    const usable = Math.max(1, fileSeconds - 0.6);
     chars = [];
     let t = 0;
     script.forEach((_, k) => {
-      t += gaps[k];
       const span = (usable * weights[k]) / W;
       const n = spokenPer[k].length;
       const speak = span * (n / weights[k]);
@@ -102,26 +129,51 @@ export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds:
     });
   }
 
+  // 2. make room for the title card: pause the voiceover in the middle of the silence before the
+  //    concept section. The cut sits in silence, so nothing is spliced into the voice itself.
+  let insert = 0;
+  let split = Number.POSITIVE_INFINITY;
+  for (const b of BUMPERS) {
+    let g = 0;
+    let first = -1;
+    for (let i = 0; i < script.length; i++) {
+      if (script[i].shot === b.before) {
+        first = g;
+        break;
+      }
+      g += spokenPer[i].length;
+    }
+    if (first <= 0) continue;
+    const silenceStart = chars[first - 1].end;
+    const silenceEnd = chars[first].start;
+    const existing = Math.max(0, silenceEnd - silenceStart);
+    insert = Math.max(0, b.hold - existing);
+    split = silenceStart + existing / 2;
+  }
+  const toFilm = (x: number) => x + (x >= split ? insert : 0);
+  const filmChars = chars.map((c) => ({ start: toFilm(c.start), end: toFilm(c.end) }));
+
+  // 3. lines, captions and shots in FILM time
   let g = 0;
   const lines: TimedLine[] = script.map((l, i) => {
     const n = spokenPer[i].length;
-    const mine = chars.slice(g, g + n);
+    const mine = filmChars.slice(g, g + n);
     g += n;
     return { i, text: l.text, shot: l.shot, start: mine[0].start, end: mine[n - 1].end, charStart: mine.map((c) => c.start) };
   });
   if (tsOk) {
     for (const tl of ts.lines) {
       if (!tl.shot) continue;
-      for (const l of lines) if (l.start >= tl.start - 1e-3 && l.start < tl.end) l.shot = tl.shot as ShotId;
+      const a0 = toFilm(tl.start);
+      const a1 = toFilm(tl.end);
+      for (const l of lines) if (l.start >= a0 - 1e-3 && l.start < a1) l.shot = tl.shot as ShotId;
     }
   }
-  const lastEnd = lines[lines.length - 1].end;
-  if (duration < lastEnd) {
-    warnings.push("Timestamps run past the audio length: extending the film.");
-    duration = lastEnd + 0.4;
-  }
+  const speechEnd = lines[lines.length - 1].end;
+  const duration = speechEnd + END_HOLD + END_FADE;
+  const tail = toFilm(fileSeconds) - duration;
+  if (tail > 1) warnings.push(`Dropped ${tail.toFixed(1)}s of trailing silence: the film ends ${END_HOLD + END_FADE}s after the last word.`);
 
-  // caption units: one per `|` piece, timed by its own characters
   const units: Unit[] = [];
   for (const l of lines) {
     let k = 0;
@@ -134,26 +186,40 @@ export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds:
     }
   }
 
-  // shots: from the first line of a shot to the first line of the next one
   const shots: Shot[] = [];
   for (const l of lines) {
     const last = shots[shots.length - 1];
     if (!last || last.id !== l.shot) shots.push({ id: l.shot, start: l.start, end: 0 });
   }
   shots[0].start = 0;
-  // bumpers live in the silence before their target shot
   for (const b of BUMPERS) {
     const k = shots.findIndex((s) => s.id === b.before);
     if (k <= 0) continue;
     const prevLast = lines.filter((l) => l.shot === shots[k - 1].id).pop();
-    const from = prevLast ? prevLast.end + 0.05 : shots[k].start - b.fallbackGap;
-    if (shots[k].start - from < 1.5) warnings.push(`Only ${(shots[k].start - from).toFixed(2)}s of silence for the "${b.id}" card before "${b.before}".`);
+    const from = prevLast ? prevLast.end + 0.05 : shots[k].start - b.hold;
     shots.splice(k, 0, { id: b.id, start: from, end: 0 });
   }
   shots.forEach((s, k) => (s.end = k + 1 < shots.length ? shots[k + 1].start : duration));
 
-  const spoken = spokenPer.join("");
-  return { duration, lines, units, shots, spoken, spokenT: chars.map((c) => c.start), source, warnings };
+  const segments: AudioSeg[] = Number.isFinite(split)
+    ? [
+        { from: 0, to: split, at: 0 },
+        { from: split, to: fileSeconds, at: split + insert },
+      ]
+    : [{ from: 0, to: fileSeconds, at: 0 }];
+
+  return {
+    duration,
+    lines,
+    units,
+    shots,
+    spoken: spokenPer.join(""),
+    spokenT: filmChars.map((c) => c.start),
+    source,
+    warnings,
+    audio: { segments, fileSeconds, insert, split },
+    speechEnd,
+  };
 };
 
 /** Absolute time (s) at which `phrase` starts being spoken; searching from `after` (a phrase) if given. */

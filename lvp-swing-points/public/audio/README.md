@@ -22,6 +22,8 @@ type VoTimestamps = { duration: number; lines: Line[] };
 
 - Lines can be any size: clauses, sentences or whisper segments. The film flattens `words` (or the line itself when `words` is missing) into per-character times and maps them onto the script in `src/script.ts`. Line boundaries don't have to match the captions.
 - Punctuation and spaces are ignored when matching. If the spoken-character count differs from the script, the times are mapped proportionally and a warning is printed.
-- `shot` is optional. It overrides the section of every script line that starts inside that line. Valid ids: hook, concept, define, case, advanced, broll1, broll2, broll3, ticker, outro. The `title` card has no narration and always fills the silence between `hook` and `concept`, so leave about 3–4 s of silence there.
+- `shot` is optional. It overrides the section of every script line that starts inside that line. Valid ids: hook, concept, define, case, advanced, broll1, broll2, broll3, ticker, outro.
+- **Use the original voiceover export as it is (e.g. straight from ElevenLabs). Do not splice in silence or trim it.** The film makes its own 3.9 s room for the title card by pausing the voice inside the existing gap between 「…答案写好了」 and 「你进场之后」. That pause is cut in silence with a 3-frame ramp, so it can't click. The film also ends 0.35 s after the last word with a 0.9 s fade to black, however much silence the file has at the end.
+- Timestamps must come from **forced alignment against the script** (`scripts/align-vo.ps1`), not from a free ASR transcript. ASR mishears words (e.g. 连涨 → 连长), and that shifts single characters. Times that are out of order, overlapping or zero-length are repaired automatically, and `npm run check` reports how many.
 - If the file is missing or empty, captions and sections split the audio evenly by text length (the console warns).
 - After editing, run `npm run check`. It prints the section ranges and flags problems.

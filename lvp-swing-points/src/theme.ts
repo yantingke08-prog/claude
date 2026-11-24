@@ -13,6 +13,7 @@ export const C = {
   text: "#FFFFFF",
   muted: "#C7CEDB",
   brand: "#FF3B5C",
+  brandSolid: "#E0242E", // the logo's solid red: brand name on its own screen (flat fill, no stroke / glow)
   doji: "#8A93A6", // 十字星 (open ≈ close): neither up nor down
   ghost: "#C7CEDB", // hypothetical (if-this-happens) candles, drawn as outlines
 } as const;
@@ -41,7 +42,7 @@ export const FONT = `"${FONT_FAMILY}","Noto Sans SC","Source Han Sans SC","Micro
 export const MONO = `"JetBrains Mono","Consolas","Menlo",monospace`;
 
 /** L.V.P. = Location · Volume · Pattern */
-export const BRAND = { mark: "L.V.P.", full: "LOCATION · VOLUME · PATTERN", line: "ORDER FLOW" } as const;
+export const BRAND = { mark: "L.V.P.订单流", full: "LOCATION · VOLUME · PATTERN" } as const;
 
 export const DISCLAIMER = "个人经验分享，不构成投资建议，市场有风险，投资需谨慎。";
 

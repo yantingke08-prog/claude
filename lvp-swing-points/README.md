@@ -47,10 +47,10 @@ npm run stills -- 2.5 66 104
 powershell -ExecutionPolicy Bypass -File scripts/render.ps1
 ```
 
-This runs `npm run check`, then writes `D:/claude视频/LVP-孤立高低点.mp4` (H.264, about 3 Mbps, AAC) and a cover still next to it. Pass `-Out "D:\path\name.mp4"` to write elsewhere. The equivalent raw command is:
+This runs `npm run check`, then writes a **new file every time**, e.g. `D:/claude视频/LVP-孤立高低点-v3-20261124-1530.mp4` (H.264, about 3 Mbps, AAC), with a cover still next to it. It never overwrites an earlier render. Pass `-Dir` to write somewhere else. The equivalent raw command (choose a new name yourself) is:
 
 ```powershell
-npx remotion render src/index.ts LvpSwingPoints "D:/claude视频/LVP-孤立高低点.mp4" --codec=h264 --video-bitrate=3M --audio-codec=aac
+npx remotion render src/index.ts LvpSwingPoints "D:/claude视频/LVP-孤立高低点-v3-manual.mp4" --codec=h264 --video-bitrate=3M --audio-codec=aac
 ```
 
 BGM is not included. If you want music, mix it at ≤ -28 dB under the voice before you export `vo.mp3`.
@@ -62,7 +62,7 @@ BGM is not included. If you want music, mix it at ≤ -28 dB under the voice bef
 | Voiceover | `public/audio/vo.mp3` | The preview is silent and the length comes from the timestamps. |
 | Timestamps | `public/audio/vo.timestamps.json` | The audio is split evenly by text length. |
 | B-roll #1–#3 (tablet, dual monitors, typing) | `public/broll/broll1.mp4` … `broll3.mp4` (see `public/broll/README.md`) | Code-built stand-ins play. |
-| Mascot | none: the LVP corner badge replaces the character, as the production script asks | — |
+| Mascot | none: the L.V.P.订单流 corner badge replaces the character, as the production script asks | — |
 
 ## Layout
 
@@ -72,7 +72,7 @@ BGM is not included. If you want music, mix it at ≤ -28 dB under the voice bef
 | `src/cues.ts` | Every timed action → the phrase that triggers it. |
 | `src/timeline.ts` | Timestamps (+ audio length) → timed lines, captions, sections, and text anchors. Pure TS. |
 | `src/theme.ts` | All colours, fonts and the disclaimer. |
-| `src/kit.tsx` | Layers L1 background, L2 chart engine (candles grow at 0.12 s each), L3 annotations (0.3 s fade + 0.85→1 easeOutBack, B bubble ripple, levels draw in 0.35 s with an 8 px glow and the label 0.15 s later), L5 text (title bar, 110 px big title, disclaimer), L6 brand (LVP badge, price-ladder mark), plus the per-section slow push-in (100→104 %, x 0→−30 px, easeInOutSine). |
+| `src/kit.tsx` | Layers L1 background, L2 chart engine (candles grow at 0.12 s each), L3 annotations (0.3 s fade + 0.85→1 easeOutBack, B bubble ripple, levels draw in 0.35 s with an 8 px glow and the label 0.15 s later), L5 text (title bar, 110 px big title, disclaimer), L6 brand (L.V.P.订单流 badge, and the solid-red `BrandLockup` used when the brand has the screen to itself), plus the per-section slow push-in (100→104 %, x 0→−30 px, easeInOutSine). |
 | `src/Captions.tsx` | Bottom captions: 64 px bold white, 90 px from the bottom, hard cuts, ≤14 characters. |
 | `src/Film.tsx` | Lays out the sections with a 0.3 s cross-dissolve and a hard cut into the red-band title card. It also holds the always-on badge and disclaimer, the captions and the audio. |
 | `src/scenes/*.tsx` | hook (0–24), title (24–28), concept, define, case, advanced, broll1–3, ticker, outro. |

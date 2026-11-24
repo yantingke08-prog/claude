@@ -6,7 +6,7 @@
 // 5. the timeline builds from vo.timestamps.json and from the even-split fallback
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { CUES } from "../src/cues.ts";
-import { ADV, CASE, CASE_FAKE, CASE_HOLD, CLAIMS, HOOK, HOOK_FLY, HOOK_PROBLEMS, isSwingHigh, isSwingLow, maxRun } from "../src/data.ts";
+import { ADV, CASE, CASE_FAKE, CASE_HOLD, CLAIMS, HOOK, HOOK_FLY, HOOK_PROBLEMS, SEARCHED, isSwingHigh, isSwingLow, maxRun } from "../src/data.ts";
 import { buildTimeline, findAnchor, normalise, type Timeline, type VoTimestamps } from "../src/timeline.ts";
 
 const root = new URL("..", import.meta.url);
@@ -63,6 +63,22 @@ if (ts) {
 checkTimeline("timestamps", buildTimeline(ts, null));
 checkTimeline("fallback", buildTimeline(null, 190.9));
 
+// 2b. the film makes its own room for the title card and drops trailing silence:
+//     simulate a raw voiceover with NO pause before the concept section and 20 s of silence at the end
+{
+  const base = ts ?? { duration: 190.9, lines: [] };
+  const conceptStart = base.lines.find((l) => l.shot === "concept")?.start ?? 28;
+  const shift = Math.max(0, conceptStart - (base.lines.filter((l) => l.shot === "hook").pop()?.end ?? conceptStart) - 0.3);
+  const raw: VoTimestamps = { duration: 0, lines: base.lines.map((l) => (l.start >= conceptStart ? { ...l, start: l.start - shift, end: l.end - shift } : l)) };
+  const tl = buildTimeline(raw, 210);
+  const title = tl.shots.find((s) => s.id === "title")!;
+  console.log("\n[audio layout] simulated raw voiceover: no pause before the concept section, 210 s file");
+  console.log(`  title card ${title.start.toFixed(2)} → ${title.end.toFixed(2)} (${(title.end - title.start).toFixed(2)} s); voice paused ${tl.audio.insert.toFixed(2)} s at file time ${tl.audio.split.toFixed(2)}`);
+  console.log(`  last word ends ${tl.speechEnd.toFixed(2)} s, film ends ${tl.duration.toFixed(2)} s (fade to black)`);
+  if (title.end - title.start < 3.5) fail("title card did not get its room");
+  if (tl.duration - tl.speechEnd > 1.5) fail("film keeps running after the last word");
+}
+
 // 3
 console.log("\n[pivots]");
 for (const c of CLAIMS) {
@@ -84,6 +100,8 @@ must(CASE_FAKE.bars[0].h > h(CASE.H2) && CASE_FAKE.bars[CASE_FAKE.bars.length - 
 must(Math.min(...CASE_HOLD.bars.map((b) => b.l)) > l(CASE.L3), "case: the 'holds' branch never breaks L3");
 must(B[CASE.BREAKDOWN].c < l(CASE.L3), "case: the real path breaks below L3");
 must(ADV.bars[ADV.T1].l > ADV.bars[ADV.LOW].l && ADV.bars[ADV.T2].l > ADV.bars[ADV.LOW].l, "advanced: both tests stay above the isolated low");
+for (const c of SEARCHED) must(c.seed > 0 && c.problems.length === 0, `${c.name}: realistic candles (seed ${c.seed}) satisfy every narrated fact${c.problems.length ? " — " + c.problems.join("; ") : ""}`);
+for (const c of CLAIMS.filter((x) => !x.name.startsWith("trio"))) must(maxRun(c.bars) <= 5, `${c.name}: longest same-colour run ${maxRun(c.bars)} ≤ 5`);
 must(HOOK_PROBLEMS.length === 0, `hook realism (seed ${HOOK.SEED}): mixed colours, longest run ${maxRun(HOOK.bars)} ≤ 5, doji, long wicks, varied bodies${HOOK_PROBLEMS.length ? " — " + HOOK_PROBLEMS.join("; ") : ""}`);
 must(HOOK_FLY[HOOK_FLY.length - 1].c > HOOK.bars[HOOK.TOP].h, "hook: the 一卖就飞 branch goes above the old top");
 must(HOOK.bars[HOOK.TRAP].c < HOOK.bars[HOOK.ENTRY].c + 1, "hook: the 不走 branch gives the profit back");

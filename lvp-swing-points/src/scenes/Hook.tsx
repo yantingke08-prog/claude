@@ -2,6 +2,7 @@
 import React from "react";
 import { HOOK, HOOK_FLY, MINI_FEAR, MINI_GUESS, type Bar } from "../data.ts";
 import {
+  Arrow,
   BigTitle,
   Bubble,
   Candles,
@@ -22,7 +23,7 @@ import {
   pop,
   rangeOf,
   useTime,
-  Badge,
+  BrandLockup,
 } from "../kit";
 import { C, FONT, glow, withAlpha } from "../theme.ts";
 
@@ -37,12 +38,18 @@ const BTN = { go: { x: 1560, y: 360 }, stay: { x: 1560, y: 520 }, w: 250, h: 104
 export const Hook: React.FC = () => {
   const { t, cue } = useTime();
   const sc = mixScale(SC_OPEN, SC_FULL, ramp(t, cue("hookGo") - 0.3, 0.7, easeInOutSine));
+  // one sentence = candles print fast → they stop (a held beat) → the annotation lands.
+  // Each leg must finish printing within ~55 % of its sentence, so the pause is always there.
+  const fit = (from: number, to: number, n: number) => Math.max(0.045, Math.min(0.14, (0.55 * (to - from)) / n));
+  const s1 = cue("hookStart");
+  const s2 = cue("hookRally");
+  const s3 = cue("hookDrop");
+  const s4 = cue("hookDoubt");
   const appear = growSchedule(
     [
-      { to: HOOK.PRE, at: cue("hookStart"), per: 0.1 }, // 0–0.3 s: the fall reaches the low
-      { to: HOOK.ENTRY, at: cue("hookHere") - 0.15 }, // the entry candle prints just before "这里"
-      { to: HOOK.TOP, at: cue("hookEntered") + 0.1, per: 0.17 }, // 连涨
-      { to: HOOK.DROP, at: cue("hookDrop"), per: 0.14 }, // 回调
+      { to: HOOK.ENTRY, at: s1, per: fit(s1, cue("hookEntered"), HOOK.ENTRY - HOOK.PRE + 4) }, // 当你在这里进场
+      { to: HOOK.TOP, at: s2, per: fit(s2, s3, HOOK.TOP - HOOK.ENTRY) }, // 行情已经连涨了好几天
+      { to: HOOK.DROP, at: s3, per: fit(s3, s4, HOOK.DROP - HOOK.TOP) }, // 结果一波回调砸了下来
       { to: HOOK.DOUBT, at: cue("hookDoubt") + 0.2, per: 0.2 },
       { to: HOOK.TRAP, at: cue("hookStay") + 0.35, per: 0.26 },
     ],
@@ -63,12 +70,19 @@ export const Hook: React.FC = () => {
     <>
       <PushIn dim={dim * (t > brandAt ? 1 - 0.6 * clamp01((t - brandAt) / 0.4) : 1)}>
         <Stage>
-          <HLine y={sc.y(e.c)} x1={sc.x(HOOK.ENTRY)} x2={sc.x(HOOK.DOUBT + 1)} color={C.muted} at={cue("hookDrop")} dashed label="成本" />
+          <HLine y={sc.y(e.c)} x1={sc.x(HOOK.ENTRY)} x2={sc.x(HOOK.DOUBT + 1)} color={C.muted} at={s4} dashed label="成本" />
           <Candles bars={HOOK.bars} sc={sc} appear={appear} opacity={realOpacity} />
           {t < flyOut + 0.3 && <Candles bars={HOOK_FLY} sc={sc} appear={flyAppear} offset={HOOK.DOUBT + 1} ghost opacity={1 - clamp01((t - flyOut) / 0.3)} />}
-          <EntryMark sc={sc} at={cue("hookHere")} until={cue("hookDrop")} />
-          <Bubble x={sc.x(HOOK.ENTRY)} y={sc.y(e.l)} letter="B" color={C.up} at={cue("hookHere")} r={40} gap={40} ripples={2} />
-          <Label x={sc.x(HOOK.ENTRY) + 62} y={sc.y(e.l) + 96} text="进场" color={C.up} anchor="start" size={34} at={cue("hookHere") + 0.15} out={cue("hookDrop")} />
+          {/* beat 1 — 进场 */}
+          <EntryMark sc={sc} at={cue("hookEntered")} until={s3} />
+          <Bubble x={sc.x(HOOK.ENTRY)} y={sc.y(e.l)} letter="B" color={C.up} at={cue("hookEntered")} r={40} gap={40} ripples={2} />
+          <Label x={sc.x(HOOK.ENTRY) + 62} y={sc.y(e.l) + 96} text="进场" color={C.up} anchor="start" size={34} at={cue("hookEntered") + 0.15} out={s3} />
+          {/* beat 2 — 连涨 */}
+          <Arrow x1={sc.x(HOOK.ENTRY + 2)} y1={sc.y(e.l) - 10} x2={sc.x(HOOK.TOP - 1)} y2={sc.y(HOOK.bars[HOOK.TOP - 1].l) - 10} color={C.up} at={cue("hookDays")} out={s4} />
+          <Label x={sc.x(Math.round((HOOK.ENTRY + HOOK.TOP) / 2)) + 40} y={sc.y((e.l + HOOK.bars[HOOK.TOP - 1].l) / 2) + 46} text="连涨" color={C.up} at={cue("hookDays") + 0.15} out={s4} size={34} />
+          {/* beat 3 — 回调 */}
+          <Arrow x1={sc.x(HOOK.TOP + 1)} y1={sc.y(HOOK.bars[HOOK.TOP].h) - 6} x2={sc.x(HOOK.DROP)} y2={sc.y(HOOK.bars[HOOK.DROP].h) - 18} color={C.down} at={cue("hookSmash")} out={cue("hookGo")} />
+          <Label x={sc.x(HOOK.DROP) + 30} y={sc.y(HOOK.bars[HOOK.DROP].h) - 70} text="回调" color={C.down} at={cue("hookSmash") + 0.15} out={cue("hookGo")} size={34} />
           <Label x={sc.x(HOOK.DOUBT + 4)} y={sc.y(131) - 10} text="一卖就飞" color={C.up} at={flyAt + 0.3} out={flyOut} />
           <Label x={sc.x(HOOK.TRAP) - 40} y={sc.y(HOOK.bars[HOOK.TRAP].l) + 64} text="利润回吐" color={C.down} at={cue("hookGiveBack")} />
         </Stage>
@@ -243,7 +257,9 @@ const BrandBeat: React.FC<{ at: number }> = ({ at }) => {
       <div style={{ position: "absolute", top: 190, left: 0, right: 0, textAlign: "center", fontFamily: FONT, fontSize: 64, fontWeight: 900, color: C.text, letterSpacing: 18 }}>
         <span style={{ color: C.up, textShadow: `0 0 18px ${withAlpha(C.up, 0.6)}` }}>✕</span> 怕　<span style={{ color: C.up, textShadow: `0 0 18px ${withAlpha(C.up, 0.6)}` }}>✕</span> 猜
       </div>
-      <Badge x={872} y={440} scale={3 * p.scale * breathe} origin="50% 50%" />
+      <div style={{ position: "absolute", left: 0, right: 0, top: 330, display: "flex", justifyContent: "center", transform: `scale(${p.scale * breathe})` }}>
+        <BrandLockup size={96} />
+      </div>
       <div style={{ position: "absolute", top: 700, left: 0, right: 0, textAlign: "center", fontFamily: FONT, fontSize: 40, fontWeight: 700, color: C.muted, opacity: written, letterSpacing: 6 }}>
         答案写在K线里
       </div>

@@ -1,27 +1,16 @@
-// 188.5–190.9: dark + LVP brand
+// The last line: dark + the brand lockup (flat solid red). The film then fades to black.
 import React from "react";
-import { AbsoluteFill, Img, staticFile } from "remotion";
-import { PriceLadder, easeOutCubic, lerp, pop, ramp, useTime } from "../kit";
-import { BRAND, C, FONT, withAlpha, N } from "../theme.ts";
+import { AbsoluteFill } from "remotion";
+import { BrandLockup, pop, useTime } from "../kit";
+import { N } from "../theme.ts";
 
 export const Outro: React.FC = () => {
   const { t, cue } = useTime();
   const p = pop(t, cue("outIam") - 0.2);
-  const lad = ramp(t, cue("outIam"), 0.8, easeOutCubic);
-  const breathe = 1 + 0.02 * Math.sin(t * 3);
   return (
-    <AbsoluteFill style={{ background: N.void, alignItems: "center", justifyContent: "center", fontFamily: FONT }}>
-      <div style={{ opacity: p.opacity, transform: `scale(${p.scale * breathe}) translateY(-60px)`, display: "flex", alignItems: "center", gap: 40 }}>
-        <Img src={staticFile("brand/lvp-mark-white.svg")} style={{ width: 200, height: 200 }} />
-        <div>
-          <div style={{ fontSize: 130, fontWeight: 900, letterSpacing: 8, color: C.text, WebkitTextStroke: `3px ${C.brand}`, textShadow: `0 0 30px ${withAlpha(C.brand, 0.7)}`, lineHeight: 1 }}>
-            {BRAND.mark}
-          </div>
-          <div style={{ fontSize: 24, fontWeight: 600, letterSpacing: 6, color: C.muted, marginTop: 18 }}>{BRAND.full}</div>
-        </div>
-        <div style={{ opacity: lad, transform: `translateX(${lerp(20, 0, lad)}px)` }}>
-          <PriceLadder size={160} progress={lad} />
-        </div>
+    <AbsoluteFill style={{ background: N.void, alignItems: "center", justifyContent: "center" }}>
+      <div style={{ opacity: p.opacity, transform: `scale(${p.scale}) translateY(-50px)` }}>
+        <BrandLockup size={120} />
       </div>
     </AbsoluteFill>
   );

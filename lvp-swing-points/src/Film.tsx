@@ -1,10 +1,10 @@
 import React, { useMemo } from "react";
-import { AbsoluteFill, Audio, continueRender, delayRender, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Sequence, continueRender, delayRender, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { Captions } from "./Captions";
 import { Background, Badge, Disclaimer, TimeProvider } from "./kit";
 import { SCENES } from "./scenes";
 import { FONT, FONT_FAMILY } from "./theme.ts";
-import { VO_AUDIO, buildTimeline, type Timeline } from "./timeline.ts";
+import { END_HOLD, VO_AUDIO, buildTimeline, type Timeline } from "./timeline.ts";
 
 export type FilmProps = { timeline: Timeline | null; hasAudio: boolean; broll: Record<string, boolean> };
 
@@ -56,9 +56,42 @@ export const Film: React.FC<FilmProps> = ({ timeline, hasAudio, broll }) => {
       <AbsoluteFill style={{ zIndex: 100, pointerEvents: "none" }}>
         {current !== "title" && current !== "outro" && <Badge />}
         <Disclaimer />
-        <Captions units={tl.units} />
+        {current !== "title" && <Captions units={tl.units} />}
       </AbsoluteFill>
-      {hasAudio && <Audio src={staticFile(VO_AUDIO)} />}
+      {/* the end: fade to black right after the last word */}
+      <AbsoluteFill style={{ zIndex: 300, background: "black", opacity: interpolate(t, [tl.speechEnd + END_HOLD, tl.duration], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }} />
+      {hasAudio && <Voice tl={tl} />}
     </AbsoluteFill>
+  );
+};
+
+/** The raw voiceover, laid in segments (a pause for the title card is cut inside existing silence).
+ * Each cut gets a 3-frame volume ramp so no click can be heard; the voice fades with the picture. */
+const Voice: React.FC<{ tl: Timeline }> = ({ tl }) => {
+  const { fps } = useVideoConfig();
+  const RAMP = 3;
+  return (
+    <>
+      {tl.audio.segments.map((s, k) => {
+        const len = Math.max(1, Math.round((Math.min(s.to, s.from + tl.duration - s.at) - s.from) * fps));
+        const atF = Math.round(s.at * fps);
+        const endFadeA = Math.round((tl.speechEnd + END_HOLD) * fps) - atF;
+        const endFadeB = Math.round(tl.duration * fps) - atF;
+        return (
+          <Sequence key={k} from={atF} durationInFrames={len} layout="none">
+            <Audio
+              src={staticFile(VO_AUDIO)}
+              trimBefore={Math.round(s.from * fps)}
+              volume={(f) => {
+                const inRamp = s.from > 0 ? Math.min(1, f / RAMP) : 1;
+                const outRamp = k < tl.audio.segments.length - 1 ? Math.min(1, (len - f) / RAMP) : 1;
+                const end = interpolate(f, [endFadeA, Math.max(endFadeA + 1, endFadeB)], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+                return Math.max(0, Math.min(inRamp, outRamp, end));
+              }}
+            />
+          </Sequence>
+        );
+      })}
+    </>
   );
 };

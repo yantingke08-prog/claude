@@ -492,38 +492,24 @@ export const Disclaimer: React.FC = () => (
 );
 
 // ------------------------------------------------------------------ L6 brand
-/** price-ladder symbol: bars of different lengths (a DOM / order queue) */
-export const PriceLadder: React.FC<{ size: number; color?: string; progress?: number }> = ({ size, color = C.brand, progress = 1 }) => {
-  const rows = [0.55, 0.8, 1, 0.68, 0.42];
-  const h = size / (rows.length * 1.6);
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
-      {rows.map((r, i) => {
-        const k = clamp01(progress * rows.length - i);
-        return (
-          <rect
-            key={i}
-            x={size * (1 - r) * 0.5}
-            y={size * 0.1 + i * h * 1.6}
-            width={size * r * k}
-            height={h}
-            rx={h / 2}
-            fill={i === 2 ? color : withAlpha(color, 0.55 + i * 0.05)}
-            style={{ filter: glow(color, 6, 0.6) }}
-          />
-        );
-      })}
-    </svg>
-  );
-};
-
-/** LVP corner badge (top-left, always on). The mark is the user's own logo (white, unaltered). */
-export const Badge: React.FC<{ scale?: number; x?: number; y?: number; origin?: string }> = ({ scale = 1, x = 40, y = 30, origin = "0% 0%" }) => (
-  <div style={{ position: "absolute", left: x, top: y, display: "flex", alignItems: "center", gap: 12, transform: `scale(${scale})`, transformOrigin: origin, fontFamily: FONT }}>
+/** L.V.P.订单流 corner badge (top-left, always on). The mark is the user's own logo (white, unaltered). */
+export const Badge: React.FC = () => (
+  <div style={{ position: "absolute", left: 40, top: 30, display: "flex", alignItems: "center", gap: 12, fontFamily: FONT }}>
     <Img src={staticFile("brand/lvp-mark-white.svg")} style={{ width: 54, height: 54 }} />
     <div style={{ lineHeight: 1 }}>
-      <div style={{ fontSize: 30, fontWeight: 900, color: C.text, letterSpacing: 2, textShadow: `0 0 12px ${withAlpha(C.brand, 0.7)}`, WebkitTextStroke: `1px ${C.brand}` }}>{BRAND.mark}</div>
-      <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: 2, marginTop: 5 }}>{BRAND.full}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: C.text, letterSpacing: 1 }}>{BRAND.mark}</div>
+      <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, letterSpacing: 2, marginTop: 6 }}>{BRAND.full}</div>
+    </div>
+  </div>
+);
+
+/** The brand on its own screen: logo + "L.V.P.订单流" in flat solid red (no stroke, no glow, no lines). */
+export const BrandLockup: React.FC<{ size?: number }> = ({ size = 120 }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: size * 0.32, fontFamily: FONT }}>
+    <Img src={staticFile("brand/lvp-mark-white.svg")} style={{ width: size * 1.45, height: size * 1.45 }} />
+    <div style={{ lineHeight: 1 }}>
+      <div style={{ fontSize: size, fontWeight: 900, color: C.brandSolid, letterSpacing: size * 0.02, whiteSpace: "nowrap" }}>{BRAND.mark}</div>
+      <div style={{ fontSize: size * 0.2, fontWeight: 600, color: C.muted, letterSpacing: size * 0.06, marginTop: size * 0.22, whiteSpace: "nowrap" }}>{BRAND.full}</div>
     </div>
   </div>
 );

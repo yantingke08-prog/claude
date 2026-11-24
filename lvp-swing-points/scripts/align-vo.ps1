@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Chinese forced alignment of the user's voiceover against the script.
   public/audio/vo.mp3 + src/script.ts  ->  public/audio/vo.timestamps.json

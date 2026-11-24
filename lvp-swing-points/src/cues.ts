@@ -11,6 +11,8 @@ export const CUES = {
   hookHere: c("这里进场"),
   hookEntered: c("进场"),
   hookRally: c("行情已经连涨"),
+  hookDays: c("好几天"),
+  hookSmash: c("砸了下来"),
   hookDrop: c("结果一波回调"),
   hookDoubt: c("走还是不走"),
   hookTangle: c("是不是又开始纠结"),

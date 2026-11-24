@@ -1,13 +1,18 @@
-<#
+﻿<#
 .SYNOPSIS
   One command -> the 16:9 film (1920x1080, 30 fps, H.264 High + AAC 44.1 kHz) with your voiceover.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts/render.ps1
-  powershell -ExecutionPolicy Bypass -File scripts/render.ps1 -Out "D:\claude视频\LVP-孤立高低点.mp4"
+  powershell -ExecutionPolicy Bypass -File scripts/render.ps1 -Dir "D:\claude视频"
+
+  Never overwrites: every render gets a new file name with the version and the time,
+  e.g. D:/claude视频/LVP-孤立高低点-v3-20261124-1530.mp4 (plus -2, -3 … if that exists too).
 #>
 param(
-  [string]$Out = "D:/claude视频/LVP-孤立高低点.mp4",
+  [string]$Dir = "D:/claude视频",
+  [string]$Name = "LVP-孤立高低点",
+  [string]$Version = "v3",
   [string]$VideoBitrate = "3M",
   [string]$Concurrency = ""
 )
@@ -21,8 +26,12 @@ $tsOk = $false
 if (Test-Path $ts) { try { $tsOk = ((Get-Content $ts -Raw -Encoding UTF8 | ConvertFrom-Json).lines.Count -gt 0) } catch {} }
 if (-not $tsOk) { Write-Host "[render] vo.timestamps.json is empty: captions/shots use the even split. Run scripts/align-vo.ps1 first for exact timing." -ForegroundColor Yellow }
 
-$dir = Split-Path -Parent $Out
-if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Force $dir | Out-Null }
+if (-not (Test-Path $Dir)) { New-Item -ItemType Directory -Force $Dir | Out-Null }
+$stamp = Get-Date -Format "yyyyMMdd-HHmm"
+$Out = Join-Path $Dir "$Name-$Version-$stamp.mp4"
+$n = 2
+while (Test-Path $Out) { $Out = Join-Path $Dir "$Name-$Version-$stamp-$n.mp4"; $n++ }
+Write-Host "[render] new file (nothing is overwritten): $Out" -ForegroundColor Cyan
 
 Push-Location $Root
 try {

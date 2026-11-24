@@ -20,10 +20,10 @@ export type ShotId =
 
 export type ScriptLine = { text: string; shot: ShotId; seed: [number, number] };
 
-/** Shots with no narration of their own, placed in the silence before another shot. */
-export const BUMPERS: { id: ShotId; before: ShotId; fallbackGap: number }[] = [
-  { id: "title", before: "concept", fallbackGap: 3.9 },
-];
+/** Shots with no narration of their own, placed before another shot. The film makes room for
+ * them itself (it pauses the voiceover inside the existing silence), so the voiceover file never
+ * needs silence spliced in. `hold` = how long the card stays on screen. */
+export const BUMPERS: { id: ShotId; before: ShotId; hold: number }[] = [{ id: "title", before: "concept", hold: 3.9 }];
 
 export const TITLE = "孤立高低点";
 export const TITLE_EN = "SWING HIGH · SWING LOW";

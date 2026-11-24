@@ -12,7 +12,7 @@ const SX = bx(61) - 4; // they rest under the range, below the key level
 const SW = bx(71) - bx(61) + 8;
 
 export const Forced: React.FC = () => {
-  const { t, at } = useShot();
+  const { t, at, dur } = useShot();
   const speed = at("突然加速");
   const third = at("第三批人");
   const stops = at("被迫平仓");
@@ -37,7 +37,10 @@ export const Forced: React.FC = () => {
   const live = upto === BREAK ? live73 : upto === PLUNGE ? live74 : undefined;
   // first two stops fire on 被触发, the rest on 观望的人 → 一下加速
   const fireAt = (k: number) => (k < 2 ? trig + k * 0.25 : lerp(bystand, accel + 0.3, (k - 2) / (STOPS.length - 3)));
-  const replay = (k: number) => win(t, chain + k * 0.12, chain + k * 0.12 + 0.5, 0.1);
+  // 同一方向…逼了出来: the stops replay as a chain — one batch per hit, spread from 同一方向 to the end of the shot
+  const hitAt = (k: number) => lerp(same + 0.15, Math.max(same + 1.6, dur - 0.45), k / (STOPS.length - 1));
+  const replay = (k: number) => win(t, hitAt(k), hitAt(k) + 0.35, 0.08);
+  const hitShake = STOPS.reduce((sum, _, k) => sum + shake(t, hitAt(k) + 0.3, 5, 0.3), 0);
 
   const c = camSteps(t, [
     [0, aim(540, 930, 1, 6, -2)],
@@ -47,11 +50,10 @@ export const Forced: React.FC = () => {
     [trig, aim(bx(69), py(-11), 1.6, 7, -10)],
     [accel, aim(bx(69), py(-15), 1.35, 7, -8)],
     [really, aim(bx(60), py(-8), 1.05, 6, -4)],
-    [same, aim(bx(67), py(-12), 1.35, 7, -8)],
-    [chain, aim(bx(68), py(-12), 1.5, 7, -10)],
+    ...STOPS.map((_, k) => [hitAt(k), aim(bx(69), py(-10 - k * 2), 1.35 + k * 0.06, 7, -8 - k)] as [number, ReturnType<typeof aim>]),
   ]);
   return (
-    <Stage cam={{ ...c, y: c.y + shake(t, brk + 0.2, 8) + shake(t, accel + 0.2, 14, 0.6) }}>
+    <Stage cam={{ ...c, y: c.y + shake(t, brk + 0.2, 8) + shake(t, accel + 0.2, 14, 0.6) + hitShake }}>
       <Chart upto={upto} live={live} o={(i) => (i >= 59 ? 1 : 0.5 - 0.25 * win(t, speed, third + 0.2))} glow={(i) => (i === PLUNGE ? p74 * 0.8 : i === BREAK ? p73 * 0.5 : 0)} />
       <Axis ticks={[14, 7, 0, -7, -14, -21, -28]} />
       <FocusBox x={bx(58)} y={py(0)} w={bx(72) - bx(58) + 14} h={py(-8) - py(0)} o={win(t, speed, third + 0.2) * 0.85} />
@@ -66,6 +68,22 @@ export const Forced: React.FC = () => {
             <div style={{ position: "absolute", left: SX, top: y - 11, width: SW, height: 22, border: `3px dashed ${C.forced}`, borderRadius: 4, opacity: ramp(t, third + k * 0.08, 0.25) * (1 - f) * (0.6 + 0.4 * win(t, stops, brk)) }} />
             <div style={{ position: "absolute", left: SX, top: y - 11, width: SW, height: 22, background: `linear-gradient(90deg, ${C.forced}, ${C.forcedD})`, borderRadius: 4, opacity: f * (0.35 + 0.65 * Math.max(1 - flown, replay(k))), boxShadow: `0 0 ${10 + 26 * Math.max(1 - flown, replay(k))}px ${C.forced}` }} />
             <Pellet x={lerp(SX + SW, bx(upto) + 6, flown)} y={y} color={C.forced} r={10} o={win(t, fireAt(k), fireAt(k) + 0.35, 0.06)} />
+            <Pellet x={lerp(SX + SW, bx(PLUNGE) + 6, clamp01((t - hitAt(k)) / 0.3))} y={lerp(y, py(-10 - k * 2.4), clamp01((t - hitAt(k)) / 0.3))} color={C.forced} r={12} o={win(t, hitAt(k), hitAt(k) + 0.3, 0.05)} />
+            <div
+              style={{
+                position: "absolute",
+                left: bx(PLUNGE) + 14,
+                top: py(-10 - k * 2.4),
+                transform: `translate(0,-50%) scale(${0.6 + 0.4 * ramp(t, hitAt(k) + 0.28, 0.12)})`,
+                color: C.down,
+                fontSize: 30,
+                fontWeight: 900,
+                opacity: ramp(t, hitAt(k) + 0.28, 0.1),
+                textShadow: `0 0 12px ${C.down}`,
+              }}
+            >
+              ▼
+            </div>
           </React.Fragment>
         );
       })}

@@ -47,7 +47,7 @@ export const pop = (t: number, a: number, d = 0.35) => {
 };
 export const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
 /** visible between a and b (s) with short fades */
-export const win = (t: number, a: number, b = Infinity, f = 0.25) => clamp01((t - a) / f) * clamp01((b - t) / f);
+export const win = (t: number, a: number, b = Infinity, f = 0.25) => clamp01((t - a) / f) * clamp01((b + f - t) / f);
 
 // ---------- shot context: every time a scene uses comes from here ----------
 export type ShotCtx = {
@@ -309,22 +309,39 @@ export const Candle: React.FC<{
   const col = up ? C.up : C.down;
   const dark = up ? C.upD : C.downD;
   const top = Math.min(open, close);
-  const h = Math.max(4, Math.abs(open - close));
+  const h = Math.max(3, Math.abs(open - close));
+  const ww = Math.max(1.5, Math.round(w * 0.14 * 2) / 2); // wick: thin line, a fraction of the body
+  const flat = w < 20; // small candles: flat, crisp, no 3D faces (they blur and flicker when zoomed out)
   return (
-    <div style={{ position: "absolute", left: 0, top: 0, transformStyle: "preserve-3d", opacity: o }}>
+    <div style={{ position: "absolute", left: 0, top: 0, transformStyle: flat ? undefined : "preserve-3d", opacity: o }}>
       <div
         style={{
           position: "absolute",
-          left: cx - 2.5,
+          left: cx - ww / 2,
           top: high,
-          width: 5,
+          width: ww,
           height: Math.max(0, low - high),
-          background: shade(col, 0.2),
-          transform: `translateZ(${-w * 0.25}px)`,
-          borderRadius: 3,
+          background: col,
+          opacity: 0.9,
+          transform: flat ? undefined : `translateZ(${-w * 0.25}px)`,
         }}
       />
-      <Box x={cx - w / 2} y={top} w={w} h={h} d={w * 0.5} color={col} dark={dark} glow={glow} />
+      {flat ? (
+        <div
+          style={{
+            position: "absolute",
+            left: cx - w / 2,
+            top,
+            width: w,
+            height: h,
+            background: col,
+            boxShadow: glow ? `0 0 ${10 + 20 * glow}px ${col}` : undefined,
+            outline: `1px solid ${dark}`,
+          }}
+        />
+      ) : (
+        <Box x={cx - w / 2} y={top} w={w} h={h} d={w * 0.5} color={col} dark={dark} glow={glow} />
+      )}
     </div>
   );
 };
@@ -451,44 +468,3 @@ export const rnd = (seed: number) => {
   return x - Math.floor(x);
 };
 
-/**
- * Rewind look (2D overlay, content band only): scanlines rolling upward, a bright tracking bar and a ◀◀ glyph.
- * o = 0..1 strength; the scene itself plays its motion backwards while this is on.
- */
-export const RewindFx: React.FC<{ o: number; t: number }> = ({ o, t }) => {
-  if (o <= 0.001) return null;
-  return (
-    <div style={{ position: "absolute", left: 0, top: 300, width: W, height: 1070, overflow: "hidden", pointerEvents: "none", zIndex: 50 }}>
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: -12,
-          width: W,
-          height: 1100,
-          background: "repeating-linear-gradient(180deg, rgba(200,220,255,0.07) 0 2px, transparent 2px 7px)",
-          transform: `translateY(${-((t * 420) % 7)}px)`,
-          opacity: o,
-        }}
-      />
-      <div style={{ position: "absolute", left: 0, top: 1070 - ((t * 1500) % 1170), width: W, height: 46, background: "linear-gradient(180deg, transparent, rgba(220,235,255,0.12), transparent)", opacity: o }} />
-      <div
-        style={{
-          position: "absolute",
-          left: W / 2,
-          top: 90,
-          transform: "translate(-50%,-50%)",
-          fontFamily: FONT,
-          fontSize: 76,
-          fontWeight: 900,
-          letterSpacing: -10,
-          color: "#ffffff",
-          opacity: o * (0.75 + 0.25 * Math.sin(t * 18)),
-          textShadow: "0 0 24px rgba(255,255,255,0.6)",
-        }}
-      >
-        ◀◀
-      </div>
-    </div>
-  );
-};

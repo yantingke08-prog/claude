@@ -6,6 +6,7 @@ import { Who } from "./Who";
 import { Three } from "./Three";
 import { Tug } from "./Tug";
 import { Aggr } from "./Aggr";
+import { AggrK } from "./AggrK";
 import { Absorb } from "./Absorb";
 import { AbsorbK } from "./AbsorbK";
 import { Broll } from "./Broll";
@@ -22,6 +23,7 @@ export const SCENES: Record<string, React.FC> = {
   "three": Three,
   "tug": Tug,
   "aggr": Aggr,
+  "aggr-k": AggrK,
   "absorb": Absorb,
   "absorb-k": AbsorbK,
   "broll-desk": Broll,

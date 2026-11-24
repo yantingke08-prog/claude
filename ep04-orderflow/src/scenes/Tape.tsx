@@ -3,16 +3,16 @@
 // Three outlined zones = the three kinds of fills; then the close replays down — the fall you saw.
 import React from "react";
 import { At, C, MONO, Stage, Tag, cam, camSteps, clamp01, lerp, ramp, useShot, win } from "../kit";
-import { CHASE, FOOT, MAIN } from "../data";
+import { FALL_END, FOOT, MAIN, TURN } from "../data";
 import { Chart, Minimap } from "./chart";
-import { CHASE_CAM, chaseAt } from "./Hook";
+import { CHASE_CAM, ENTRY } from "./Hook";
 
-const ROW_H = 50;
+const ROW_H = 58;
 const TOP = 500; // y of the highest row (tick 14)
 const CX = 540;
 const BAR_MAX = 250;
 const MAXV = Math.max(...FOOT.flatMap((r) => [r.bid, r.ask]));
-export const footY = (tick: number) => TOP + (MAIN[CHASE].h - tick) * ROW_H;
+export const footY = (tick: number) => TOP + (MAIN[TURN].h - tick) * ROW_H;
 const askL = CX + 80;
 const bidR = CX - 80;
 
@@ -59,13 +59,13 @@ export const Tape: React.FC = () => {
     [decided, cam(0, 30, 160, 9, -6)],
     [unseen, cam(0, 0, 60, 8, 4)],
   ]);
-  const b = MAIN[CHASE];
-  const closeY = lerp(footY(11), footY(b.c), ramp(t, decided, 0.5)); // replays the fall from your entry
+  const b = MAIN[TURN];
+  const closeY = lerp(footY(ENTRY), footY(b.c), ramp(t, decided, 0.5)); // the second after your entry: 10.11 → 10.06
   return (
     <>
       <Stage cam={c}>
         <At x={0} y={0} z={lerp(0, -400, ramp(t, sec, 0.5))} o={chartO}>
-          <Chart upto={CHASE} live={chaseAt(1)} />
+          <Chart upto={FALL_END} />
         </At>
         {FOOT.map((r, k) => {
           const y = footY(r.tick);
@@ -88,12 +88,12 @@ export const Tape: React.FC = () => {
         {/* the last price: starts at your entry, drops to the close on 胜负 */}
         <div style={{ position: "absolute", left: CX - 74, top: closeY - 22, width: 148, height: 44, border: "3px solid #fff", borderRadius: 6, opacity: ramp(t, open + 0.3, 0.2), boxShadow: "0 0 18px rgba(255,255,255,0.5)", transform: "translateZ(32px)" }} />
         {/* three kinds of fills, each outlined where it shows in the numbers */}
-        <Zone side="ask" hi={11} lo={5} color={C.up} o={red * zonesOff} />
-        <Zone side="both" hi={14} lo={12} color={C.passive} o={blue * zonesOff} />
-        <Zone side="bid" hi={3} lo={1} color={C.forced} o={amber * zonesOff} />
-        <Tag x={askL + BAR_MAX + 22} y={footY(8)} text="主动买" color={C.up} size={36} o={red * zonesOff} />
+        <Zone side="ask" hi={12} lo={10} color={C.up} o={red * zonesOff} />
+        <Zone side="both" hi={13} lo={13} color={C.passive} o={blue * zonesOff} />
+        <Zone side="bid" hi={7} lo={5} color={C.forced} o={amber * zonesOff} />
+        <Tag x={askL + BAR_MAX + 22} y={footY(11)} text="主动买" color={C.up} size={36} o={red * zonesOff} />
         <Tag x={askL + BAR_MAX + 22} y={footY(13)} text="被动接" color={C.passive} size={36} o={blue * zonesOff} />
-        <Tag x={bidR - BAR_MAX - 22} y={footY(2)} text="被迫卖" color={C.forced} size={36} align="right" o={amber * zonesOff} />
+        <Tag x={bidR - BAR_MAX - 22} y={footY(6)} text="被迫卖" color={C.forced} size={36} align="right" o={amber * zonesOff} />
         {/* the candle you saw, laid over the footprint */}
         <div style={{ position: "absolute", left: CX - 16, top: footY(b.h), width: 32, height: footY(b.l) - footY(b.h), opacity: ghost * 0.9, transform: "translateZ(40px)" }}>
           <div style={{ position: "absolute", left: 14, top: 0, width: 4, height: "100%", background: C.down }} />
@@ -101,7 +101,7 @@ export const Tape: React.FC = () => {
         </div>
         <Tag x={CX} y={footY(b.h) - 44} align="center" text="你看到的只是这根K线" color={C.text} size={32} o={ramp(t, unseen + 0.3, 0.25)} />
       </Stage>
-      <Minimap upto={CHASE} mark={CHASE} o={ramp(t, sec, 0.3)} />
+      <Minimap upto={FALL_END} mark={TURN} o={ramp(t, sec, 0.3)} />
     </>
   );
 };

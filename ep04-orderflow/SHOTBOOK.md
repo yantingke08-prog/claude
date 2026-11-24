@@ -1,6 +1,23 @@
-# SHOTBOOK v3: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
+# SHOTBOOK v4: EP.04 订单流 · 三种成交 (`Ep04OrderFlowThreeFills`)
 
 1080×1920 · 30 fps · the length is the real voiceover length (`public/audio/vo.mp3`).
+
+## v4 changes (user feedback, 2026-11-24)
+
+1. **Opening redone (first ~3 s).**
+   - **你刚追:** the rise prints bar by bar, fast.
+   - **进去:** the red bar you chase into grows, with 你追进 at its close (10.11).
+   - **掉头:** green bars print one by one after it.
+   - **不是你运气差:** focus box on your bar and the fall.
+2. **All rewinds removed** (hook, aggr, accept). Accept is back to two stacked panels: A plays, then the camera moves down to B.
+3. **Shorter wicks.** Ordinary bars have a wick of 0–1 tick.
+4. **先别盯 K 线:** a light-sweep switch back to the K-line chart. On "K 线" a big red X is drawn, and the chart dims to 22 % under it. The X stays until 你想啊.
+5. **Nothing leaves early.** `win()` now fades an element out *after* the next word starts, never before it.
+6. **Candles readable when small.** The wick is a thin line (14 % of the body width). Small candles are drawn flat and crisp (no 3D faces) and have a dark outline.
+7. **96.5–99.6 s (同一方向…逼了出来):** the stops replay as a chain. Each batch fires into the plunge bar, a ▼ steps down the bar, and the camera pushes in a little with a jolt on every hit.
+8. **~130 s:** the closing shot is flat 2D, with no 3D camera or rotation, so the candles and the 每个价位成交了多少 text no longer shimmer. The zoom is only 2.5 %, smooth and rounded.
+9. **34 s shot shortened:** it is now two shots. `aggr` (book) covers only 主动买 → 往上跳. `aggr-k` (K-line chart) has green sell bars printing on 砸买单 / 往下走; 它告诉你 goes back to your red bar, and on 付多少钱 a bracket shows 多付7跳 (10.04 → 10.11).
+10. **那一秒 footprint:** now the first green bar (the second after your entry). Its zones are 主动买 (top, ask side), 被动接 (top row, both sides) and 被迫卖 (bottom, bid side).
 
 ## v3 changes (feedback: rewind at the start; the ~135 s chart and profile were piled on top of each other; tags unclear and overlapping)
 

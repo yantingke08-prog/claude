@@ -18,8 +18,8 @@ const leg = (from: number, to: number, n: number, seed: number, vol: number, cho
     const noise = (rnd(seed + k * 7.3) - 0.5) * 2 * chop;
     const c = k === n - 1 ? to : Math.round(target + noise); // land exactly on the leg's end price
     const o = prev;
-    const h = Math.max(o, c) + Math.round(rnd(seed + k * 3.1) * 2);
-    const l = Math.min(o, c) - Math.round(rnd(seed + k * 5.7) * 2);
+    const h = Math.max(o, c) + (rnd(seed + k * 3.1) > 0.55 ? 1 : 0);
+    const l = Math.min(o, c) - (rnd(seed + k * 5.7) > 0.55 ? 1 : 0);
     const v = Math.round(vol * (0.6 + 0.35 * (h - l) / 4 + 0.3 * rnd(seed + k * 1.9)));
     out.push({ o, h, l, c, v });
     prev = c;
@@ -33,7 +33,7 @@ const range = (lo: number, hi: number, n: number, seed: number, vol: number): Ba
   for (let k = 0; k < n; k++) {
     const c = k === n - 1 ? hi - 2 : Math.round(lo + 0.5 + rnd(seed + k * 4.1) * (hi - lo - 1));
     const o = prev;
-    out.push({ o, c, h: Math.min(hi, Math.max(o, c) + 1), l: Math.max(lo, Math.min(o, c) - 1), v: Math.round(vol * (0.7 + 0.4 * rnd(seed + k))) });
+    out.push({ o, c, h: Math.min(hi, Math.max(o, c) + (rnd(seed + k * 2.3) > 0.5 ? 1 : 0)), l: Math.max(lo, Math.min(o, c) - (rnd(seed + k * 3.7) > 0.5 ? 1 : 0)), v: Math.round(vol * (0.7 + 0.4 * rnd(seed + k))) });
     prev = c;
   }
   return out;
@@ -46,11 +46,18 @@ export const CHASE = 44; // the bar you chased into (hook)
 export const ABSORB = 52; // huge volume, no progress (passive absorption)
 export const BREAK = 73; // key level breaks → stops fire
 export const PLUNGE = 74; // stop cascade accelerates the move
+export const TURN = CHASE + 1; // first bar of the reversal; its footprint is "那一秒"
+export const FALL_END = CHASE + 5; // last bar of the hook's reversal
 
 export const MAIN: Bar[] = [
   ...leg(-30, 4, 44, 11, 900, 2.2), // 0–43 the rise
-  { o: 4, h: 14, l: 1, c: 2, v: 3400 }, // 44 chase-and-reverse: long upper wick
-  ...leg(2, 1, 7, 61, 1000, 1.2), // 45–51
+  { o: 4, h: 12, l: 3, c: 11, v: 3000 }, // 44 the red bar you chase into (entry at its close, 10.11)
+  { o: 11, h: 13, l: 5, c: 6, v: 3400 }, // 45 straight back down: the second after you got in
+  { o: 6, h: 7, l: 2, c: 3, v: 2400 }, // 46
+  { o: 3, h: 4, l: 0, c: 1, v: 1900 }, // 47
+  { o: 1, h: 2, l: -2, c: -1, v: 1600 }, // 48
+  { o: -1, h: 1, l: -2, c: 0, v: 1200 }, // 49
+  ...leg(0, 1, 2, 61, 1000, 1.0), // 50–51
   { o: 1, h: 3, l: -1, c: 1, v: 3900 }, // 52 big volume, price does not move
   ...leg(1, -3, 6, 91, 900, 1.2), // 53–58
   ...range(SUPPORT, RESIST, 14, 131, 700), // 59–72 narrow range
@@ -86,14 +93,15 @@ export const volumeProfile = (upto = MAIN.length - 1) => {
 // ---- footprint of the chase bar: bid × ask volume per price; sums to MAIN[CHASE].v --------
 export type FootRow = { tick: number; bid: number; ask: number }; // bid = sold into bids (主动卖), ask = bought from asks (主动买)
 export const FOOT: FootRow[] = (() => {
-  const b = MAIN[CHASE];
+  const b = MAIN[TURN];
   const rows: FootRow[] = [];
   const raw: { tick: number; bid: number; ask: number }[] = [];
   for (let p = b.h; p >= b.l; p--) {
     const upper = (p - b.l) / (b.h - b.l); // 0 at low, 1 at high
-    // chasers lift offers on the way up (ask heavy mid/high), the top gets sold into, the bottom is stop selling
-    const ask = 60 + 260 * Math.sin(Math.PI * Math.min(1, upper * 1.15)) + 40 * rnd(p + 300);
-    const bid = 50 + (upper > 0.75 ? 220 : 0) + (upper < 0.2 ? 260 : 0) + 40 * rnd(p + 400);
+    // top: late chasers lift offers (ask heavy) into resting sellers (both sides big at the very top);
+    // bottom: stops of the chasers fire, selling into bids (bid heavy)
+    const ask = 50 + (upper > 0.55 ? 260 : 40) + 30 * rnd(p + 300);
+    const bid = 50 + (upper >= 0.99 ? 230 : 0) + (upper < 0.3 ? 280 : 30) + 30 * rnd(p + 400);
     raw.push({ tick: p, bid, ask });
   }
   const sum = raw.reduce((s, r) => s + r.bid + r.ask, 0);

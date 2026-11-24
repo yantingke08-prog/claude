@@ -5,7 +5,7 @@ import { MAIN, type Bar } from "../data";
 
 export type Geo = { x0: number; dx: number; w: number; y0: number; k: number; volBase: number; volH: number; maxV: number };
 /** full-chart geometry: 80 bars across x 80–996, price y 544–1174, volume up from 1320 */
-export const GEO: Geo = { x0: 80, dx: 11.6, w: 8, y0: 740, k: 14, volBase: 1322, volH: 110, maxV: 5200 };
+export const GEO: Geo = { x0: 80, dx: 11.6, w: 9, y0: 740, k: 14, volBase: 1322, volH: 110, maxV: 5200 };
 export const bx = (i: number, g: Geo = GEO) => g.x0 + i * g.dx;
 export const py = (tick: number, g: Geo = GEO) => g.y0 - tick * g.k;
 

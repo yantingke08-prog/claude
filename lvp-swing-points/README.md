@@ -16,13 +16,17 @@ Dependency versions are pinned exactly and `package-lock.json` is committed. The
 
 ## Voiceover → timing
 
-1. Put the finished voiceover at `public/audio/vo.mp3`.
-2. Time it against the script with forced alignment, which needs Python with `pip install -U stable-ts` (or `whisperx`) and ffmpeg:
+1. Put the finished voiceover at `public/audio/vo.mp3`. Use the original export, with no trimming and no spliced-in silence.
+2. Time the script against **this** file:
+   ```powershell
+   npm run sync
+   ```
+   This needs nothing extra: it uses the ffmpeg that ships with Remotion. It finds every pause in your voice, lines the 99 script lines up on them, and stamps the result with the audio's size and length. `scripts/render.ps1` runs it for you whenever the timings weren't measured on the current `vo.mp3`. For character-level precision, use whisper forced alignment instead (Python + `pip install -U stable-ts`):
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts/align-vo.ps1
    ```
-   This overwrites `public/audio/vo.timestamps.json`, which is committed seeded with the production script's suggested timings. You can also edit start/end by hand. The format is in `public/audio/README.md`.
-3. Check the result:
+   Either way, `public/audio/vo.timestamps.json` is overwritten. The committed copy only holds the script's suggested timings, so previews work without audio.
+3. Check the result. It fails if the timings don't belong to the `vo.mp3` that is there:
    ```powershell
    npm run check
    ```
@@ -47,10 +51,10 @@ npm run stills -- 2.5 66 104
 powershell -ExecutionPolicy Bypass -File scripts/render.ps1
 ```
 
-This runs `npm run check`, then writes a **new file every time**, e.g. `D:/claude视频/LVP-孤立高低点-v3-20261124-1530.mp4` (H.264, about 3 Mbps, AAC), with a cover still next to it. It never overwrites an earlier render. Pass `-Dir` to write somewhere else. The equivalent raw command (choose a new name yourself) is:
+This runs `npm run check`, then writes a **new file every time**, e.g. `D:/claude视频/LVP-孤立高低点-v4-20261124-1530.mp4` (H.264, about 3 Mbps, AAC), with a cover still next to it. It never overwrites an earlier render. Pass `-Dir` to write somewhere else. The equivalent raw command (choose a new name yourself) is:
 
 ```powershell
-npx remotion render src/index.ts LvpSwingPoints "D:/claude视频/LVP-孤立高低点-v3-manual.mp4" --codec=h264 --video-bitrate=3M --audio-codec=aac
+npx remotion render src/index.ts LvpSwingPoints "D:/claude视频/LVP-孤立高低点-v4-manual.mp4" --codec=h264 --video-bitrate=3M --audio-codec=aac
 ```
 
 BGM is not included. If you want music, mix it at ≤ -28 dB under the voice before you export `vo.mp3`.

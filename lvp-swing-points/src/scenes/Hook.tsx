@@ -37,7 +37,7 @@ const BTN = { go: { x: 1560, y: 360 }, stay: { x: 1560, y: 520 }, w: 250, h: 104
 
 export const Hook: React.FC = () => {
   const { t, cue } = useTime();
-  const sc = mixScale(SC_OPEN, SC_FULL, ramp(t, cue("hookGo") - 0.3, 0.7, easeInOutSine));
+  const sc = mixScale(SC_OPEN, SC_FULL, ramp(t, cue("hookDoubt") - 0.45, 0.6, easeInOutSine)); // make room for the switches
   // one sentence = candles print fast → they stop (a held beat) → the annotation lands.
   // Each leg must finish printing within ~55 % of its sentence, so the pause is always there.
   const fit = (from: number, to: number, n: number) => Math.max(0.045, Math.min(0.14, (0.55 * (to - from)) / n));
@@ -116,57 +116,79 @@ const EntryMark: React.FC<{ sc: Scale; at: number; until: number }> = ({ sc, at,
 // ---------------------------------------------------------------- L4: 走 / 不走 buttons + hand cursor
 const Dilemma: React.FC = () => {
   const { t, cue } = useTime();
-  const on = cue("hookGo");
-  const fly = cue("hookFly");
-  const stay = cue("hookStay");
+  const on = cue("hookDoubt"); // both switches appear on 「走还是不走」
   const off = cue("hookStill");
   const p = pop(t, on, off);
   if (p.opacity <= 0) return null;
-  // cursor path: rest → 走 → back off → 不走
-  const rest = { x: 1820, y: 760 };
-  const goPt = { x: BTN.go.x + 150, y: BTN.go.y + 70 };
-  const backPt = { x: BTN.go.x + 300, y: BTN.go.y + 150 };
-  const stayPt = { x: BTN.stay.x + 150, y: BTN.stay.y + 70 };
-  const seg = (a: number, d: number) => easeInOutSine(clamp01((t - a) / d));
-  let pt = { x: lerp(rest.x, goPt.x, seg(on + 0.2, 0.6)), y: lerp(rest.y, goPt.y, seg(on + 0.2, 0.6)) };
-  if (t > fly) pt = { x: lerp(goPt.x, backPt.x, seg(fly, 0.4)), y: lerp(goPt.y, backPt.y, seg(fly, 0.4)) };
-  if (t > stay) pt = { x: lerp(backPt.x, stayPt.x, seg(stay, 0.5)), y: lerp(backPt.y, stayPt.y, seg(stay, 0.5)) };
-  const hover: "go" | "stay" | null = t > stay + 0.45 ? "stay" : t > on + 0.75 && t < fly ? "go" : null;
-  const press = (a: number) => (t > a && t < a + 0.25 ? 0.94 : 1);
+  // whichever option the voice is saying grows a little (eased, with a soft overshoot);
+  // the other one settles back. On 「是不是又开始纠结了」 neither is chosen.
+  const sayGo = cue("hookDoubt"); // 「走」还是不走
+  const sayStay = cue("hookDoubtStay"); // 走还是「不走」
+  const tangle = cue("hookTangle");
+  const go = cue("hookGo"); // 「走」，怕这只是正常的回踩 / 一卖就飞
+  const stay = cue("hookStay"); // 「不走」，又怕它是真反转
+  const spans = { go: [[sayGo, sayStay], [go, stay]], stay: [[sayStay, tangle], [stay, off]] } as const;
+  const emph = (who: "go" | "stay") =>
+    Math.max(0, ...spans[who].map(([a, b]) => easeOutBack(clamp01((t - a) / 0.4)) * (1 - easeInOutSine(clamp01((t - b) / 0.35)))));
+  const eGo = emph("go");
+  const eStay = emph("stay");
+  // the hand follows the spoken option (rests between them while 纠结)
+  const goPt = { x: BTN.go.x + 205, y: BTN.go.y + 88 };
+  const stayPt = { x: BTN.stay.x + 205, y: BTN.stay.y + 88 };
+  const midPt = { x: BTN.go.x + 300, y: (BTN.go.y + BTN.stay.y) / 2 + 80 };
+  const rest = { x: BTN.go.x + 300, y: BTN.go.y + 20 };
+  const moves: [number, { x: number; y: number }][] = [
+    [sayGo, goPt],
+    [sayStay, stayPt],
+    [tangle, midPt],
+    [go, goPt],
+    [stay, stayPt],
+  ];
+  let pt = rest;
+  for (const [at, target] of moves) {
+    if (t < at) break;
+    const k = easeInOutSine(clamp01((t - at) / 0.4));
+    pt = { x: lerp(pt.x, target.x, k), y: lerp(pt.y, target.y, k) };
+  }
   return (
     <div style={{ position: "absolute", inset: 0, opacity: p.opacity }}>
-      <Button label="走" x={BTN.go.x} y={BTN.go.y} active={hover === "go"} scale={p.scale * press(on + 0.8)} />
-      <Button label="不走" x={BTN.stay.x} y={BTN.stay.y} active={hover === "stay"} scale={p.scale * press(stay + 0.5)} />
+      <Button label="走" x={BTN.go.x} y={BTN.go.y} emphasis={eGo} scale={p.scale} />
+      <Button label="不走" x={BTN.stay.x} y={BTN.stay.y} emphasis={eStay} scale={p.scale} />
       <Hand x={pt.x} y={pt.y} />
     </div>
   );
 };
 
-const Button: React.FC<{ label: string; x: number; y: number; active: boolean; scale: number }> = ({ label, x, y, active, scale }) => (
-  <div
-    style={{
-      position: "absolute",
-      left: x,
-      top: y,
-      width: BTN.w,
-      height: BTN.h,
-      borderRadius: 52,
-      border: `3px solid ${active ? C.text : withAlpha(C.muted, 0.6)}`,
-      background: active ? withAlpha(C.text, 0.92) : withAlpha(C.bg, 0.75),
-      color: active ? C.bg : C.text,
-      boxShadow: active ? `0 0 30px ${withAlpha(C.text, 0.55)}` : "none",
-      fontFamily: FONT,
-      fontWeight: 900,
-      fontSize: 54,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      transform: `scale(${scale})`,
-    }}
-  >
-    {label}
-  </div>
-);
+/** emphasis 0→1: grows to 114 %, fills white, glows */
+const Button: React.FC<{ label: string; x: number; y: number; emphasis: number; scale: number }> = ({ label, x, y, emphasis, scale }) => {
+  const e = Math.max(0, emphasis);
+  const on = clamp01(e);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: BTN.w,
+        height: BTN.h,
+        borderRadius: 52,
+        border: `3px solid ${on > 0.5 ? C.text : withAlpha(C.muted, 0.6)}`,
+        background: on > 0.5 ? withAlpha(C.text, 0.92) : withAlpha(C.bg, 0.75),
+        color: on > 0.5 ? C.bg : C.text,
+        boxShadow: `0 0 ${10 + 30 * on}px ${withAlpha(C.text, 0.55 * on)}`,
+        fontFamily: FONT,
+        fontWeight: 900,
+        fontSize: 54,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transform: `scale(${scale * (1 + 0.14 * e)})`,
+      }}
+    >
+      {label}
+    </div>
+  );
+};
 
 /** a simple pointing hand, fingertip at (x, y) */
 const Hand: React.FC<{ x: number; y: number }> = ({ x, y }) => (

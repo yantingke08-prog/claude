@@ -7,6 +7,7 @@
     "studio": "remotion studio src/index.ts",
     "typecheck": "tsc --noEmit",
     "check": "node --experimental-strip-types --no-warnings scripts/check.mts",
+    "sync": "node scripts/sync-vo.mjs",
     "seed": "node --experimental-strip-types --no-warnings scripts/seed-timestamps.mts",
     "stills": "node scripts/stills.mjs",
     "render": "powershell -ExecutionPolicy Bypass -File scripts/render.ps1"

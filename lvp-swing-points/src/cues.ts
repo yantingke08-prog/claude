@@ -15,6 +15,7 @@ export const CUES = {
   hookSmash: c("砸了下来"),
   hookDrop: c("结果一波回调"),
   hookDoubt: c("走还是不走"),
+  hookDoubtStay: c("不走", "走还是"),
   hookTangle: c("是不是又开始纠结"),
   hookGo: c("走，怕这只是"),
   hookFly: c("一卖就飞"),

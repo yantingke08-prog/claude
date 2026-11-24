@@ -7,12 +7,12 @@
   powershell -ExecutionPolicy Bypass -File scripts/render.ps1 -Dir "D:\claude视频"
 
   Never overwrites: every render gets a new file name with the version and the time,
-  e.g. D:/claude视频/LVP-孤立高低点-v3-20261124-1530.mp4 (plus -2, -3 … if that exists too).
+  e.g. D:/claude视频/LVP-孤立高低点-v4-20261124-1530.mp4 (plus -2, -3 … if that exists too).
 #>
 param(
   [string]$Dir = "D:/claude视频",
   [string]$Name = "LVP-孤立高低点",
-  [string]$Version = "v3",
+  [string]$Version = "v4",
   [string]$VideoBitrate = "3M",
   [string]$Concurrency = ""
 )
@@ -22,9 +22,16 @@ $vo = Join-Path $Root "public/audio/vo.mp3"
 $ts = Join-Path $Root "public/audio/vo.timestamps.json"
 
 if (-not (Test-Path $vo)) { Write-Host "[render] public/audio/vo.mp3 is missing - put the finished voiceover there (the film would be silent)." -ForegroundColor Red; exit 1 }
-$tsOk = $false
-if (Test-Path $ts) { try { $tsOk = ((Get-Content $ts -Raw -Encoding UTF8 | ConvertFrom-Json).lines.Count -gt 0) } catch {} }
-if (-not $tsOk) { Write-Host "[render] vo.timestamps.json is empty: captions/shots use the even split. Run scripts/align-vo.ps1 first for exact timing." -ForegroundColor Yellow }
+# Timings must be measured on THIS vo.mp3, or picture and captions drift from the voice.
+$measured = $false
+if (Test-Path $ts) {
+  try { $j = Get-Content $ts -Raw -Encoding UTF8 | ConvertFrom-Json; $measured = ($j.audio -and $j.audio.bytes -eq (Get-Item $vo).Length) } catch {}
+}
+if (-not $measured) {
+  Write-Host "[render] vo.timestamps.json was not measured on this vo.mp3 - syncing now (npm run sync)..." -ForegroundColor Yellow
+  Push-Location $Root
+  try { npm run -s sync; if ($LASTEXITCODE -ne 0) { throw "npm run sync failed" } } finally { Pop-Location }
+}
 
 if (-not (Test-Path $Dir)) { New-Item -ItemType Directory -Force $Dir | Out-Null }
 $stamp = Get-Date -Format "yyyyMMdd-HHmm"

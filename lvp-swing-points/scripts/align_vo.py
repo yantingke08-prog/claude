@@ -111,7 +111,8 @@ def main() -> int:
             "shot": l["shot"],
         })
     dur = audio_duration(Path(a.audio)) or (out[-1]["end"] + 0.5)
-    Path(a.out).write_text(json.dumps({"duration": round(dur, 3), "lines": out}, ensure_ascii=False, indent=1), encoding="utf-8")
+    fp = {"bytes": Path(a.audio).stat().st_size, "seconds": round(dur, 3)}
+    Path(a.out).write_text(json.dumps({"duration": round(dur, 3), "source": f"align-vo ({a.engine})", "audio": fp, "lines": out}, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"OK: {len(out)} lines, {total} chars, {dur:.2f} s -> {a.out}")
     return 0
 

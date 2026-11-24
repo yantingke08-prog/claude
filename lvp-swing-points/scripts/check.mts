@@ -4,10 +4,10 @@
 // 3. every isolated high/low the film points at satisfies the 3-candle rule; branches behave as narrated
 // 4. no colour literal outside src/theme.ts
 // 5. the timeline builds from vo.timestamps.json and from the even-split fallback
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { CUES } from "../src/cues.ts";
 import { ADV, CASE, CASE_FAKE, CASE_HOLD, CLAIMS, HOOK, HOOK_FLY, HOOK_PROBLEMS, SEARCHED, isSwingHigh, isSwingLow, maxRun } from "../src/data.ts";
-import { buildTimeline, findAnchor, normalise, type Timeline, type VoTimestamps } from "../src/timeline.ts";
+import { buildTimeline, findAnchor, normalise, timestampsMatch, type Timeline, type VoTimestamps } from "../src/timeline.ts";
 
 const root = new URL("..", import.meta.url);
 let bad = 0;
@@ -61,6 +61,16 @@ if (ts) {
   if (a !== tl0.spoken) fail("vo.timestamps.json text differs from src/script.ts (spoken characters do not match)");
 }
 checkTimeline("timestamps", buildTimeline(ts, null));
+// the real voiceover, if it is here: its timings must have been measured on it
+{
+  const vo = new URL("public/audio/vo.mp3", root);
+  if (existsSync(vo) && ts) {
+    const bytes = statSync(vo).size;
+    if (!ts.audio || ts.audio.bytes !== bytes) fail("vo.timestamps.json was not measured on public/audio/vo.mp3 — run: npm run sync");
+    else console.log(`
+[voiceover] timings measured on this vo.mp3 (${bytes} bytes, ${ts.audio.seconds} s, ${ts.source ?? "?"})`);
+  }
+}
 checkTimeline("fallback", buildTimeline(null, 190.9));
 
 // 2b. the film makes its own room for the title card and drops trailing silence:
@@ -69,8 +79,16 @@ checkTimeline("fallback", buildTimeline(null, 190.9));
   const base = ts ?? { duration: 190.9, lines: [] };
   const conceptStart = base.lines.find((l) => l.shot === "concept")?.start ?? 28;
   const shift = Math.max(0, conceptStart - (base.lines.filter((l) => l.shot === "hook").pop()?.end ?? conceptStart) - 0.3);
-  const raw: VoTimestamps = { duration: 0, lines: base.lines.map((l) => (l.start >= conceptStart ? { ...l, start: l.start - shift, end: l.end - shift } : l)) };
-  const tl = buildTimeline(raw, 210);
+  const raw: VoTimestamps = {
+    duration: 210,
+    audio: { bytes: 12345, seconds: 210 },
+    lines: base.lines.map((l) => (l.start >= conceptStart ? { ...l, start: l.start - shift, end: l.end - shift } : l)),
+  };
+  // timings measured on a different file must never cut the voice short
+  const foreign = buildTimeline({ ...raw, audio: undefined }, 210, undefined, 12345);
+  if (foreign.duration < 210 + foreign.audio.insert) fail("timings from another file cut the voiceover short");
+  else console.log(`\n[audio guard] timings not measured on this vo.mp3 → film runs to the end of the audio (${foreign.duration.toFixed(1)} s) and warns`);
+  const tl = buildTimeline(raw, 210, undefined, 12345);
   const title = tl.shots.find((s) => s.id === "title")!;
   console.log("\n[audio layout] simulated raw voiceover: no pause before the concept section, 210 s file");
   console.log(`  title card ${title.start.toFixed(2)} → ${title.end.toFixed(2)} (${(title.end - title.start).toFixed(2)} s); voice paused ${tl.audio.insert.toFixed(2)} s at file time ${tl.audio.split.toFixed(2)}`);

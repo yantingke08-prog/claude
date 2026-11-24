@@ -16,6 +16,15 @@ const exists = async (path: string) => {
     return false;
   }
 };
+const sizeOf = async (path: string) => {
+  try {
+    const r = await fetch(staticFile(path), { method: "HEAD" });
+    const n = Number(r.headers.get("content-length"));
+    return r.ok && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+};
 
 // Length = the real voiceover length (getAudioDurationInSeconds). The visuals never decide it.
 const calculateMetadata: CalculateMetadataFunction<FilmProps> = async () => {
@@ -34,7 +43,7 @@ const calculateMetadata: CalculateMetadataFunction<FilmProps> = async () => {
   } catch (e) {
     console.warn(`[vo] could not read public/${VO_TIMESTAMPS}: ${(e as Error).message}`);
   }
-  const timeline = buildTimeline(ts, audio);
+  const timeline = buildTimeline(ts, audio, undefined, audio ? await sizeOf(VO_AUDIO) : null);
   for (const w of timeline.warnings) console.warn(`[vo] ${w}`);
   const broll: Record<string, boolean> = {};
   for (const s of BROLL_SLOTS) broll[s.id] = await exists(s.file);

@@ -6,7 +6,8 @@ import { BUMPERS, LINES, type ScriptLine, type ShotId } from "./script.ts";
 
 export type Word = { word: string; start: number; end: number };
 export type TsLine = { text: string; start: number; end: number; words?: Word[]; shot?: string };
-export type VoTimestamps = { duration: number; lines: TsLine[] };
+/** `audio` = fingerprint of the vo.mp3 the timings were measured on (npm run sync / align-vo write it) */
+export type VoTimestamps = { duration: number; lines: TsLine[]; audio?: { bytes: number; seconds: number }; source?: string };
 
 export const VO_AUDIO = "audio/vo.mp3";
 export const VO_TIMESTAMPS = "audio/vo.timestamps.json";
@@ -83,7 +84,19 @@ export const sanitiseChars = (chars: CharT[]) => {
   return { chars: out, fixed };
 };
 
-export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds: number | null | undefined, script: ScriptLine[] = LINES): Timeline => {
+/** do these timestamps belong to this exact voiceover file? */
+export const timestampsMatch = (ts: VoTimestamps, audioSeconds: number | null | undefined, audioBytes?: number | null) => {
+  if (!audioSeconds) return true; // no audio: nothing to disagree with
+  if (ts.audio && audioBytes) return ts.audio.bytes === audioBytes && Math.abs(ts.audio.seconds - audioSeconds) < 0.1;
+  return false; // never measured on this file (e.g. the committed seed timings)
+};
+
+export const buildTimeline = (
+  ts: VoTimestamps | null | undefined,
+  audioSeconds: number | null | undefined,
+  script: ScriptLine[] = LINES,
+  audioBytes?: number | null,
+): Timeline => {
   const warnings: string[] = [];
   const spokenPer = script.map((l) => normalise(l.text));
   const total = spokenPer.reduce((s, x) => s + x.length, 0);
@@ -170,7 +183,12 @@ export const buildTimeline = (ts: VoTimestamps | null | undefined, audioSeconds:
     }
   }
   const speechEnd = lines[lines.length - 1].end;
-  const duration = speechEnd + END_HOLD + END_FADE;
+  // Trim trailing silence ONLY when the timings were measured on this very file; otherwise the
+  // voice could be cut off, so the film runs to the end of the audio.
+  const trusted = !tsOk || !audioSeconds || timestampsMatch(ts, audioSeconds, audioBytes);
+  if (tsOk && audioSeconds && !trusted)
+    warnings.push("vo.timestamps.json was NOT measured on this vo.mp3 → captions and actions will drift. Run `npm run sync` (render.ps1 does it for you).");
+  const duration = trusted ? speechEnd + END_HOLD + END_FADE : Math.max(speechEnd + END_HOLD + END_FADE, toFilm(fileSeconds) + 0.2);
   const tail = toFilm(fileSeconds) - duration;
   if (tail > 1) warnings.push(`Dropped ${tail.toFixed(1)}s of trailing silence: the film ends ${END_HOLD + END_FADE}s after the last word.`);
 

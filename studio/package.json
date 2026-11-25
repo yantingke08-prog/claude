@@ -22,7 +22,17 @@
     "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
     "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
     "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
-    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
+    "sz:studio": "remotion studio src/sanzhong/index.ts",
+    "sz:check": "node --experimental-strip-types --no-warnings scripts/sanzhong-check.mts",
+    "sz:align": "powershell -ExecutionPolicy Bypass -File scripts/sanzhong-align-vo.ps1",
+    "sz:still": "remotion still src/sanzhong/index.ts SanzhongLVP out/sanzhong/still.png",
+    "sz:stills": "node --experimental-strip-types --no-warnings scripts/sanzhong-stills.mjs",
+    "sz:qa": "node --experimental-strip-types --no-warnings scripts/sanzhong-qa.mjs",
+    "sz:prep": "node -e \"require('fs').mkdirSync('D:/claude视频',{recursive:true})\"",
+    "sz:render": "remotion render src/sanzhong/index.ts SanzhongLVP \"D:/claude视频/三种成交_LVP订单流_three-fills-v1.mp4\" --gl=angle --concurrency=50% --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sz:render:cpu": "remotion render src/sanzhong/index.ts SanzhongLVP \"D:/claude视频/三种成交_LVP订单流_three-fills-v1.mp4\" --gl=swangle --concurrency=2 --codec=h264 --crf=16 --pixel-format=yuv420p --color-space=bt709 --audio-codec=aac --audio-bitrate=320k",
+    "sz:make": "npm run sz:check && npm run sz:prep && npm run sz:render"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

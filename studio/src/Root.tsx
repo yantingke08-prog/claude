@@ -13,6 +13,8 @@ import { LvpV1Seeing } from "./lvp/V1Seeing";
 import { LvpV2Footprint } from "./lvp/V2Footprint";
 import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
+import { PocMagnet, PocMagnetCover } from "./poc/Film";
+import POC_TL from "./poc/timeline.json";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -43,6 +45,10 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+    </Folder>
+    <Folder name="POC">
+      <Composition id="PocMagnet" component={PocMagnet} durationInFrames={POC_TL.frames} fps={POC_TL.fps} width={POC_TL.width} height={POC_TL.height} defaultProps={{ muted: false }} />
+      <Still id="PocMagnetCover" component={PocMagnetCover} width={1440} height={2560} />
     </Folder>
   </>
 );

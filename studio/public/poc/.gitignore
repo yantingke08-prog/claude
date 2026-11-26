@@ -1,0 +1,2 @@
+# big intermediate WAVs are rebuilt by `npm run poc:sync`; the repo keeps the MP3s (the render reads mix.mp3)
+/*.wav

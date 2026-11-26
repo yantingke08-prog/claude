@@ -1,0 +1,85 @@
+{
+  "title": "POC 怎么用：为什么这条线像磁铁",
+  "slug": "poc-magnet-v1",
+  "episode": "订单流 06",
+  "fps": 30,
+  "tts": {
+    "voice": "zh-CN-YunjianNeural",
+    "rate": "+0%",
+    "pitch": "-2Hz",
+    "lead": 1.4,
+    "tail": 3.2
+  },
+  "gaps": {
+    "line": 0.38,
+    "section": 0.7,
+    "question": 0.85
+  },
+  "estimate": { "cps": 4.2, "latin": 0.35 },
+  "numbers": {
+    "aPoc": 5012,
+    "aBars": 34,
+    "aTouch": 19,
+    "aTop": 5030,
+    "aDev": 18,
+    "bPocs.0": 5013,
+    "bPocs.1": 5031,
+    "cPrior": 5031,
+    "cPoc": 5050
+  },
+  "notes": "text = what the voice reads and what the captions show. Numbers are written the way the voice says them and must equal the demo data (npm run poc:data checks the ones listed in `numbers`). gap = seconds of silence after a line when the default (line / section / question) is not right for the meaning. Picture events (events.json) are keyed by line id + word: change a word here and in events.json together.",
+  "lines": [
+    { "id": "L01", "section": "hook", "text": "看这条线。", "gap": 0.6 },
+    { "id": "L02", "section": "hook", "text": "价格往上冲，回来了；往下砸，又回来了。", "gap": 0.5 },
+    { "id": "L03", "nocap": true, "section": "hook", "text": "它凭什么，总能把价格吸回去？", "gap": 1.0 },
+
+    { "id": "L04", "section": "what", "text": "上一集讲的价值区，是成交最密的一片区间。" },
+    { "id": "L05", "section": "what", "text": "这一集，只讲区间里最亮的那一条线：POC，控制点。", "gap": 0.55 },
+    { "id": "L06", "section": "what", "text": "把这一天的每一笔成交，按价格摞起来，就是成交量分布。", "gap": 0.45 },
+    { "id": "L07", "section": "what", "text": "最长的那一格，就是成交量最大的价位：五千零一十二。", "gap": 0.6 },
+    { "id": "L08", "section": "what", "text": "POC 是一条线，不是一个区间。", "gap": 0.6 },
+    { "id": "L09", "section": "what", "text": "它是这一天最多人愿意成交的价格，也就是公认的公平价。" },
+
+    { "id": "L10", "nocap": true, "section": "why", "text": "为什么它像磁铁？" },
+    { "id": "L11", "section": "why", "text": "第一，价格在这里停得最久：三十四根K线里，十九根碰过它。", "gap": 0.45 },
+    { "id": "L12", "section": "why", "text": "第二，这里换手最多，四千二百多手。", "gap": 0.32 },
+    { "id": "L13", "section": "why", "text": "最多人的筹码，和对公平价的记忆，都压在这条线上。", "gap": 0.55 },
+    { "id": "L14", "section": "why", "text": "价格一被推远，离公平价越远，愿意跟着成交的人越少。", "gap": 0.34 },
+    { "id": "L15", "section": "why", "text": "推不动了，就会被拉回来，重新撮合。" },
+
+    { "id": "L16", "section": "away", "text": "偏离之后，是怎么回来的？" },
+    { "id": "L17", "section": "away", "text": "价格冲到五千零三十，离 POC 十八个点。", "gap": 0.4 },
+    { "id": "L18", "section": "away", "text": "上面几乎没有成交，三根K线，就退回了五千零一十二。", "gap": 0.5 },
+    { "id": "L19", "section": "away", "text": "这叫回补：价格回到成交密集的地方，把成交补上。" },
+
+    { "id": "L20", "section": "move", "text": "但磁铁，不是永远不动。", "gap": 0.55 },
+    { "id": "L21", "section": "move", "text": "第二天，价格放量突破，冲上五千零三十。", "gap": 0.4 },
+    { "id": "L22", "section": "move", "text": "关键是，它没有回去，而是在上面停住，来回成交。", "gap": 0.45 },
+    { "id": "L23", "section": "move", "text": "成交越堆越多，POC 就从五千零一十三，搬到了五千零三十一。", "gap": 0.8 },
+    { "id": "L24", "section": "move", "text": "这叫价值迁移：市场认可的公平价，换了地方。", "gap": 0.5 },
+    { "id": "L25", "section": "move", "text": "这时候 POC 往上搬，是趋势信号，不再是回拉信号。", "gap": 0.4 },
+    { "id": "L26", "section": "move", "text": "还盯着老 POC 等它回去，就是在逆势。" },
+
+    { "id": "L27", "section": "use", "text": "那普通交易者，该怎么用它？三步。", "gap": 0.6 },
+    { "id": "L28", "nocap": true, "section": "use1", "text": "第一步，定方向。", "gap": 0.42 },
+    { "id": "L29", "section": "use1", "text": "把几天的 POC 连起来看：一天比一天高，价值中心在往上走。", "gap": 0.42 },
+    { "id": "L30", "section": "use1", "text": "价格在 POC 上方，偏多看；在下方，偏空看。" },
+    { "id": "L31", "nocap": true, "section": "use2", "text": "第二步，找目标。", "gap": 0.42 },
+    { "id": "L32", "section": "use2", "text": "前一天的 POC 和当天的 POC，就是价格最容易被吸过去的两个目标位。", "gap": 0.42 },
+    { "id": "L33", "section": "use2", "text": "这一天，价格离开当天的五千零五十，一路被吸到前一天的五千零三十一。" },
+    { "id": "L34", "nocap": true, "section": "use3", "text": "第三步，找入场。", "gap": 0.42 },
+    { "id": "L35", "section": "use3", "text": "价格回到 POC 附近，先别提前挂单。", "gap": 0.5 },
+    { "id": "L36", "section": "use3", "text": "先看反转三要素：主动卖单被吸收，卖压衰竭，主动买单接手。", "gap": 0.5 },
+    { "id": "L37", "section": "use3", "text": "再看盘口：下方的买单被砸了还在补，上方的卖单开始撤。", "gap": 0.45 },
+    { "id": "L38", "section": "use3", "text": "都确认了再进场，止损放在反转低点外面。" },
+
+    { "id": "L39", "section": "wall", "text": "还有一点：POC 不是必须守住的墙。", "gap": 0.42 },
+    { "id": "L40", "section": "wall", "text": "价格可以直接穿过它。", "gap": 0.42 },
+    { "id": "L41", "section": "wall", "text": "穿过去以后，下面如果是低量节点，LVN，也就是几乎没人成交的价位，", "gap": 0.2 },
+    { "id": "L42", "section": "wall", "text": "价格会很快滑过去，一直滑到下一个成交密集的地方。", "gap": 0.8 },
+
+    { "id": "L43", "nocap": true, "section": "end", "text": "这些信号，都只代表概率，不是保证。", "gap": 0.6 },
+    { "id": "L44", "nocap": true, "section": "end", "text": "你看图的时候，会先画出 POC 吗？评论区聊聊。", "gap": 0.6 },
+    { "id": "L45", "nocap": true, "section": "end", "text": "教育内容，不构成投资建议。" }
+  ]
+}

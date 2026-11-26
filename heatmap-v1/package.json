@@ -1,0 +1,32 @@
+{
+  "name": "heatmap-v1",
+  "version": "1.0.0",
+  "private": true,
+  "description": "热图怎么看？挂单墙背后的真相 — vertical 1080x1920 30fps 3D Remotion explainer (no voiceover)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "node --experimental-strip-types --no-warnings scripts/check.mts",
+    "fonts": "python scripts/fonts.py",
+    "stills": "node scripts/stills.mjs",
+    "render": "powershell -ExecutionPolicy Bypass -File scripts/render.ps1"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.2",
+    "@react-three/postprocessing": "3.2.2",
+    "@remotion/bundler": "4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "@remotion/three": "4.0.539",
+    "postprocessing": "6.39.5",
+    "react": "19.2.9",
+    "react-dom": "19.2.9",
+    "remotion": "4.0.539",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/three": "0.186.0",
+    "typescript": "5.9.3"
+  }
+}

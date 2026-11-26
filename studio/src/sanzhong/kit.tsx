@@ -1,7 +1,7 @@
 // Shared visual kit: backdrop, 3D stage, 3D boxes/candles, order book, terminal tags, overlays.
 import React from "react";
 import { AbsoluteFill, Img, staticFile } from "remotion";
-import { C, FONT, H, L, MONO, RADIUS, T, W } from "./theme";
+import { C, DN, DNT, FONT, H, L, MONO, RADIUS, STOP, STOPT, T, UP, UPT, W } from "./theme";
 
 export const LOGO = staticFile("sanzhong/brand/lvp-logo.jpg");
 
@@ -115,7 +115,7 @@ export const Candle3D: React.FC<{ k: Candle; x: number; w: number; y: PriceMap; 
 }) => {
   if (grow <= 0 || o <= 0) return null;
   const up = k.c >= k.o;
-  const col = color ?? (up ? C.green : C.red);
+  const col = color ?? (up ? UP : DN); // 红涨绿跌
   const c = k.o + (k.c - k.o) * grow;
   const hi = Math.max(k.o, c) + (k.h - Math.max(k.o, k.c)) * grow;
   const lo = Math.min(k.o, c) - (Math.min(k.o, k.c) - k.l) * grow;
@@ -228,8 +228,8 @@ export const Book: React.FC<{ x: number; y: number; rows: BookRow[]; max: number
     <div style={{ position: "absolute", left: 0, top: 0, opacity: o, transformStyle: "preserve-3d" }}>
       {/* panel */}
       <div style={{ position: "absolute", left: left - 18, top: y - 58, width: BOOK.w + 36, height: rows.length * BOOK.rowH + 76, borderRadius: RADIUS, background: C.panel, border: `1px solid ${C.border}`, transform: "translateZ(-14px)" }} />
-      <div style={{ position: "absolute", left: left, top: y - 46, width: half, textAlign: "center", fontFamily: FONT, fontSize: T.xs, color: C.greenText, letterSpacing: 2 }}>买单 BID</div>
-      <div style={{ position: "absolute", left: x + BOOK.priceW / 2, top: y - 46, width: half, textAlign: "center", fontFamily: FONT, fontSize: T.xs, color: C.redText, letterSpacing: 2 }}>卖单 ASK</div>
+      <div style={{ position: "absolute", left: left, top: y - 46, width: half, textAlign: "center", fontFamily: FONT, fontSize: T.xs, color: UPT, letterSpacing: 2 }}>买单 BID</div>
+      <div style={{ position: "absolute", left: x + BOOK.priceW / 2, top: y - 46, width: half, textAlign: "center", fontFamily: FONT, fontSize: T.xs, color: DNT, letterSpacing: 2 }}>卖单 ASK</div>
       {rows.map((r, k) => {
         const cy = y + k * BOOK.rowH;
         const bh = BOOK.rowH - 14;
@@ -243,16 +243,16 @@ export const Book: React.FC<{ x: number; y: number; rows: BookRow[]; max: number
             </div>
             {r.bid ? (
               <>
-                <Box x={x - BOOK.priceW / 2 - 8 - bw} y={cy + 7} w={bw} h={bh} d={12} color={r.bidColor ?? C.green} o={1 - dim * 0.65} glow={r.bidGlow} />
-                <div style={{ position: "absolute", left: left + 2, top: cy, width: 68, height: BOOK.rowH, lineHeight: `${BOOK.rowH}px`, textAlign: "left", fontFamily: MONO, fontSize: T.xs + 2, color: r.bidColor ?? C.greenText, opacity: 1 - dim * 0.6, transform: "translateZ(8px)" }}>
+                <Box x={x - BOOK.priceW / 2 - 8 - bw} y={cy + 7} w={bw} h={bh} d={12} color={r.bidColor ?? UP} o={1 - dim * 0.65} glow={r.bidGlow} />
+                <div style={{ position: "absolute", left: left + 2, top: cy, width: 68, height: BOOK.rowH, lineHeight: `${BOOK.rowH}px`, textAlign: "left", fontFamily: MONO, fontSize: T.xs + 2, color: r.bidColor ?? UPT, opacity: 1 - dim * 0.6, transform: "translateZ(8px)" }}>
                   {Math.round(r.bid)}
                 </div>
               </>
             ) : null}
             {r.ask ? (
               <>
-                <Box x={x + BOOK.priceW / 2 + 8} y={cy + 7} w={aw} h={bh} d={12} color={r.askColor ?? C.red} o={1 - dim * 0.65} glow={r.askGlow} />
-                <div style={{ position: "absolute", left: x + BOOK.w / 2 - 70, top: cy, width: 68, height: BOOK.rowH, lineHeight: `${BOOK.rowH}px`, textAlign: "right", fontFamily: MONO, fontSize: T.xs + 2, color: r.askColor ?? C.redText, opacity: 1 - dim * 0.6, transform: "translateZ(8px)" }}>
+                <Box x={x + BOOK.priceW / 2 + 8} y={cy + 7} w={aw} h={bh} d={12} color={r.askColor ?? DN} o={1 - dim * 0.65} glow={r.askGlow} />
+                <div style={{ position: "absolute", left: x + BOOK.w / 2 - 70, top: cy, width: 68, height: BOOK.rowH, lineHeight: `${BOOK.rowH}px`, textAlign: "right", fontFamily: MONO, fontSize: T.xs + 2, color: r.askColor ?? DNT, opacity: 1 - dim * 0.6, transform: "translateZ(8px)" }}>
                   {Math.round(r.ask)}
                 </div>
               </>
@@ -270,9 +270,9 @@ export const Book: React.FC<{ x: number; y: number; rows: BookRow[]; max: number
                         width: 32,
                         height: BOOK.rowH - 26,
                         borderRadius: 4,
-                        border: `2px dashed ${C.redText}`,
-                        background: fire > 0 ? alpha(C.red, 0.35 + 0.65 * fire) : "transparent",
-                        boxShadow: fire > 0.5 ? `0 0 16px ${alpha(C.red, 0.8)}` : undefined,
+                        border: `2px dashed ${STOPT}`,
+                        background: fire > 0 ? alpha(STOP, 0.35 + 0.65 * fire) : "transparent",
+                        boxShadow: fire > 0.5 ? `0 0 16px ${alpha(STOP, 0.8)}` : undefined,
                         transform: `translateZ(${10 + 30 * fire}px)`,
                         opacity: (r.stopO ?? 1) * (1 - Math.max(0, fire - 0.8) * 5),
                       }}

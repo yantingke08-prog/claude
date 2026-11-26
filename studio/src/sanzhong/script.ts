@@ -5,7 +5,7 @@
 // - SFX hangs sound cues on beats, so picture, captions and sound all move with the recording.
 // Pure module (no Remotion imports): scripts/sanzhong-check.mts imports it with node.
 
-export type Tone = "red" | "green" | "cyan" | "amber";
+export type Tone = "red" | "green" | "cyan" | "amber" | "violet"; // red = up/buy, green = down/sell (红涨绿跌)
 export type ShotId =
   | "hook"
   | "tape"
@@ -172,38 +172,38 @@ export type BeatId = keyof typeof BEATS;
 
 /** Caption keywords: drawn in the tone colour (the first match in a caption unit). */
 export const HI: [phrase: string, tone: Tone][] = [
-  ["掉头", "red"],
+  ["掉头", "green"],
   ["三种成交", "amber"],
   ["谁在成交", "amber"],
   ["追着价格打", "amber"],
   ["挂在原地", "cyan"],
-  ["被硬逼着成交", "red"],
+  ["被硬逼着成交", "violet"],
   ["较劲", "amber"],
-  ["主动买", "green"],
-  ["主动卖", "red"],
-  ["往上跳", "green"],
-  ["往下走", "red"],
+  ["主动买", "red"],
+  ["主动卖", "green"],
+  ["往上跳", "red"],
+  ["往下走", "green"],
   ["付多少钱", "amber"],
   ["有没有人接", "cyan"],
   ["被动承接", "cyan"],
-  ["推不动", "red"],
-  ["被接住", "green"],
+  ["推不动", "amber"],
+  ["被接住", "red"],
   ["价格却不走", "amber"],
   ["稳稳接", "cyan"],
   ["\"追\"", "amber"],
   ["\"扛\"", "cyan"],
   ["突然加速", "amber"],
-  ["第三批人", "red"],
-  ["止损和被迫平仓", "red"],
-  ["止损单被触发", "red"],
-  ["被迫成交", "red"],
+  ["第三批人", "violet"],
+  ["止损和被迫平仓", "violet"],
+  ["止损单被触发", "violet"],
+  ["被迫成交", "violet"],
   ["一下加速", "amber"],
-  ["连续逼了出来", "red"],
+  ["连续逼了出来", "violet"],
   ["谁着急", "amber"],
   ["谁有耐心", "cyan"],
   ["接受它", "amber"],
-  ["站得住", "green"],
-  ["市场不认可", "red"],
+  ["站得住", "red"],
+  ["市场不认可", "green"],
   ["一笔一笔", "amber"],
   ["百分之七十", "amber"],
 ];

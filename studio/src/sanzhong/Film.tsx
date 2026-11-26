@@ -2,7 +2,7 @@ import React from "react";
 import { AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { prog } from "./anim";
 import { Captions } from "./Captions";
-import { FilmProvider, useFilm } from "./ctx";
+import { FilmProvider, ShotCtx, XF, useFilm } from "./ctx";
 import { Backdrop, Disclaimer, Header } from "./kit";
 import { VO_AUDIO } from "./audioContract";
 import { SCENES } from "./scenes";
@@ -20,7 +20,6 @@ const QA_CSS = `
   [data-qa] * { background: transparent !important; }
 `;
 
-const XF = 0.35; // seconds of cross-fade into each new shot
 
 const Shots: React.FC = () => {
   const { t, tl } = useFilm();
@@ -34,7 +33,9 @@ const Shots: React.FC = () => {
         const o = i === 0 ? 1 : prog(t, s.start, XF);
         return (
           <AbsoluteFill key={`${s.id}-${i}`} style={{ opacity: o }}>
-            <Scene shot={s} />
+            <ShotCtx.Provider value={{ start: s.start, first: i === 0 }}>
+              <Scene shot={s} />
+            </ShotCtx.Provider>
           </AbsoluteFill>
         );
       })}

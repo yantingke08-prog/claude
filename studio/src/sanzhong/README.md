@@ -3,6 +3,11 @@
 A vertical 1080×1920, 30 fps order-flow explainer about the three kinds of fills: 主动 (aggressive), 被动 (passive) and 被迫 (forced).
 The film is driven by the user's own recording. Nothing is synthesised.
 
+**Colours (v2): 红涨绿跌.** Up candles, active buys and the bid side are red; down candles, active sells and the ask side are green.
+Stops and forced fills are violet, resting orders and key levels are cyan, and amber marks emphasis and 追价.
+
+**Order-flow layers (v2):** a footprint (卖 × 买 per price, ≥3× imbalance cells filled, POC framed), volume and Delta panes under every chart, a live readout row (成交量 / Delta / 最新价), and a 逐笔成交 ticker. All of these are seeded synthetic data from `orderflow.tsx`, and one print list drives both the ticker and the readouts.
+
 ## Files
 
 | Path | What it is |

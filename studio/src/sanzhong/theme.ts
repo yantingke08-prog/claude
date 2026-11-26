@@ -3,10 +3,13 @@ export const W = 1080;
 export const H = 1920;
 
 export const C = {
-  red: "#D11F2D", // sell, risk, forced
+  // A-share / 国内期货 convention: 红涨绿跌. Buy-side = red, sell-side = green.
+  red: "#D11F2D", // up candle, active buy, bid side
   redText: "#F0444F",
-  green: "#1FA34A", // buy, support, acceptance
+  green: "#1FA34A", // down candle, active sell, ask side
   greenText: "#35C266",
+  violet: "#9D6BFF", // pending stops / forced fills (被迫)
+  violetText: "#B48CFF",
   cyan: "#5CD6FF", // key level, resting (passive) orders
   amber: "#FFB547", // emphasis, aggressive urgency
   bg: "#07090D",
@@ -19,8 +22,15 @@ export const C = {
   border: "rgba(145,160,181,0.22)",
 } as const;
 
-export type Tone = "red" | "green" | "cyan" | "amber";
-export const toneColor = (t: Tone) => (t === "red" ? C.redText : t === "green" ? C.greenText : t === "cyan" ? C.cyan : C.amber);
+export type Tone = "red" | "green" | "cyan" | "amber" | "violet";
+export const toneColor = (t: Tone) => (t === "red" ? C.redText : t === "green" ? C.greenText : t === "cyan" ? C.cyan : t === "violet" ? C.violetText : C.amber);
+/** semantic aliases (红涨绿跌) */
+export const UP = C.red;
+export const UPT = C.redText;
+export const DN = C.green;
+export const DNT = C.greenText;
+export const STOP = C.violet;
+export const STOPT = C.violetText;
 
 // Local fonts only: render needs no network.
 export const FONT = '"Microsoft YaHei", "Noto Sans SC", "PingFang SC", sans-serif';

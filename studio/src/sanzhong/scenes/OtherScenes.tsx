@@ -6,7 +6,8 @@ import { useFilm } from "../ctx";
 import { Box, LOGO, Stage, Tag, alpha, fmtPrice } from "../kit";
 import { PROFILE } from "../market";
 import { mulberry32 } from "../../lib/rng";
-import { C, FONT, L, MONO, T, W } from "../theme";
+import { C, DN, DNT, FONT, L, MONO, STOP, STOPT, T, UP, UPT, W } from "../theme";
+import { Hud, Ticker, flow, fmtD, fmtN, merge, totals, type Print as Fill } from "../orderflow";
 import type { SceneProps } from "./parts";
 
 // ---------------- tug: three forces on one price ----------------
@@ -33,7 +34,9 @@ export const Tug: React.FC<SceneProps> = ({ shot }) => {
   const f = prog(t, b("forces"), 0.5);
   const jig = Math.sin((t - b("forces")) * 9) * 10 * f * (1 - prog(t, b("result"), 0.4));
   const cam = { rx: 8, ry: keys(t, [[shot.start, -14], [shot.end, 10]]), s: 1 };
+  const tugPrints = React.useMemo(() => flow(701, shot.start, shot.end + 0.5, { every: 0.09, buyP: 0.6, hi: 70, p: (s) => (s > b("nextTick") + 0.4 ? 6 : 5) }), [shot.start, shot.end, b]);
   return (
+    <>
     <Stage cam={cam}>
       <div style={{ position: "absolute", left: 539, top: tickY(10), width: 2, height: tickY(0) - tickY(10), background: "rgba(145,160,181,0.35)" }} />
       {Array.from({ length: 11 }, (_, i) => (
@@ -49,12 +52,18 @@ export const Tug: React.FC<SceneProps> = ({ shot }) => {
       {/* price puck */}
       <Box x={565} y={puckY - 24 + jig * 0.3} w={48} h={48} d={48} color={C.amber} glow={0.6} />
       <Arrow x={330} y={tickY(2)} len={mix(120, 260, f) + jig} dir={1} color={C.amber} o={f} />
-      <Arrow x={760} y={tickY(7) - 26 - (mix(120, 200, f) - jig)} len={mix(120, 200, f) - jig} dir={-1} color={C.red} o={f} />
+      <Arrow x={760} y={tickY(7) - 26 - (mix(120, 200, f) - jig)} len={mix(120, 200, f) - jig} dir={-1} color={STOP} o={f} />
       <Tag x={622} y={puckY} text="+1 跳" color={C.amber} o={prog(t, b("nextTick") + 0.6, 0.3)} mono />
       <Tag x={330} y={tickY(2) + 30} text="追价" color={C.amber} o={f} align="c" />
       <Tag x={894} y={tickY(7)} text="挂单" color={C.cyan} o={f} />
-      <Tag x={760} y={tickY(7) - 26 - 200 - 30} text="被迫" color={C.redText} o={f} align="c" />
+      <Tag x={760} y={tickY(7) - 26 - 200 - 30} text="被迫" color={STOPT} o={f} align="c" />
+      <Tag x={894} y={tickY(7) + 44} text="卖 900" color={C.cyan} o={f} size={24} mono />
+      <Tag x={330} y={tickY(2) + 74} text="主动买" color={UPT} o={f} align="c" size={24} />
+      <Tag x={760} y={tickY(7) - 26 - 200 - 74} text="止损卖" color={STOPT} o={f} align="c" size={24} />
     </Stage>
+      <Hud items={[{ label: "买压", value: fmtN(count(t, b("forces"), 1.2, 600, 1480)), color: UPT }, { label: "挂单", value: "900", color: C.cyan }, { label: "止损", value: fmtN(count(t, b("forces"), 1.2, 200, 760)), color: STOPT }]} />
+      <Ticker t={t} prints={tugPrints} />
+    </>
   );
 };
 
@@ -105,8 +114,9 @@ export const Poll: React.FC<SceneProps> = ({ shot }) => {
 const PILLARS = [
   { x: 260, color: C.amber, base: "追价", top: "着急", beat: "sumChase" as const },
   { x: 540, color: C.cyan, base: "挂单", top: "耐心", beat: "sumRest" as const },
-  { x: 820, color: C.red, base: "被迫", top: "加速", beat: "sumForced" as const },
+  { x: 820, color: STOP, base: "被迫", top: "加速", beat: "sumForced" as const },
 ];
+const SUB = ["看 Delta", "看 挂单墙", "看 止损簇"];
 export const Sum: React.FC<SceneProps> = ({ shot }) => {
   const { t, b } = useFilm();
   const inP = prog(t, b("together"), 0.6);
@@ -133,8 +143,9 @@ export const Sum: React.FC<SceneProps> = ({ shot }) => {
         return (
           <React.Fragment key={i}>
             <Box x={p.x - 75} y={FLOOR - h} w={150} h={h} d={150} color={p.color} o={0.35 + 0.65 * Math.max(u, 0.0)} glow={u * 0.6 + flick * 0.6} />
-            <Tag x={p.x} y={FLOOR + 40} text={p.base} color={p.color === C.red ? C.redText : p.color} o={1} align="c" z={90} />
-            <Tag x={p.x} y={FLOOR - h - 34} text={p.top} color={p.color === C.red ? C.redText : p.color} o={prog(t, b(p.beat) + 0.35, 0.3)} align="c" z={90} size={40} />
+            <Tag x={p.x} y={FLOOR + 40} text={p.base} color={p.color === STOP ? STOPT : p.color} o={1} align="c" z={90} />
+            <Tag x={p.x} y={FLOOR + 80} text={SUB[i]} color={C.sub} o={prog(t, b(p.beat) + 0.5, 0.3)} align="c" z={90} size={24} />
+            <Tag x={p.x} y={FLOOR - h - 34} text={p.top} color={p.color === STOP ? STOPT : p.color} o={prog(t, b(p.beat) + 0.35, 0.3)} align="c" z={90} size={40} />
           </React.Fragment>
         );
       })}
@@ -162,12 +173,19 @@ export const Print: React.FC<SceneProps> = ({ shot }) => {
   const fill = prog(t, t1, 0.4);
   const cam = { rx: 10, ry: keys(t, [[shot.start, -12], [shot.end, -4]]), s: camSteps(t, 1, [[b("oneByOne"), 1.05]]) };
   const stackTop = P_BOT - Math.ceil(landed / 3) * (BRICK_H + 4);
+  const rs = mulberry32(61);
+  const sides = spawn.map(() => (rs() < 0.55 ? 1 : -1));
+  const fills: Fill[] = spawn.map((s2, i) => ({ t: s2 + 0.4, side: sides[i] as 1 | -1, size: 3 + ((i * 37) % 58), p: 40 + Math.floor(i / 3 / 2) }));
+  const { delta } = totals(fills, t);
   return (
+    <>
+    <Hud items={[{ label: "成交笔数", value: fmtN(Math.round((landed / N_BRICKS) * TOTAL_FILLS)), color: C.amber }, { label: "Delta", value: fmtD(delta), color: delta >= 0 ? UPT : DNT }, { label: "最新价", value: (3400 + (40 + Math.floor(landed / 6)) * 0.25).toFixed(2), color: C.amber }]} o={prog(t, t0, 0.3)} />
+    <Ticker t={t} prints={fills} />
     <Stage cam={cam}>
       {/* the bar to be printed */}
       <div style={{ position: "absolute", left: P_X - 85, top: P_TOP - 6, width: 170, height: P_BOT - P_TOP + 12, border: `3px dashed ${alpha(C.sub, 0.6)}`, borderRadius: 6, opacity: ghost * (1 - fill), transform: "translateZ(-10px)" }} />
-      <div style={{ position: "absolute", left: P_X - 2, top: P_TOP - 90, width: 4, height: P_BOT - P_TOP + 170, background: C.green, opacity: fill }} />
-      <Box x={P_X - 80} y={P_TOP} w={160} h={P_BOT - P_TOP} d={70} color={C.green} o={fill} glow={0.3 * fill} />
+      <div style={{ position: "absolute", left: P_X - 2, top: P_TOP - 90, width: 4, height: P_BOT - P_TOP + 170, background: UP, opacity: fill }} />
+      <Box x={P_X - 80} y={P_TOP} w={160} h={P_BOT - P_TOP} d={70} color={UP} o={fill} glow={0.3 * fill} />
       {spawn.map((s, i) => {
         const u = Math.min(1, Math.max(0, (t - s) / 0.4));
         if (u <= 0) return null;
@@ -175,15 +193,20 @@ export const Print: React.FC<SceneProps> = ({ shot }) => {
         const row = Math.floor(i / 3);
         const tx = P_X - 72 + col * (BRICK_W + 4);
         const ty = P_BOT - (row + 1) * (BRICK_H + 4);
-        const fromLeft = r() < 0.55;
+        const fromLeft = sides[i] > 0;
+        r();
         const sx = fromLeft ? 120 : 960;
         const sy = 600 + r() * 500;
         const ease = 1 - Math.pow(1 - u, 3);
-        return <Box key={i} x={mix(sx, tx, ease)} y={mix(sy, ty, ease)} w={BRICK_W} h={BRICK_H} d={24} color={fromLeft ? C.green : C.red} o={1 - fill} />;
+        return <Box key={i} x={mix(sx, tx, ease)} y={mix(sy, ty, ease)} w={BRICK_W} h={BRICK_H} d={24} color={fromLeft ? UP : DN} o={1 - fill} />;
       })}
-      <Tag x={P_X + 104} y={Math.min(P_BOT - 30, stackTop + 10)} text={`${Math.round((landed / N_BRICKS) * TOTAL_FILLS)} 笔`} color={C.amber} o={prog(t, t0, 0.3)} mono />
+      <Tag x={P_X + 104} y={Math.min(P_BOT - 30, stackTop + 10)} text={`${Math.round((landed / N_BRICKS) * TOTAL_FILLS)} 笔`} color={C.amber} o={prog(t, t0, 0.3) * (1 - fill)} mono />
       <Tag x={P_X - 104} y={P_TOP + 30} text="?" color={C.sub} o={ghost * (1 - prog(t, t0, 0.4))} align="r" size={44} />
+      <Tag x={140} y={560} text="买方成交" color={UPT} o={win(t, t0, t1, 0.3)} size={26} />
+      <Tag x={940} y={560} text="卖方成交" color={DNT} o={win(t, t0, t1, 0.3)} align="r" size={26} />
+      <Tag x={P_X + 104} y={P_TOP + 20} text="阳线收出" color={UPT} o={fill} size={26} />
     </Stage>
+    </>
   );
 };
 
@@ -234,6 +257,9 @@ export const Next: React.FC<SceneProps> = ({ shot }) => {
           ) : null,
         )}
         <Tag x={PR_X + PR_W + 8} y={vaTop - 30} text={`${count(t, b("pct70"), 0.7, 0, 70)}%`} color={C.amber} o={va} align="r" mono size={40} />
+        <Tag x={PR_X + (vMax / vMax) * PR_W * grow(poc) + 14} y={PR_TOP + poc * PR_ROW + PR_ROW / 2} text="POC" color={C.amber} o={prog(t, b("sameZone"), 0.3)} mono size={26} />
+        <Tag x={PR_X + PR_W + 22} y={vaTop + 14} text="VAH" color={C.amber} o={prog(t, b("sameZone") + 0.3, 0.3)} mono size={24} />
+        <Tag x={PR_X + PR_W + 22} y={vaBot - 14} text="VAL" color={C.amber} o={prog(t, b("sameZone") + 0.5, 0.3)} mono size={24} />
       </Stage>
       {endIn > 0 ? (
         <AbsoluteFill style={{ opacity: endIn, alignItems: "center", justifyContent: "center", fontFamily: FONT }}>

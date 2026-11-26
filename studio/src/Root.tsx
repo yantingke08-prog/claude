@@ -13,6 +13,8 @@ import { LvpV1Seeing } from "./lvp/V1Seeing";
 import { LvpV2Footprint } from "./lvp/V2Footprint";
 import { LvpV3Profile } from "./lvp/V3Profile";
 import { VIDEO as LVP } from "./lvp/brand";
+import { ValueArea, ValueAreaCover } from "./valuearea/Film";
+import { FPS as VA_FPS, FRAMES as VA_FRAMES, HEIGHT as VA_H, WIDTH as VA_W } from "./valuearea/cue";
 
 const base = { fps: TL.fps, width: TL.width, height: TL.height };
 const expBase = { fps: EXP.fps, width: EXP.width, height: EXP.height };
@@ -43,6 +45,16 @@ export const RemotionRoot: React.FC = () => (
       <Composition id="LVP-V2-Footprint" component={LvpV2Footprint} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-V3-Profile" component={LvpV3Profile} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
       <Composition id="LVP-EndCard" component={LvpEndCard} durationInFrames={LVP.frames} fps={LVP.fps} width={LVP.width} height={LVP.height} />
+    </Folder>
+    <Folder name="ValueArea">
+      <Composition id="ValueArea" component={ValueArea} durationInFrames={VA_FRAMES} fps={VA_FPS} width={VA_W} height={VA_H} defaultProps={{
+        muted: false,
+        requireAudio: false,
+        lite: true,
+      }} />
+      <Still id="ValueAreaCover" component={ValueAreaCover} width={VA_W} height={VA_H} defaultProps={{
+        lite: true,
+      }} />
     </Folder>
   </>
 );

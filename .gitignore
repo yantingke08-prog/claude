@@ -2,3 +2,8 @@ node_modules/
 studio/out/
 studio/.remotion/
 *.log
+# 价值区 film: the voice and the mix stay local; subtitles/stills are rebuilt
+studio/public/voiceover/
+studio/public/valuearea/mix.wav
+studio/.cache/
+.env

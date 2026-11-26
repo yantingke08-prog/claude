@@ -1,0 +1,262 @@
+{
+  "title": "价值区怎么用？只看3个数",
+  "slug": "value-area-3-numbers",
+  "episode": "（5）价值区怎么用？只看3个数",
+  "fps": 30,
+  "source": "../valuearea-script.txt (verbatim; estimate refuses to run if a line differs)",
+  "estimate": {
+    "cps": 5.3,
+    "latin": 0.32,
+    "lead": 0.6,
+    "tail": 1.5,
+    "lineGap": 0.26,
+    "sectionGap": 0.6,
+    "pause": {
+      "，": 0.16,
+      "、": 0.08,
+      "：": 0.22,
+      "；": 0.26,
+      "。": 0.3,
+      "？": 0.36,
+      "！": 0.3
+    }
+  },
+  "notes": "text = what the voice reads and what the captions show, word for word from valuearea-script.txt. Picture events (events.json) are keyed by line id + word: change a word here, in valuearea-script.txt and in events.json together.",
+  "lines": [
+    {
+      "id": "L01",
+      "section": "hook",
+      "text": "同一个价格为什么有时候能撑住，有时候一碰就穿。"
+    },
+    {
+      "id": "L02",
+      "section": "hook",
+      "text": "问题不在那条线，而在成交最挤的三个数里。"
+    },
+    {
+      "id": "L03",
+      "section": "profile",
+      "text": "你先别急着划支撑。"
+    },
+    {
+      "id": "L04",
+      "section": "profile",
+      "text": "打开成交量分布，也就是 volume profile。"
+    },
+    {
+      "id": "L05",
+      "section": "profile",
+      "text": "看一段时间里，每个价位到底成交了多少。"
+    },
+    {
+      "id": "L06",
+      "section": "profile",
+      "text": "哪一段成交最密，那一段就是价值区。"
+    },
+    {
+      "id": "L07",
+      "section": "profile",
+      "text": "说白了，价格不是谁拍脑袋定出来的，"
+    },
+    {
+      "id": "L08",
+      "section": "profile",
+      "text": "是市场用真金白银一笔一笔投出来的。"
+    },
+    {
+      "id": "L09",
+      "section": "profile",
+      "text": "成交最密的地方，就是大家暂时最认的价。"
+    },
+    {
+      "id": "L10",
+      "section": "three",
+      "text": "那这三个数到底看什么？"
+    },
+    {
+      "id": "L11",
+      "section": "three",
+      "text": "先看成交量，判断这地方到底有没有人认。"
+    },
+    {
+      "id": "L12",
+      "section": "three",
+      "text": "再看上沿，看价格往上走有没有压力。"
+    },
+    {
+      "id": "L13",
+      "section": "three",
+      "text": "最后看下沿，看价格往下砸，有没有人接。"
+    },
+    {
+      "id": "L14",
+      "section": "trap",
+      "text": "很多人到这一步，第一反应就是："
+    },
+    {
+      "id": "L15",
+      "section": "trap",
+      "text": "碰到上沿就空，碰到下沿就多。"
+    },
+    {
+      "id": "L16",
+      "section": "trap",
+      "text": "先别急，价值区不是一堵墙。"
+    },
+    {
+      "id": "L17",
+      "section": "trap",
+      "text": "它是一个区间，价格在里面的时候，"
+    },
+    {
+      "id": "L18",
+      "section": "trap",
+      "text": "多空分歧不大，来回震很正常。"
+    },
+    {
+      "id": "L19",
+      "section": "trap",
+      "text": "真正有信息的时候，是价格跑到边缘。"
+    },
+    {
+      "id": "L20",
+      "section": "poll",
+      "text": "你平时看到价格到价值区上沿，"
+    },
+    {
+      "id": "L21",
+      "section": "poll",
+      "text": "第一反应是做空，还是先等确认？"
+    },
+    {
+      "id": "L22",
+      "section": "poll",
+      "text": "弹幕打做空或者确认。"
+    },
+    {
+      "id": "L23",
+      "section": "poll",
+      "text": "我猜不少人选做空，因为看起来最直观。"
+    },
+    {
+      "id": "L24",
+      "section": "poll",
+      "text": "可市场最爱骗的，就是这种第一反应。"
+    },
+    {
+      "id": "L25",
+      "section": "accept",
+      "text": "价格冲到上沿，成交继续放大，"
+    },
+    {
+      "id": "L26",
+      "section": "accept",
+      "text": "回踩还能站住，说明市场在接受更高的价格。"
+    },
+    {
+      "id": "L27",
+      "section": "reject",
+      "text": "冲上去没人跟，马上缩回来，"
+    },
+    {
+      "id": "L28",
+      "section": "reject",
+      "text": "说明上面这个价市场不认，往下也一样。"
+    },
+    {
+      "id": "L29",
+      "section": "watch",
+      "text": "所以你别光看它有没有碰到线，"
+    },
+    {
+      "id": "L30",
+      "section": "watch",
+      "text": "你得看它碰到线以后，能不能站住。"
+    },
+    {
+      "id": "L31",
+      "section": "watch",
+      "text": "你发现没有，价值区中间最容易来回挨打。"
+    },
+    {
+      "id": "L32",
+      "section": "watch",
+      "text": "边缘才真正考验判断。"
+    },
+    {
+      "id": "L33",
+      "section": "watch",
+      "text": "站住了，市场在建立新价值；"
+    },
+    {
+      "id": "L34",
+      "section": "watch",
+      "text": "站不住，又回到原来的区间。"
+    },
+    {
+      "id": "L35",
+      "section": "watch",
+      "text": "说明旧价值还在拉它。"
+    },
+    {
+      "id": "L36",
+      "section": "map",
+      "text": "记住一句话，价值区不是买卖按钮。"
+    },
+    {
+      "id": "L37",
+      "section": "map",
+      "text": "它是一张地图。"
+    },
+    {
+      "id": "L38",
+      "section": "map",
+      "text": "它告诉你市场过去最认可哪里，"
+    },
+    {
+      "id": "L39",
+      "section": "map",
+      "text": "哪里成交稀薄。"
+    },
+    {
+      "id": "L40",
+      "section": "map",
+      "text": "下次看到价格回到价值区，"
+    },
+    {
+      "id": "L41",
+      "section": "map",
+      "text": "先别问这里能不能买，"
+    },
+    {
+      "id": "L42",
+      "section": "map",
+      "text": "先问一句，市场认不认这个价。"
+    },
+    {
+      "id": "L43",
+      "section": "end",
+      "text": "你更容易在价值区中间来回挨打，"
+    },
+    {
+      "id": "L44",
+      "section": "end",
+      "text": "还是在边缘被假突破骗？"
+    },
+    {
+      "id": "L45",
+      "section": "end",
+      "text": "评论区打中间或者边缘。"
+    },
+    {
+      "id": "L46",
+      "section": "end",
+      "text": "下一期我们看 POC，"
+    },
+    {
+      "id": "L47",
+      "section": "end",
+      "text": "为什么它总像一块磁铁？"
+    }
+  ]
+}

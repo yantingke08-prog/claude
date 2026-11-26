@@ -22,7 +22,22 @@
     "exp:render:gpu": "remotion render Expectancy out/expectancy.mp4 --gl=angle --concurrency=50%",
     "exp:sample": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4",
     "exp:sample:gpu": "remotion render Exp-lln-3d-sample out/samples/lln-3d-sample.mp4 --gl=angle --concurrency=50%",
-    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted"
+    "exp:sample:clean:gpu": "remotion render Exp-lln-3d-clean out/samples/lln-3d-clean.mp4 --gl=angle --concurrency=50% --muted",
+    "va:typecheck": "tsc --noEmit",
+    "va:fonts": "python scripts/valuearea-fonts.py",
+    "va:estimate": "python scripts/valuearea-sync.py estimate",
+    "va:align": "python scripts/valuearea-sync.py align",
+    "va:srt": "python scripts/valuearea-sync.py srt",
+    "va:mix": "python scripts/valuearea-sync.py mix",
+    "va:sync": "python scripts/valuearea-sync.py all",
+    "va:check": "python scripts/valuearea-sync.py check",
+    "va:stills": "node scripts/valuearea-stills.mjs",
+    "va:render": "node scripts/valuearea-make.mjs render",
+    "va:render:cpu": "node scripts/valuearea-make.mjs render --cpu",
+    "va:cover": "node scripts/valuearea-make.mjs cover",
+    "va:cover:cpu": "node scripts/valuearea-make.mjs cover --cpu",
+    "va:make": "node scripts/valuearea-make.mjs make",
+    "va:make:cpu": "node scripts/valuearea-make.mjs make --cpu"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

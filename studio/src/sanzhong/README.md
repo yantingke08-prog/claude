@@ -35,7 +35,7 @@ npm run sz:check
 npm run sz:studio
 npm run sz:qa
 npm run sz:stills
-# 5. render to D:\claude视频\三种成交_LVP订单流_three-fills-v1.mp4
+# 5. render to D:\claude视频\三种成交_LVP订单流_three-fills-v2.mp4
 npm run sz:make          # GPU (--gl=angle)
 npm run sz:render:cpu    # no GPU
 ```

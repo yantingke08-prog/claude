@@ -101,7 +101,7 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
         const yy = rowY(p);
         const isAsk = p in ASK;
         const size = isAsk ? (p === 100.75 ? ask1 : ASK[p]) : p === 100.5 ? bid1 : BID[p];
-        const col = isAsk ? C.red : C.green;
+        const col = isAsk ? C.down : C.up;
         const eatenFlash = p === 100.75 && pEat > 0 && pEat < 1 ? 0.35 : 0;
         return (
           <g key={p} opacity={o}>
@@ -114,17 +114,17 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
             )}
             <T bare={bare} x={BK.priceX + 70} y={yy + 37} fill={C.white2} textAnchor="middle">{fmt(p)}</T>
             {isAsk ? (
-              <T bare={bare} x={BK.askX + 14} y={yy + 37} fill={size === 0 ? C.grey : C.red} fontWeight={700}>{size}</T>
+              <T bare={bare} x={BK.askX + 14} y={yy + 37} fill={size === 0 ? C.grey : C.down} fontWeight={700}>{size}</T>
             ) : (
-              <T bare={bare} x={BK.bidX + 146} y={yy + 37} fill={C.green} fontWeight={700} textAnchor="end">{size}</T>
+              <T bare={bare} x={BK.bidX + 146} y={yy + 37} fill={C.up} fontWeight={700} textAnchor="end">{size}</T>
             )}
           </g>
         );
       })}
       {!bare && (
         <>
-          <SvgLabel f={f} at={tBook + 2} x={BK.askX + 14} y={TOP - 16} text="卖单" color={C.red} size={26} weight={700} />
-          <SvgLabel f={f} at={tBook + 0.3 * FPS} x={BK.bidX + 146} y={TOP + PRICES.length * ROW_H + 30} text="买单" color={C.green} anchor="end" size={26} weight={700} />
+          <SvgLabel f={f} at={tBook + 2} x={BK.askX + 14} y={TOP - 16} text="卖单" color={C.down} size={26} weight={700} />
+          <SvgLabel f={f} at={tBook + 0.3 * FPS} x={BK.bidX + 146} y={TOP + PRICES.length * ROW_H + 30} text="买单" color={C.up} anchor="end" size={26} weight={700} />
         </>
       )}
 
@@ -145,7 +145,7 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
       {/* 大买单：从下方飞入卖一，被吃完后消失 */}
       {pFly > 0 && pEat < 1 && (
         <g transform={`translate(${mix(BK.askX - 40, BK.askX + 190, pFly)}, ${mix(rowY(99.75) + 70, rowY(100.75) + 4, pFly)})`} opacity={1 - pEat * 0.9}>
-          <rect width={150} height={46} rx={6} fill={C.green} />
+          <rect width={150} height={46} rx={6} fill={C.up} />
           {!bare && (
             <text x={75} y={32} textAnchor="middle" fontFamily={SANS} fontWeight={800} fontSize={26} fill={C.bg}>
               买 {Math.round(BIG * (1 - pEat))}
@@ -158,7 +158,7 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
       {hits.map((h, k) =>
         h > 0 && h < 1 ? (
           <g key={k} transform={`translate(${mix(BK.bidX - 110, BK.bidX + 10, h)}, ${rowY(100.5) + 6})`} opacity={1 - h * 0.6}>
-            <rect width={110} height={40} rx={6} fill={C.red} />
+            <rect width={110} height={40} rx={6} fill={C.down} />
             {!bare && (
               <text x={55} y={29} textAnchor="middle" fontFamily={SANS} fontWeight={800} fontSize={24} fill={C.white}>
                 卖 55
@@ -175,8 +175,8 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
       {/* ===== 足迹 ===== */}
       {!bare && (
         <>
-          <SvgLabel f={f} at={tFoot + 0.2 * FPS} x={FP.x + 150} y={rowY(101.0) + 36} text="主动卖" color={C.red} anchor="middle" size={26} />
-          <SvgLabel f={f} at={tFoot + 0.2 * FPS} x={FP.x + 330} y={rowY(101.0) + 36} text="主动买" color={C.green} anchor="middle" size={26} />
+          <SvgLabel f={f} at={tFoot + 0.2 * FPS} x={FP.x + 150} y={rowY(101.0) + 36} text="主动卖" color={C.down} anchor="middle" size={26} />
+          <SvgLabel f={f} at={tFoot + 0.2 * FPS} x={FP.x + 330} y={rowY(101.0) + 36} text="主动买" color={C.up} anchor="middle" size={26} />
         </>
       )}
       {FOOT.map(([p, sell, buy], k) => {
@@ -190,9 +190,9 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
         const big = p === 100.75;
         return (
           <g key={p} opacity={pc}>
-            <rect x={FP.x + 60} y={yy} width={180} height={ROW_H - 6} fill={C.red} fillOpacity={Math.min(0.55, s / 300)} stroke={C.lineSoft} />
-            <rect x={FP.x + 240} y={yy} width={180} height={ROW_H - 6} fill={C.green} fillOpacity={Math.min(0.55, buy / 300)} stroke={C.lineSoft} />
-            {big && <rect x={FP.x + 240} y={yy} width={180} height={ROW_H - 6} fill="none" stroke={C.green} strokeWidth={3} />}
+            <rect x={FP.x + 60} y={yy} width={180} height={ROW_H - 6} fill={C.down} fillOpacity={Math.min(0.55, s / 300)} stroke={C.lineSoft} />
+            <rect x={FP.x + 240} y={yy} width={180} height={ROW_H - 6} fill={C.up} fillOpacity={Math.min(0.55, buy / 300)} stroke={C.lineSoft} />
+            {big && <rect x={FP.x + 240} y={yy} width={180} height={ROW_H - 6} fill="none" stroke={C.up} strokeWidth={3} />}
             {imb && pImb > 0 && <rect x={p === 100.25 ? FP.x + 240 : FP.x + 60} y={yy} width={180} height={ROW_H - 6} fill="none" stroke={C.gold} strokeWidth={4} opacity={pImb} />}
             <T bare={bare} x={FP.x + 150} y={yy + 37} fill={C.white} textAnchor="middle" fontWeight={p === 100.5 && hits[0] > 0 ? 800 : 500}>{s}</T>
             <T bare={bare} x={FP.x + 330} y={yy + 37} fill={C.white} textAnchor="middle" fontWeight={big ? 800 : 500}>{buy}</T>
@@ -212,13 +212,13 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
       {/* 足迹左侧的 K 线实体：100.00 → 100.75 */}
       {prog(f, tFoot + 0.9 * FPS, 0.3) > 0 && (
         <g opacity={prog(f, tFoot + 0.9 * FPS, 0.3)}>
-          <line x1={FP.x + 25} x2={FP.x + 25} y1={rowY(100.75) + 4} y2={rowY(100.0) + ROW_H - 10} stroke={C.green} strokeWidth={2} />
-          <rect x={FP.x + 14} y={rowY(100.75) + 10} width={22} height={rowY(100.25) - rowY(100.75) + ROW_H - 26} fill={C.green} />
+          <line x1={FP.x + 25} x2={FP.x + 25} y1={rowY(100.75) + 4} y2={rowY(100.0) + ROW_H - 10} stroke={C.up} strokeWidth={2} />
+          <rect x={FP.x + 14} y={rowY(100.75) + 10} width={22} height={rowY(100.25) - rowY(100.75) + ROW_H - 26} fill={C.up} />
         </g>
       )}
 
       {/* ===== 决策信号 ===== */}
-      <Signal f={f} at={tDelta + 0.3 * FPS} y={TOP} bare={bare} title="Delta" color={deltaNow >= 0 ? C.green : C.red}>
+      <Signal f={f} at={tDelta + 0.3 * FPS} y={TOP} bare={bare} title="Delta" color={deltaNow >= 0 ? C.up : C.down}>
         {/* Delta 横条：零轴居中 */}
         {(() => {
           const pBar = prog(f, tDelta + 0.6 * FPS, 0.45);
@@ -227,9 +227,9 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
           return (
             <g>
               <line x1={zx} x2={zx} y1={TOP + 70} y2={TOP + 118} stroke={C.white2} strokeWidth={2} />
-              <rect x={deltaNow >= 0 ? zx : zx - w} y={TOP + 78} width={Math.max(2, w)} height={32} fill={deltaNow >= 0 ? C.green : C.red} />
+              <rect x={deltaNow >= 0 ? zx : zx - w} y={TOP + 78} width={Math.max(2, w)} height={32} fill={deltaNow >= 0 ? C.up : C.down} />
               {!bare && (
-                <text x={SG.x + SG.w - 24} y={TOP + 46} textAnchor="end" fontFamily={MONO} fontWeight={800} fontSize={34} fill={deltaNow >= 0 ? C.green : C.red} opacity={pBar}>
+                <text x={SG.x + SG.w - 24} y={TOP + 46} textAnchor="end" fontFamily={MONO} fontWeight={800} fontSize={34} fill={deltaNow >= 0 ? C.up : C.down} opacity={pBar}>
                   {deltaNow >= 0 ? "+" : ""}
                   {deltaNow}
                 </text>
@@ -239,7 +239,7 @@ export const OrderBook: React.FC<ChartProps> = ({ f, at, bare }) => {
         })()}
       </Signal>
       <Signal f={f} at={tAbs + 1.15 * FPS} y={TOP + 190} bare={bare} title="吸收" color={C.goldHi} note="卖压被买一接住，价格不跌" />
-      <Signal f={f} at={tImb + 0.5 * FPS} y={TOP + 350} bare={bare} title="失衡 4:1" color={C.green} note="买盘远远压过卖盘" />
+      <Signal f={f} at={tImb + 0.5 * FPS} y={TOP + 350} bare={bare} title="失衡 4:1" color={C.up} note="买盘远远压过卖盘" />
     </svg>
   );
 };

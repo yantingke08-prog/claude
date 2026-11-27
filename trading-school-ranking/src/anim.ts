@@ -36,14 +36,28 @@ export const rng = (seed: number) => {
 
 export type Candle = { o: number; h: number; l: number; c: number; v: number };
 
-/** 按 closes 生成带影线的 K 线（固定 seed） */
+/** 标准正态（Box-Muller） */
+export const gauss = (r: () => number) => Math.sqrt(-2 * Math.log(Math.max(1e-9, r()))) * Math.cos(2 * Math.PI * r());
+
+/** 按 closes 生成带影线的 K 线（固定 seed）。
+ *  实体大小跟着收盘价跳动走；影线长短按“大多短、少数很长”的长尾分布；
+ *  开盘价偶尔跳空。wick = 影线尺度（价格单位）。 */
 export const candlesFrom = (closes: number[], seed: number, wick = 0.6): Candle[] => {
   const r = rng(seed);
+  const tail = () => {
+    const u = r();
+    return u < 0.62 ? 0.08 + r() * 0.45 : u < 0.9 ? 0.5 + r() * 0.9 : 1.5 + r() * 1.9;
+  };
   return closes.map((c, i) => {
-    const o = i === 0 ? c - (r() - 0.5) * 1.2 : closes[i - 1] + (r() - 0.5) * 0.4;
+    const prev = i === 0 ? c - (r() - 0.5) * wick * 2 : closes[i - 1];
+    const move = Math.abs(c - prev);
+    const gap = r() < 0.12 ? gauss(r) * wick * 0.9 : gauss(r) * wick * 0.12;
+    const o = prev + gap;
     const hi = Math.max(o, c);
     const lo = Math.min(o, c);
-    return { o, c, h: hi + r() * wick + 0.1, l: lo - r() * wick - 0.1, v: 0.35 + r() * 0.65 };
+    const sz = wick * 0.55 + move * 0.35;
+    const v = Math.min(1, 0.1 + Math.min(0.55, (move / wick) * 0.22) + r() * r() * 0.5);
+    return { o, c, h: hi + tail() * sz, l: lo - tail() * sz, v };
   });
 };
 

@@ -6,17 +6,17 @@ import { Arrow, Candles, Stroke, SvgLabel } from "../ui.tsx";
 import { CHART_H, CHART_W, keyed, scale, type ChartProps } from "./common.ts";
 
 const N = 30;
-const closes = keyed(N, [[0, 50], [10, 58], [16, 65], [17, 65], [23, 56], [24, 55], [25, 57.4], [29, 63]], 404, 0.6);
-const data: Candle[] = candlesFrom(closes, 405, 0.6);
+const closes = keyed(N, [[0, 50], [10, 58], [16, 65], [17, 65], [23, 56], [24, 55], [25, 57.4], [29, 63]], 404, 0.85);
+const data: Candle[] = candlesFrom(closes, 405, 0.75);
 // 手工设定关键 K 线
 data[17] = { o: 64.6, c: 65.2, h: 71, l: 64.2, v: 0.9 }; // 长上影
 data[24] = { o: 56.4, c: 55.3, h: 56.8, l: 54.2, v: 0.6 }; // 被吞没的阴线
 data[25] = { o: 55.1, c: 57.6, h: 58, l: 54.6, v: 1 }; // 阳包阴
-const KEY_HI = 71;
-const KEY_LO = 54.2;
+const KEY_HI = Math.max(...data.map((d) => d.h));
+const KEY_LO = Math.min(...data.slice(18).map((d) => d.l));
 
 const x = scale(0, N - 1, 90, CHART_W - 260);
-const y = scale(48, 73, 540, 40);
+const y = scale(Math.min(...data.map((d) => d.l)) - 1.5, KEY_HI + 2, 540, 40);
 const ghostA = sma(closes, 5);
 const ghostB = sma(closes, 12);
 
@@ -54,14 +54,14 @@ export const NakedKChart: React.FC<ChartProps> = ({ f, at, bare }) => {
       {box(24, 25, tEngulf)}
       <Stroke d={`M${x(8)} ${y(KEY_HI)} L${CHART_W - 120} ${y(KEY_HI)}`} p={prog(f, tLevels, 0.5)} color={C.white2} width={2} dash="12 8" />
       <Stroke d={`M${x(18)} ${y(KEY_LO)} L${CHART_W - 120} ${y(KEY_LO)}`} p={prog(f, tLevels + 6, 0.5)} color={C.white2} width={2} dash="12 8" />
-      <Arrow f={f} at={tRead} x1={x(29) + 36} y1={y(60)} x2={x(29) + 96} y2={y(66.5)} color={C.green} width={5} />
+      <Arrow f={f} at={tRead} x1={x(29) + 36} y1={y(60)} x2={x(29) + 96} y2={y(66.5)} color={C.up} width={5} />
       {!bare && (
         <>
           <SvgLabel f={f} at={tShadow} x={x(17)} y={y(KEY_HI) - 26} text="长上影" color={C.goldHi} anchor="middle" />
           <SvgLabel f={f} at={tEngulf} x={x(24.5)} y={y(KEY_LO) + 54} text="吞没" color={C.goldHi} anchor="middle" />
           <SvgLabel f={f} at={tLevels} x={CHART_W - 110} y={y(KEY_HI) + 9} text="关键高点" color={C.white2} />
           <SvgLabel f={f} at={tLevels + 6} x={CHART_W - 110} y={y(KEY_LO) + 9} text="关键低点" color={C.white2} />
-          <SvgLabel f={f} at={tRead} x={x(29) + 106} y={y(66.5) + 4} text="多方占优" color={C.green} weight={700} />
+          <SvgLabel f={f} at={tRead} x={x(29) + 106} y={y(66.5) + 4} text="多方占优" color={C.up} weight={700} />
         </>
       )}
     </svg>

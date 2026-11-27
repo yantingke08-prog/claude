@@ -1,13 +1,14 @@
 import React from "react";
 import { candlesFrom, mix, prog, textIn } from "./anim.ts";
-import { FINAL, type ChartProps } from "./charts/common.ts";
+import { FINAL, keyed, type ChartProps } from "./charts/common.ts";
 import { IndicatorChart } from "./charts/IndicatorChart.tsx";
 import { NakedKChart } from "./charts/NakedKChart.tsx";
 import { BOOK_H, BOOK_W, OrderBook } from "./charts/OrderBook.tsx";
 import { PriceActionChart } from "./charts/PriceActionChart.tsx";
 import { WyckoffChart } from "./charts/WyckoffChart.tsx";
-import { CONCLUSION, MINDMAP, ORDER, SCHOOLS, TITLE, type SchoolKey } from "./content.ts";
+import { CONCLUSION, MINDMAP, ORDER, SCHOOLS, type SchoolKey } from "./content.ts";
 import { easeInOut } from "./anim.ts";
+import { IntroFx } from "./intro.tsx";
 import { C, FPS, FS, HEIGHT, L, SANS, SERIF, WIDTH } from "./theme.ts";
 import type { SceneSpan } from "./timeline.ts";
 import { Arrow, Candles, ChartTitle, PageTitle, Panel, ProsCons, Stroke, SvgLabel } from "./ui.tsx";
@@ -27,48 +28,8 @@ const CHARTS: Partial<Record<SchoolKey, React.FC<ChartProps>>> = {
   wyckoff: WyckoffChart,
 };
 
-// ------------------------------------------------------------------ 开场
-export const Intro: React.FC<SceneProps> = ({ span, f }) => {
-  const at = atOf(span);
-  return (
-    <div style={{ position: "absolute", inset: 0 }}>
-      <div style={{ position: "absolute", top: 230, width: WIDTH, textAlign: "center", fontFamily: SERIF, fontWeight: 800, fontSize: FS.hero, color: C.white, letterSpacing: 8, ...textIn(f, at(0, 0), 0.4) }}>
-        {TITLE.line1}
-      </div>
-      <div style={{ position: "absolute", top: 420, width: WIDTH, textAlign: "center", fontFamily: SERIF, fontWeight: 800, fontSize: FS.hero + 10, color: C.gold, letterSpacing: 30, ...textIn(f, at(0, 0.3), 0.4) }}>
-        {TITLE.line2}
-      </div>
-      <div style={{ position: "absolute", top: 640, left: 0, width: WIDTH, height: 4, display: "flex", justifyContent: "center" }}>
-        <div style={{ width: 520 * prog(f, at(0, 0.6), 0.5), height: 3, background: C.gold }} />
-      </div>
-      {/* 第五名 → 第一名 */}
-      <div style={{ position: "absolute", top: 700, width: WIDTH, display: "flex", justifyContent: "center", gap: 36 }}>
-        {[5, 4, 3, 2, 1].map((n, k) => (
-          <div
-            key={n}
-            style={{
-              width: 110,
-              height: 110,
-              borderRadius: 6,
-              border: `1.5px solid ${n === 1 ? C.gold : C.line}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: SERIF,
-              fontWeight: 800,
-              fontSize: 64,
-              color: n === 1 ? C.goldHi : C.white2,
-              background: C.panel,
-              ...textIn(f, at(1, 0.15 + k * 0.15), 0.3),
-            }}
-          >
-            {n}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+// ------------------------------------------------------------------ 开场（见 intro.tsx）
+export const Intro: React.FC<SceneProps> = ({ span, f }) => <IntroFx span={span} f={f} at={atOf(span)} />;
 
 // ------------------------------------------------------------------ 名次揭晓
 export const Rank: React.FC<SceneProps> = ({ span, f }) => {
@@ -161,7 +122,7 @@ export const Cards: React.FC<SceneProps> = ({ span, f }) => {
 };
 
 // ------------------------------------------------------------------ 订单流 1：痕迹 vs 推动
-const TRACE = candlesFrom([50, 51, 50.4, 52, 53, 52.2, 54, 53.4, 55, 56, 55.2, 57, 58, 57.4, 59], 101, 0.6);
+const TRACE = candlesFrom(keyed(15, [[0, 50], [4, 53.2], [6, 52], [10, 56.4], [11, 55.6], [14, 59]], 101, 0.55), 102, 0.5);
 export const OfTrace: React.FC<SceneProps> = ({ span, f }) => {
   const at = atOf(span);
   const t1 = at(1, 0);
@@ -182,7 +143,7 @@ export const OfTrace: React.FC<SceneProps> = ({ span, f }) => {
           ))}
         </div>
         <svg width={780} height={430} style={{ position: "absolute", left: 30, top: 170 }}>
-          <Candles f={f} at={at(0, 0.1)} data={TRACE} x={(i) => 40 + i * 50} y={(v) => 400 - (v - 48) * 32} bw={22} step={0.04} color={() => C.grey} />
+          <Candles f={f} at={at(0, 0.1)} data={TRACE} x={(i) => 40 + i * 50} y={(v) => 400 - (v - 48) * 32} bw={22} step={0.04} color={() => "#9AA2AD"} />
           <SvgLabel f={f} at={at(0, 0.6)} x={390} y={420} text="价格留下的痕迹" color={C.white2} anchor="middle" size={32} />
         </svg>
       </Panel>
@@ -199,19 +160,19 @@ export const OfTrace: React.FC<SceneProps> = ({ span, f }) => {
             </g>
           ))}
           {/* 被成交推高的 K 线 */}
-          {prog(f, t1 + 0.2 * FPS, 0.25) > 0 && <rect x={500} y={base + 26 - level * tickH - 8} width={60} height={Math.max(8, level * tickH + 8)} fill={C.green} />}
+          {prog(f, t1 + 0.2 * FPS, 0.25) > 0 && <rect x={500} y={base + 26 - level * tickH - 8} width={60} height={Math.max(8, level * tickH + 8)} fill={C.up} />}
           {/* 逐笔主动买 */}
           {steps.map((p, k) =>
             p > 0 && p < 1 ? (
               <g key={k} transform={`translate(${mix(60, 380, p)}, ${base - k * tickH - 4})`} opacity={1 - p * 0.5}>
-                <rect width={110} height={40} rx={6} fill={C.green} />
+                <rect width={110} height={40} rx={6} fill={C.up} />
                 <text x={55} y={29} textAnchor="middle" fontFamily={SANS} fontWeight={800} fontSize={24} fill={C.bg}>
                   买 60
                 </text>
               </g>
             ) : null,
           )}
-          <SvgLabel f={f} at={t1 + 1.9 * FPS} x={60} y={170} text="主动买单" color={C.green} size={30} weight={700} />
+          <SvgLabel f={f} at={t1 + 1.9 * FPS} x={60} y={170} text="主动买单" color={C.up} size={30} weight={700} />
           <SvgLabel f={f} at={t1 + 2.1 * FPS} x={60} y={216} text="一笔笔推高价格" color={C.white} size={30} />
         </svg>
       </Panel>
@@ -275,13 +236,13 @@ const MiniIcon: React.FC<{ kind: number }> = ({ kind }) => (
   <svg width={460} height={150} style={{ position: "absolute", left: 0, top: 18 }}>
     {kind === 0 &&
       [0, 1, 2, 3, 4, 5].map((i) => (
-        <rect key={i} x={i < 3 ? 230 : 230 - [90, 120, 70][i - 3]} y={10 + i * 21} width={i < 3 ? [60, 80, 110][i] : [90, 120, 70][i - 3]} height={16} fill={i < 3 ? C.red : C.green} opacity={0.6} />
+        <rect key={i} x={i < 3 ? 230 : 230 - [90, 120, 70][i - 3]} y={10 + i * 21} width={i < 3 ? [60, 80, 110][i] : [90, 120, 70][i - 3]} height={16} fill={i < 3 ? C.down : C.up} opacity={0.6} />
       ))}
     {kind === 1 &&
       [0, 1, 2, 3, 4].map((i) => (
         <g key={i}>
-          <rect x={160} y={8 + i * 25} width={70} height={22} fill={C.red} opacity={[0.2, 0.35, 0.25, 0.5, 0.2][i]} />
-          <rect x={232} y={8 + i * 25} width={70} height={22} fill={C.green} opacity={[0.3, 0.6, 0.25, 0.3, 0.2][i]} />
+          <rect x={160} y={8 + i * 25} width={70} height={22} fill={C.down} opacity={[0.2, 0.35, 0.25, 0.5, 0.2][i]} />
+          <rect x={232} y={8 + i * 25} width={70} height={22} fill={C.up} opacity={[0.3, 0.6, 0.25, 0.3, 0.2][i]} />
         </g>
       ))}
     {kind === 2 && (

@@ -12,7 +12,7 @@ export const Panel: React.FC<{ x: number; y: number; w: number; h: number; child
       top: y,
       width: w,
       height: h,
-      background: "linear-gradient(180deg, rgba(17,23,34,0.92), rgba(13,18,27,0.92))",
+      background: "linear-gradient(180deg, rgba(26,34,49,0.94), rgba(18,25,37,0.94))",
       border: `1.5px solid ${C.line}`,
       borderRadius: 6,
       boxSizing: "border-box",
@@ -66,7 +66,7 @@ export const Arrow: React.FC<{ f: number; at: number; x1: number; y1: number; x2
 export const SvgLabel: React.FC<{ f: number; at: number; x: number; y: number; text: string; color?: string; size?: number; anchor?: "start" | "middle" | "end"; weight?: number }> = ({ f, at, x, y, text, color = C.white, size = FS.label, anchor = "start", weight = 600 }) => {
   const p = prog(f, at, 0.3);
   return (
-    <text x={x} y={y + (1 - p) * 8} fill={color} fontSize={Math.max(FS.labelSmall, size)} fontFamily={SANS} fontWeight={weight} textAnchor={anchor} opacity={p}>
+    <text x={x} y={y + (1 - p) * 8} fill={color} fontSize={Math.max(FS.labelSmall, size)} fontFamily={SANS} fontWeight={weight} textAnchor={anchor} opacity={p} stroke="rgba(9,11,14,0.85)" strokeWidth={6} paintOrder="stroke" strokeLinejoin="round">
       {text}
     </text>
   );
@@ -89,7 +89,7 @@ export const Candles: React.FC<{
       const p = prog(f, at + i * step * FPS, 0.16);
       if (p <= 0) return null;
       const up = c.c >= c.o;
-      const col = color ? color(c, i) : up ? C.green : C.red;
+      const col = color ? color(c, i) : up ? C.up : C.down;
       const top = y(Math.max(c.o, c.c));
       const bot = y(Math.min(c.o, c.c));
       const bh = Math.max(2, bot - top);
@@ -99,7 +99,7 @@ export const Candles: React.FC<{
       const by = up ? bot - grow : top;
       return (
         <g key={i} opacity={(dim ? dim(i) : 1) * Math.min(1, p * 1.5)}>
-          <line x1={cx} x2={cx} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth={2} opacity={p} />
+          <line x1={cx} x2={cx} y1={y(c.h)} y2={y(c.l)} stroke={col} strokeWidth={2.4} opacity={p} />
           <rect x={cx - bw / 2} y={by} width={bw} height={Math.max(1, grow)} fill={col} />
         </g>
       );
@@ -126,7 +126,7 @@ export const ProsCons: React.FC<{ f: number; at: number; kind: "pro" | "con"; po
         overflow: "hidden",
         borderRadius: 6,
         border: `1.5px solid ${col}`,
-        background: kind === "pro" ? "rgba(46,204,113,0.08)" : "rgba(231,76,60,0.08)",
+        background: kind === "pro" ? "rgba(54,224,127,0.12)" : "rgba(255,90,78,0.12)",
         boxSizing: "border-box",
       }}
     >

@@ -8,19 +8,23 @@ export const PLACEHOLDER_SECONDS = 93;
 
 export const C = {
   bg: "#090B0E",
-  panel: "#111722",
+  panel: "#161E2B",
   white: "#F4F2EC",
-  white2: "#B8B8B8",
+  white2: "#D3D6DB",
   gold: "#D4AF37",
   goldHi: "#F4D77A",
-  green: "#2ECC71",
-  red: "#E74C3C",
-  grey: "#555B63",
+  /** 优势卡 / 风险卡 */
+  green: "#36E07F",
+  red: "#FF5A4E",
+  /** 红涨绿跌：K 线、买卖、Delta 等行情含义一律用 up / down */
+  up: "#FF4B55",
+  down: "#1FE08A",
+  grey: "#7D858F",
   /** 背景渐变的深蓝黑端 */
   bgDeep: "#0D1420",
   /** 细白色边框 */
-  line: "rgba(244,242,236,0.22)",
-  lineSoft: "rgba(244,242,236,0.10)",
+  line: "rgba(244,242,236,0.34)",
+  lineSoft: "rgba(244,242,236,0.18)",
   /** 片尾白底 */
   paper: "#F4F2EC",
   ink: "#151A22",
